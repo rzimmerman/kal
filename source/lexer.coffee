@@ -22,7 +22,6 @@ exports.Lexer = class Lexer
       value = parse_token[type] text
       if last_token_type is 'NEWLINE' #check for indent/dedent
         indentation = if type is 'WHITESPACE' then text.length else 0
-        console.log @line, indentation
         if indentation > @indent
           @indents.push @indent
           @indent = indentation
