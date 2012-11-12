@@ -77,7 +77,7 @@ Nodes = [
     parse: ->
       @op = @req 'IDENTIFIER', 'LITERAL'
       if @op.type is 'LITERAL'
-        @error "unexpected operator #{@op.value}" if @op.value in [')',']','}',';',':']
+        @error "unexpected operator #{@op.value}" if @op.value in [')',']','}',';',':',',']
         @lock()
         @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/']
       else
@@ -94,7 +94,7 @@ Nodes = [
     is_lvalue: ->
       return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
-      @base    = @req ParenExpression, MapExpression, NumberConstant, StringConstant, 'IDENTIFIER'
+      @base    = @req ParenExpression, ListExpression, NumberConstant, StringConstant, 'IDENTIFIER'
       @accessors = @opt_multi IndexExpression
       
   class NumberConstant extends ASTBase
@@ -120,6 +120,19 @@ Nodes = [
       @req_val ')'
       
   class ListExpression extends ASTBase
+    parse: ->
+      @req_val '['
+      @lock()
+      @items = []
+      item = @opt Expression
+      while item
+        @items.push item
+        if @opt_val ','
+          item = @opt Expression
+        else
+          item = null
+      @req_val ']'
+      
   class MapExpression extends ASTBase
 ]
 

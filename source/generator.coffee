@@ -120,3 +120,6 @@ apply_generator_to_grammar = ->
   @IndexExpression::js = ->
     return "[#{@expr.js()}]"
   
+  @ListExpression::js = ->
+    rv = (item.js() for item in @items).join(', ')
+    return "[#{rv}]"
