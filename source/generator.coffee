@@ -6,11 +6,33 @@ apply_generator_to_grammar = ->
   indent = -> i += '  '
   dedent = -> i = i[0..-3]
   
+  scopes = []
+  scope = {}
+  push_scope = ->
+    scopes.push scope
+    scope = {}
+  pop_scope = (code, force_closed) ->
+    rv = i
+    var_names = (var_name for var_name, bubbles of scope when not bubbles or force_closed or scopes is [])
+    if var_names.length > 0
+      rv += '(function () {\n'
+      indent()
+      rv += i + 'var ' + var_names.join(', ') + ';\n'
+    rv += '  ' + code.replace /\n/g, '\n  '
+    if var_names.length > 0
+      dedent()
+      rv += "\n#{i}})()\n"
+    scope = scopes.pop() if scopes isnt []
+    return rv
+  
   self = this
   
   @File::js = ->
     i = ''
-    (statement.js() for statement in @statements).join '\n'
+    scope = {}
+    scopes = []
+    rv = (statement.js() for statement in @statements).join '\n'
+    return pop_scope rv, yes
     
   @Statement::js = ->
     return i + @statement.js()
@@ -28,6 +50,7 @@ apply_generator_to_grammar = ->
   @UnaryExpression::js = ->
     if @base.type is 'IDENTIFIER'
       rv = @base.value
+      scope[@base.value] = yes
     else
       rv = @base.js()
     rv += @indexer.js() if @indexer?
@@ -58,6 +81,22 @@ apply_generator_to_grammar = ->
 
   @BlankStatment::js = ->
     return ''
+
+  for_depth = 1
+  @ForStatement::js = ->
+    iterator   = "ki$#{for_depth}"
+    terminator = "kobj$#{for_depth}"
+    scope[iterator] = yes
+    scope[terminator] = yes
+    rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+    indent()
+    for_depth += 1
+    rv += "#{i}#{@iterant.js()} = #{iterator};\n"
+    rv += @loop_block.js()
+    for_depth -= 1
+    dedent()
+    rv += "\n#{i}}"
+    return rv
     
   @Block::js = ->
     indent()

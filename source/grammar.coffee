@@ -43,7 +43,16 @@ Nodes = [
       @false_block = @req Block, Statement
   
   class WhileStatement extends ASTBase
+    
   class ForStatement extends ASTBase
+    parse: ->
+      @req_val 'for'
+      @lock()
+      @iterant = @req UnaryExpression
+      @req_val 'in'
+      @iterable = @req Expression
+      @loop_block = @req Block
+      
   class DeclarationStatement extends ASTBase
   class AssignmentStatement extends ASTBase
     parse: ->
@@ -51,6 +60,7 @@ Nodes = [
       @assignOp = @req 'LITERAL'
       @error "not a valid assignment operator: #{assignOp.value}" if @assignOp.value not in ['=']
       @lock()
+      @error 'invalid assignment - the left side must be assignable' unless @lvalue.is_lvalue()
       @rvalue   = @req Expression
       @req 'NEWLINE'
 
@@ -81,8 +91,10 @@ Nodes = [
         @right = @req Expression
     
   class UnaryExpression extends ASTBase
+    is_lvalue: ->
+      return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
-      @base    = @req ParenExpression, ListExpression, MapExpression, NumberConstant, StringConstant, 'IDENTIFIER'
+      @base    = @req ParenExpression, MapExpression, NumberConstant, StringConstant, 'IDENTIFIER'
       @indexer = @opt IndexExpression
   class NumberConstant extends ASTBase
     parse: ->
