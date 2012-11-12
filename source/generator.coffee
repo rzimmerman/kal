@@ -27,6 +27,9 @@ apply_generator_to_grammar = ->
   
   self = this
   
+  string_escape = (str) ->
+    
+  
   @File::js = ->
     i = ''
     scope = {}
@@ -53,7 +56,7 @@ apply_generator_to_grammar = ->
       scope[@base.value] = yes
     else
       rv = @base.js()
-    rv += @indexer.js() if @indexer?
+    rv += accessor.js() for accessor in @accessors
     return rv
     
   @AssignmentStatement::js = ->
@@ -63,7 +66,14 @@ apply_generator_to_grammar = ->
     return "#{@token.value}"
   
   @StringConstant::js = ->
-    return "'#{@token.value}'"
+    rv = @token.value
+    if @token.value[0] is '"'
+      r = /#{.*?}/g
+      m = r.exec rv
+      while m
+        rv = rv[0...m.index] + '" + ' + rv[m.index+2...m.index+m[0].length-1] + ' + "' + rv[m.index+m[0].length..]
+        m = r.exec rv
+    return rv
   
   @BinOp::js = ->
     return @op.value;
@@ -106,4 +116,7 @@ apply_generator_to_grammar = ->
   
   @ParenExpression::js = ->
     return "(#{@expr.js()})"
+    
+  @IndexExpression::js = ->
+    return "[#{@expr.js()}]"
   

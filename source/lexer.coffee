@@ -44,11 +44,10 @@ exports.Lexer = class Lexer
   error: (message) ->
     throw message
     
-unescape = (text) -> return text
 
 parse_token = 
   NUMBER: (text) -> return Number(text)
-  STRING: (text) -> return unescape(text[1..-2])
+  STRING: (text) -> return text
   IDENTIFIER: (text) -> return text
   NEWLINE: (text) -> return ''
   WHITESPACE: (text) -> return ' '
@@ -64,7 +63,7 @@ token_types = [
   [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'],
   [/^(\r*\n\r*)+/, 'NEWLINE'],
   [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'],
-  [/^([\+\-\*\/\^\=\.><\(\)][\f\r\t\v\u00A0\u2028\u2029 ]*){1,2}/, 'LITERAL'],
+  [/^[\+\-\*\/\^\=\.><\(\)\[\]]/, 'LITERAL'],
   [/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT']
 ]
   

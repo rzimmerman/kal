@@ -95,7 +95,8 @@ Nodes = [
       return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
       @base    = @req ParenExpression, MapExpression, NumberConstant, StringConstant, 'IDENTIFIER'
-      @indexer = @opt IndexExpression
+      @accessors = @opt_multi IndexExpression
+      
   class NumberConstant extends ASTBase
     parse: ->
       @token = @req 'NUMBER'
@@ -105,6 +106,11 @@ Nodes = [
       @token = @req 'STRING'
   
   class IndexExpression extends ASTBase
+    parse: ->
+      @req_val '['
+      @lock()
+      @expr = @req Expression
+      @req_val ']'
       
   class ParenExpression extends ASTBase
     parse: ->
