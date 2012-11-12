@@ -63,7 +63,11 @@ Nodes = [
     parse: ->
       @lvalue   = @req UnaryExpression
       @assignOp = @req 'LITERAL'
-      @error "not a valid assignment operator: #{assignOp.value}" if @assignOp.value not in ['=']
+      if @assignOp.value in ['+','-','*','/']
+        @req_val '='
+        @assignOp.value += '='
+      else if @assignOp.value isnt '='
+        @error "not a valid assignment operator: #{assignOp.value}" if @assignOp.value not in ['=']
       @lock()
       @error 'invalid assignment - the left side must be assignable' unless @lvalue.is_lvalue()
       @rvalue   = @req Expression
