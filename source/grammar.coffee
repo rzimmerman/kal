@@ -43,6 +43,11 @@ Nodes = [
       @false_block = @req Block, Statement
   
   class WhileStatement extends ASTBase
+    parse: ->
+      @req_val 'while'
+      @lock()
+      @expr = @req Expression
+      @block = @req Block
     
   class ForStatement extends ASTBase
     parse: ->

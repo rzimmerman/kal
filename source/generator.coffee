@@ -108,6 +108,14 @@ apply_generator_to_grammar = ->
     rv += "\n#{i}}"
     return rv
     
+  @WhileStatement::js = ->
+    rv = "while (#{@expr.js()}) {\n"
+    indent()
+    rv += @block.js()
+    dedent()
+    rv += "\n#{i}}"
+    return rv
+    
   @Block::js = ->
     indent()
     rv = (statement.js() for statement in @statements).join '\n'
