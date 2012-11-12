@@ -103,7 +103,7 @@ Nodes = [
     is_lvalue: ->
       return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
-      @base    = @req ParenExpression, ListExpression, NumberConstant, StringConstant, 'IDENTIFIER'
+      @base    = @req ParenExpression, ListExpression, MapExpression, NumberConstant, StringConstant, 'IDENTIFIER'
       @accessors = @opt_multi IndexExpression
       
   class NumberConstant extends ASTBase
@@ -141,8 +141,23 @@ Nodes = [
         else
           item = null
       @req_val ']'
+  
+  class MapItem extends ASTBase
+    parse: ->
+      @key = @req Expression
+      @req_val ':'
+      @lock()
+      @val = @req Expression
+      @end_token = @req_val ',', '}'
+      if @end_token.value is '}'
+        @ts.prev()
       
   class MapExpression extends ASTBase
+    parse: ->
+      @req_val '{'
+      @lock()
+      @items = @opt_multi MapItem
+      @req_val '}'
 ]
 
 exports.Grammar = {}

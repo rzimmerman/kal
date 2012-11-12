@@ -131,3 +131,10 @@ apply_generator_to_grammar = ->
   @ListExpression::js = ->
     rv = (item.js() for item in @items).join(', ')
     return "[#{rv}]"
+    
+  @MapItem::js = ->
+    return "#{@key.js()}: #{@val.js()}"
+    
+  @MapExpression::js = ->
+    rv = (item.js() for item in @items).join(', ')
+    return "{ #{rv} }"
