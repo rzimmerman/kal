@@ -6,6 +6,7 @@ apply_generator_to_grammar = ->
   indent = -> i += '  '
   dedent = -> i = i[0..-3]
   
+  self = this
   
   @File::js = ->
     i = ''
@@ -45,15 +46,15 @@ apply_generator_to_grammar = ->
     return @op.value;
     
   @IfStatement::js = ->
-    rv = "if (#{@conditional.js()}) {\n#{@true_block.js()}\n}"
+    rv = "if (#{@conditional.js()}) {\n#{@true_block.js()}\n#{i}}"
     rv += @else_block.js() if @else_block?
     return rv
     
   @ElseStatement::js = ->
-    if @false_block instanceof @IfStatement
-      return "else #{@false_block.js()}"
+    if @false_block instanceof self.Statement and @false_block.statement instanceof self.IfStatement
+      return " else #{@false_block.js()}"
     else
-      return "else {\n#{@false_block.js()}\n}\n"
+      return " else {\n#{@false_block.js()}\n#{i}}"
 
   @BlankStatment::js = ->
     return ''
