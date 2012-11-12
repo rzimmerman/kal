@@ -1,3 +1,7 @@
+exports.tokenize = (code) ->
+  lex = new Lexer(code)
+  return lex.tokens
+
 exports.Lexer = class Lexer
   constructor: (code, line_number) ->
     @code = code
@@ -16,10 +20,10 @@ exports.Lexer = class Lexer
       for [regex,type] in token_types
         text = regex.exec(chunk)?[0]
         if text?
-          type = type
+          @type = type
           break
       @error "invalid token '#{@code[index..index+15]}...'" unless text?
-      value = parse_token[type] text
+      value = parse_token[@type] text
       if last_token_type is 'NEWLINE' #check for indent/dedent
         indentation = if type is 'WHITESPACE' then text.length else 0
         if indentation > @indent
@@ -48,20 +52,19 @@ parse_token =
   IDENTIFIER: (text) -> return text
   NEWLINE: (text) -> return ''
   WHITESPACE: (text) -> return ' '
-  COMMENT: (text) -> return if text[1] is '#' then text[3..-4] else text[1..-2] 
+  COMMENT: (text) -> return if text[1] is '#' then text[3..-4] else text[1..-2]
+  LITERAL: (text) -> return text.replace /[\f\r\t\v\u00A0\u2028\u2029 ]/, ''
   
 
 token_types = [
-  [/^([+-][\f\r\t\v\u00A0\u2028\u2029 ]*)?[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
+  [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
   [/^0x[a-f0-9]+/i, 'NUMBER'],
   [/^'([^']*(\\'))*[^']*'/, 'STRING'],
   [/^"([^"]*(\\"))*[^"]*"/, 'STRING'],
   [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'],
   [/^(\r*\n\r*)+/, 'NEWLINE'],
   [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'],
-  [/^[\+\-\*\/\^\=\.><\(\)]{1,2}/, 'LITERAL'],
+  [/^([\+\-\*\/\^\=\.><\(\)][\f\r\t\v\u00A0\u2028\u2029 ]*){1,2}/, 'LITERAL'],
   [/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT']
 ]
   
-  
-exports.test = new Lexer 'aa bb 11 cc'
