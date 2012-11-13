@@ -8,6 +8,9 @@ apply_generator_to_grammar = ->
   
   scopes = []
   scope = {}
+  
+  use_snippets = {}
+  
   push_scope = ->
     scopes.push scope
     new_scope = {}
@@ -38,14 +41,14 @@ apply_generator_to_grammar = ->
   
   self = this
   
-  string_escape = (str) ->
-    
-  
   @File::js = ->
     i = ''
     scope = {}
     scopes = []
-    rv = (statement.js() for statement in @statements).join '\n'
+    use_snippets = {}
+    code = (statement.js() for statement in @statements).join '\n'
+    snip = (snippet for key, snippet of use_snippets).join('\n')
+    rv = [snip, code].join '\n' 
     return pop_scope rv, yes, yes
     
   @Statement::js = ->
@@ -59,7 +62,15 @@ apply_generator_to_grammar = ->
     
   @Expression::js = ->
     return "#{@left.js()}" unless @op?
-    return "#{@left.js()} #{@op.js()} #{@right.js()}"
+    opjs = @op.js()
+    if opjs is 'in'
+      unless use_snippets['in']?
+        use_snippets['in'] = snippets['in']
+        subscope['$kindexof'] = 'closure' for subscope in scopes
+        scope['$kindexof'] = 'closure'
+      return "$kindexof.call(#{@right.js()}, #{@left.js()}) >= 0"
+    else
+      return "#{@left.js()} #{opjs} #{@right.js()}"
     
   @UnaryExpression::js = ->
     if @base.type is 'IDENTIFIER'
@@ -176,3 +187,7 @@ apply_generator_to_grammar = ->
     
   @FunctionCallArgument::js = ->
     return @val.js()
+    
+  snippets =
+    'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
+    
