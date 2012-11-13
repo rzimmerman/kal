@@ -11,7 +11,7 @@ Nodes = [
     parse: ->
       @req 'NEWLINE'
       @req 'INDENT'
-      @lock()      
+      @lock()
       @statements = @opt_multi Statement
       @req 'DEDENT'
       
@@ -19,7 +19,6 @@ Nodes = [
     parse: ->
       @statement = @req ReturnStatement, IfStatement, WhileStatement, ForStatement, 
                         DeclarationStatement, AssignmentStatement, ExpressionStatement
-      @lock()
     
   class ReturnStatement extends ASTBase
     parse: ->
@@ -76,7 +75,7 @@ Nodes = [
   class ExpressionStatement extends ASTBase
     parse: ->
       @expr = @req Expression
-      @req 'NEWLINE'
+
       
   class BlankStatment extends ASTBase
     parse: ->
@@ -91,6 +90,7 @@ Nodes = [
         @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/']
       else
         @error "unexpected operator #{@op.value}" if @op.value not in ['and','or','xor','in','is']
+      
   class Expression extends ASTBase
     parse: ->
       @left  = @req UnaryExpression
@@ -103,7 +103,7 @@ Nodes = [
     is_lvalue: ->
       return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
-      @base    = @req ParenExpression, ListExpression, MapExpression, NumberConstant, StringConstant, 'IDENTIFIER'
+      @base    = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
       @accessors = @opt_multi IndexExpression
       
   class NumberConstant extends ASTBase
@@ -158,6 +158,31 @@ Nodes = [
       @lock()
       @items = @opt_multi MapItem
       @req_val '}'
+      
+    
+  class Ellipsis extends ASTBase
+    parse: ->
+      @req_val '.'
+      @req_val '.'
+      @req_val '.'
+    
+    
+  class FunctionDefArgument extends ASTBase
+    parse: ->
+      @name = @req 'IDENTIFIER'
+      @lock()
+      if @req_val(',',')').value is ')'
+        @ts.prev()
+      
+  class FunctionExpression extends ASTBase
+    parse: ->
+      @specifier = @req_val 'function', 'method'
+      @lock()
+      @name = @opt 'IDENTIFIER'
+      @req_val '('
+      @arguments = @opt_multi FunctionDefArgument
+      @req_val ')'
+      @block = @req Block
 ]
 
 exports.Grammar = {}

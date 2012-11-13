@@ -10,18 +10,29 @@ apply_generator_to_grammar = ->
   scope = {}
   push_scope = ->
     scopes.push scope
-    scope = {}
-  pop_scope = (code, force_closed) ->
+    new_scope = {}
+    for k,v of scope
+      if v is 'no closures'
+        #do nothing
+      else if v is 'closures ok' or v is 'argument'
+        new_scope[k] = 'closure'
+      else if v is 'closure'
+        new_scope[k] = 'closure'
+    scope = new_scope
+      
+  pop_scope = (code, force_closed, wrap) ->
     rv = i
-    var_names = (var_name for var_name, bubbles of scope when not bubbles or force_closed or scopes is [])
+    var_names = (var_name for var_name, type of scope when type isnt 'closure' and type isnt 'argument')
     if var_names.length > 0
-      rv += '(function () {\n'
-      indent()
-      rv += i + 'var ' + var_names.join(', ') + ';\n'
-    rv += '  ' + code.replace /\n/g, '\n  '
+      if wrap
+        rv += '(function () {\n'
+        indent()
+        code = i + code.replace /\n/g, '\n  '
+      rv += '  var ' + var_names.join(', ') + ';\n'
+    rv += code
     if var_names.length > 0
       dedent()
-      rv += "\n#{i}})()\n"
+      rv += "\n#{i}})()\n" if wrap
     scope = scopes.pop() if scopes isnt []
     return rv
   
@@ -35,7 +46,7 @@ apply_generator_to_grammar = ->
     scope = {}
     scopes = []
     rv = (statement.js() for statement in @statements).join '\n'
-    return pop_scope rv, yes
+    return pop_scope rv, yes, yes
     
   @Statement::js = ->
     return i + @statement.js()
@@ -53,7 +64,7 @@ apply_generator_to_grammar = ->
   @UnaryExpression::js = ->
     if @base.type is 'IDENTIFIER'
       rv = @base.value
-      scope[@base.value] = yes
+      scope[@base.value] = 'closures ok' unless scope[@base.value]?
     else
       rv = @base.js()
     rv += accessor.js() for accessor in @accessors
@@ -96,8 +107,8 @@ apply_generator_to_grammar = ->
   @ForStatement::js = ->
     iterator   = "ki$#{for_depth}"
     terminator = "kobj$#{for_depth}"
-    scope[iterator] = yes
-    scope[terminator] = yes
+    scope[iterator] = 'no closures'
+    scope[terminator] = 'no closures'
     rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
     indent()
     for_depth += 1
@@ -138,3 +149,15 @@ apply_generator_to_grammar = ->
   @MapExpression::js = ->
     rv = (item.js() for item in @items).join(', ')
     return "{ #{rv} }"
+
+  @FunctionExpression::js = ->
+    rv = "function "
+    rv += @name.value if @name?
+    arg_names = (argument.name.value for argument in @arguments)
+    rv += "(#{arg_names.join(', ')}) {\n"
+    push_scope()
+    scope[arg_name] = 'argument' for arg_name in arg_names
+    block_code = @block.js()
+    block_code = pop_scope block_code, no, no
+    rv += "#{block_code}\n#{i}}"
+    
