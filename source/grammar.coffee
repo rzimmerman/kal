@@ -104,7 +104,7 @@ Nodes = [
       return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
       @base    = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
-      @accessors = @opt_multi IndexExpression, FunctionCall
+      @accessors = @opt_multi IndexExpression, FunctionCall, PropertyAccess
       
   class NumberConstant extends ASTBase
     parse: ->
@@ -120,6 +120,12 @@ Nodes = [
       @lock()
       @expr = @req Expression
       @req_val ']'
+  
+  class PropertyAccess extends ASTBase
+    parse: ->
+      @req_val '.'
+      @lock()
+      @expr = @req FunctionExpression, 'IDENTIFIER'
   
   class FunctionCallArgument extends ASTBase
     parse: ->

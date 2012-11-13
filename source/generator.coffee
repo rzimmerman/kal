@@ -69,7 +69,14 @@ apply_generator_to_grammar = ->
       rv = @base.js()
     rv += accessor.js() for accessor in @accessors
     return rv
-    
+  
+  @PropertyAccess::js = ->
+    if @expr.type is 'IDENTIFIER'
+      rv = @expr.value
+    else
+      rv = @expr.js()
+    return ".#{rv}"
+  
   @AssignmentStatement::js = ->
     return "#{@lvalue.js()} #{@assignOp.value} #{@rvalue.js()};"
     
