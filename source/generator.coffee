@@ -100,7 +100,7 @@ apply_generator_to_grammar = ->
     else
       return " else {\n#{@false_block.js()}\n#{i}}"
 
-  @BlankStatment::js = ->
+  @BlankStatement::js = ->
     return ''
 
   for_depth = 1
@@ -161,3 +161,9 @@ apply_generator_to_grammar = ->
     block_code = pop_scope block_code, no, no
     rv += "#{block_code}\n#{i}}"
     
+  @FunctionCall::js = ->
+    rv = (argument.js() for argument in @arguments).join ', '
+    return "(#{rv})"
+    
+  @FunctionCallArgument::js = ->
+    return @val.js()

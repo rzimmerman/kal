@@ -18,7 +18,7 @@ Nodes = [
   class Statement extends ASTBase
     parse: ->
       @statement = @req ReturnStatement, IfStatement, WhileStatement, ForStatement, 
-                        DeclarationStatement, AssignmentStatement, ExpressionStatement
+                        DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
     
   class ReturnStatement extends ASTBase
     parse: ->
@@ -77,7 +77,7 @@ Nodes = [
       @expr = @req Expression
 
       
-  class BlankStatment extends ASTBase
+  class BlankStatement extends ASTBase
     parse: ->
       @req 'NEWLINE'
 
@@ -104,7 +104,7 @@ Nodes = [
       return (@base.constructor not in [NumberConstant, StringConstant])
     parse: ->
       @base    = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
-      @accessors = @opt_multi IndexExpression
+      @accessors = @opt_multi IndexExpression, FunctionCall
       
   class NumberConstant extends ASTBase
     parse: ->
@@ -120,7 +120,21 @@ Nodes = [
       @lock()
       @expr = @req Expression
       @req_val ']'
-      
+  
+  class FunctionCallArgument extends ASTBase
+    parse: ->
+      @val = @req Expression
+      @lock()
+      if @req_val(',',')').value is ')'
+        @ts.prev()
+  
+  class FunctionCall extends ASTBase
+    parse: ->
+      @req_val '('
+      @lock()
+      @arguments = @opt_multi FunctionCallArgument
+      @req_val ')'
+    
   class ParenExpression extends ASTBase
     parse: ->
       @req_val '('

@@ -52,7 +52,7 @@ exports.ASTBase = class ASTBase
   req_val: ->
     rv = @opt_val.apply this, arguments
     return rv if rv?
-    @error "Expected #{arguments.join(' or ')}"
+    @error "Expected #{(v for v in arguments).join(' or ')}"
   
   req_multi: -> #require at least one
     rv = @opt_multi.apply this, arguments
