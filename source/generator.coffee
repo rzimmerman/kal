@@ -14,7 +14,7 @@ apply_generator_to_grammar = ->
     for k,v of scope
       if v is 'no closures'
         #do nothing
-      else if v is 'closures ok' or v is 'argument'
+      else if v is 'closures ok' or v is 'argument' or v is 'function'
         new_scope[k] = 'closure'
       else if v is 'closure'
         new_scope[k] = 'closure'
@@ -22,15 +22,15 @@ apply_generator_to_grammar = ->
       
   pop_scope = (code, force_closed, wrap) ->
     rv = i
-    var_names = (var_name for var_name, type of scope when type isnt 'closure' and type isnt 'argument')
-    if var_names.length > 0
+    var_names = (var_name for var_name, type of scope when type not in ['closure', 'argument', 'function'])
+    if var_names.length > 0 or wrap
       if wrap
         rv += '(function () {\n'
         indent()
         code = i + code.replace /\n/g, '\n  '
-      rv += '  var ' + var_names.join(', ') + ';\n'
+      rv += '  var ' + var_names.join(', ') + ';\n' if var_names.length > 0
     rv += code
-    if var_names.length > 0
+    if var_names.length > 0 or wrap
       dedent()
       rv += "\n#{i}})()\n" if wrap
     scope = scopes.pop() if scopes isnt []
@@ -152,7 +152,9 @@ apply_generator_to_grammar = ->
 
   @FunctionExpression::js = ->
     rv = "function "
-    rv += @name.value if @name?
+    if @name?
+      rv += @name.value
+      scope[@name.value] = 'function'
     arg_names = (argument.name.value for argument in @arguments)
     rv += "(#{arg_names.join(', ')}) {\n"
     push_scope()

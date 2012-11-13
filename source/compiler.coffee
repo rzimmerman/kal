@@ -12,4 +12,6 @@ exports.compile = (code) ->
   
   
 fs = require 'fs'
-console.log exports.compile fs.readFileSync process.argv[2] if process.argv[2]?
+code = exports.compile fs.readFileSync process.argv[2] if process.argv[2]?
+console.log code
+console.log eval(code)

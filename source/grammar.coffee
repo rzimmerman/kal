@@ -87,7 +87,7 @@ Nodes = [
       if @op.type is 'LITERAL'
         @error "unexpected operator #{@op.value}" if @op.value in [')',']','}',';',':',',']
         @lock()
-        @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/']
+        @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<']
       else
         @error "unexpected operator #{@op.value}" if @op.value not in ['and','or','xor','in','is']
       
