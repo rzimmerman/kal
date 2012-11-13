@@ -101,7 +101,10 @@ Nodes = [
     
   class UnaryExpression extends ASTBase
     is_lvalue: ->
-      return (@base.constructor not in [NumberConstant, StringConstant])
+      return no if @base.constructor in [NumberConstant, StringConstant]
+      for accessor in @accessors
+        return no if accessor instanceof FunctionCall
+      return yes
     parse: ->
       @base    = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
       @accessors = @opt_multi IndexExpression, FunctionCall, PropertyAccess
