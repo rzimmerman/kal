@@ -153,7 +153,7 @@ apply_generator_to_grammar = ->
     rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
     indent()
     for_depth += 1
-    rv += "#{i}#{@iterant.js()} = #{iterator};\n"
+    rv += "#{i}#{@iterant.js()} = #{terminator}[#{iterator}];\n"
     rv += @loop_block.js()
     for_depth -= 1
     dedent()
