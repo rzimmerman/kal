@@ -1,0 +1,13 @@
+class A
+  method constructor()
+    me.name = 'steve'
+  method describe()
+    return me.name
+  method other_thing(a,b)
+    me.name = a
+    return a + b
+  function static_thing()
+    return 'a'
+
+a = new A()
+return a.describe()
