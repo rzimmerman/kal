@@ -12,9 +12,11 @@ KEYWORD_TRANSLATE =
   'or':'||'
   'xor':'^'
   'not':'!'
+  'new':'new '
+  'me':'$kthis'
 
 exports.load = (grammar) ->
-  apply_generator_to_grammar.apply grammar  
+  apply_generator_to_grammar.apply grammar
 
 apply_generator_to_grammar = ->
   i = ''
@@ -23,6 +25,12 @@ apply_generator_to_grammar = ->
   
   scopes = []
   scope = {}
+  
+  class_defs = []
+  class_def = ""
+    
+  class_names = []
+  class_name = ""
   
   use_snippets = {}
   
@@ -58,8 +66,12 @@ apply_generator_to_grammar = ->
   
   @File::js = ->
     i = ''
-    scope = {}
     scopes = []
+    scope = {}
+    class_defs = []
+    class_def = ""
+    class_names = []
+    class_name = ""
     use_snippets = {}
     code = (statement.js() for statement in @statements).join '\n'
     snip = (snippet for key, snippet of use_snippets).join('\n')
@@ -79,10 +91,13 @@ apply_generator_to_grammar = ->
     return "return #{@expr.js()};"
     
   @ExpressionStatement::js = ->
-    return "#{@expr.js()};"
+    rv = @expr.js()
+    return if rv isnt "" then rv + ';' else rv
     
   @Expression::js = ->
-    return "#{@left.js()}" unless @op?
+    left_code = @left.js()
+    return left_code unless @op?
+    
     opjs = @op.js()
     if opjs is 'in'
       unless use_snippets['in']?
@@ -91,14 +106,14 @@ apply_generator_to_grammar = ->
         scope['$kindexof'] = 'closure'
       return "$kindexof.call(#{@right.js()}, #{@left.js()}) >= 0"
     else
-      return "#{@left.js()} #{opjs} #{@right.js()}"
+      return "#{left_code} #{opjs} #{@right.js()}"
     
   @UnaryExpression::js = ->
     rv = ''
     rv += KEYWORD_TRANSLATE[@preop.value] if @preop?.value?
     if @base.type is 'IDENTIFIER'
       rv += KEYWORD_TRANSLATE[@base.value] or @base.value
-      scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue()
+      scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value]
     else
       rv += @base.js()
     rv += accessor.js() for accessor in @accessors
@@ -192,8 +207,18 @@ apply_generator_to_grammar = ->
     return "{ #{rv} }"
 
   @FunctionExpression::js = ->
-    rv = "function "
-    if @name?
+    rv = ""
+    static_member = no
+    instance_member = no
+    if scope['this'] is 'class definition' and @name?
+      if @specifier.value is 'function'
+        static_member = yes
+        rv += "#{class_name}.prototype.#{@name.value} = "
+      else if @specifier.value is 'method'
+        instance_member = yes
+        rv += "$kthis.#{@name.value} = "
+    rv += "function "
+    if @name? and not static_member and not instance_member
       rv += @name.value
       scope[@name.value] = 'function'
     arg_names = (argument.name.value for argument in @arguments)
@@ -203,6 +228,11 @@ apply_generator_to_grammar = ->
     block_code = @block.js()
     block_code = pop_scope block_code, no, no
     rv += "#{block_code}\n#{i}}"
+    if scope['this'] is 'class definition' and @name? and @specifier.value is 'function'
+      class_def += rv
+      return ""
+    else
+      return rv
     
   @FunctionCall::js = ->
     rv = (argument.js() for argument in @arguments).join ', '
@@ -211,6 +241,25 @@ apply_generator_to_grammar = ->
   @FunctionCallArgument::js = ->
     return @val.js()
     
+  @ClassDefinition::js = ->
+    rv = "function #{@name.value} () {\n"
+    rv += "#{i}  var $kthis = this;\n"
+    push_scope()
+    class_defs.push class_def
+    class_def = ""
+    class_names.push class_name
+    class_name = @name.value
+    scope['this'] = 'class definition'
+    block_code = @block.js()
+    block_code = pop_scope block_code, no, no
+    rv += block_code
+    rv += '\n' + i + "if (typeof($kthis.constructor) === 'function') $kthis.constructor.apply($kthis, arguments);"
+    rv += '\n' + i + '}\n'
+    rv += class_def
+    class_def = class_defs.pop()
+    class_name = class_names.pop()
+    return rv
+  
   snippets =
     'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
     

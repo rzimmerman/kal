@@ -19,7 +19,7 @@ Nodes = [
       
   class Statement extends ASTBase
     parse: ->
-      @statement = @req ReturnStatement, IfStatement, WhileStatement, ForStatement, 
+      @statement = @req ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, 
                         DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
     
   class ReturnStatement extends ASTBase
@@ -109,7 +109,7 @@ Nodes = [
         return no if accessor instanceof FunctionCall
       return yes
     parse: ->
-      @preop     = @opt_val 'not'
+      @preop     = @opt_val 'not', 'new'
       @base      = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
       @accessors = @opt_multi IndexExpression, FunctionCall, PropertyAccess
       
@@ -209,6 +209,18 @@ Nodes = [
       @req_val '('
       @arguments = @opt_multi FunctionDefArgument
       @req_val ')'
+      @block = @req Block
+  
+  class ClassDefinition extends ASTBase
+    parse: ->
+      @req_val 'class'
+      @lock()
+      @name = @opt 'IDENTIFIER'
+      if @opt_val 'inherits'
+        @req_val 'from'
+        @parent = @req 'IDENTIFIER'
+      else
+        @parent = 'Object'
       @block = @req Block
 ]
 
