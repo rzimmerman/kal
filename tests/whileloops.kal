@@ -1,0 +1,9 @@
+a = [1,2,3,4]
+i = 1
+last = 0
+while i < a.length
+  assert(i is last + 1)
+  last = i
+  i += 1
+
+assert(i is 4)
