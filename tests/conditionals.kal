@@ -1,0 +1,45 @@
+a = no
+if 5 > 3
+  a = yes
+assert(a)
+
+b = no
+if 5 > 3
+  b = yes
+else
+  b = no
+assert(b)
+
+c = no
+if 5 > 10
+  c = no
+else
+  c = yes
+assert(c)
+
+d = no
+if 5 > 10
+  d = no
+else
+  d = yes
+assert(d)
+
+e = no
+if 5 > 10
+  e = no
+  something = 1
+else if 5 < 1
+  e = no
+else
+  e = yes
+assert(e)
+
+f = no
+if 5 > 10
+  f = no
+  something = 1
+else if 5 > 1
+  f = yes
+else
+  f = no
+assert(f)
