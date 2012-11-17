@@ -109,7 +109,7 @@ apply_generator_to_grammar = ->
     return "#{@lvalue.js()} #{@assignOp.value} #{@rvalue.js()};"
     
   @NumberConstant::js = ->
-    return "#{@token.value}"
+    return "#{@token.text}"
   
   @StringConstant::js = ->
     rv = @token.value
