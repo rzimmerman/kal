@@ -40,17 +40,17 @@ apply_generator_to_grammar = ->
       
   pop_scope = (code, force_closed, wrap) ->
     rv = i
-    var_names = (var_name for var_name, type of scope when type not in ['closure', 'argument', 'function'])
-    if var_names.length > 0 or wrap
-      if wrap
-        rv += '(function () {\n'
-        indent()
-        code = i + code.replace /\n/g, '\n  '
+    var_names = (var_name for var_name, type of scope when type not in ['closure', 'argument', 'function', 'class definition'])
+    if wrap
+      rv += '(function () {\n'
+      indent()
+      code = i + code.replace /\n/g, '\n  '
+    if var_names.length > 0
       rv += '  var ' + var_names.join(', ') + ';\n' if var_names.length > 0
     rv += code
-    if var_names.length > 0 or wrap
+    if wrap
       dedent()
-      rv += "\n#{i}})()\n" if wrap
+      rv += "\n#{i}})()\n"
     scope = scopes.pop() if scopes isnt []
     return rv
   
