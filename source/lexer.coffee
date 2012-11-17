@@ -26,17 +26,7 @@ exports.Lexer = class Lexer
       @error "invalid token '#{@code[index..index+15]}...'" unless text?
       value = parse_token[@type] text
       if last_token_type is 'NEWLINE' #check for indent/dedent
-        indentation = if type is 'WHITESPACE' then text.length else 0
-        if indentation > @indent
-          @indents.push @indent
-          @indent = indentation
-          @tokens.push text:text, line:@line, value:'', type:'INDENT'
-        else if indentation < @indent
-          while @indents.length > 0 and indentation < @indent
-            @indent = @indents.pop()
-            @error 'indentation is misaligned' if indentation > @indent
-            @tokens.push text:text, line:@line, value:'', type:'DEDENT'
-          @error 'indentation is misaligned' if indentation isnt @indent
+        @handleIndentation type, text
       if type is 'COMMENT'
         @comments.push text:text, line:@line, value:value, type:type
       else if type isnt 'WHITESPACE'
@@ -44,6 +34,21 @@ exports.Lexer = class Lexer
       index += text.length
       @line += /\n/.exec(text)?[0].length or 0
       last_token_type = type
+    @handleIndentation 'NEWLINE', '' #clear up any remaining indents at the end of the file
+      
+  handleIndentation: (type, text) ->
+    indentation = if type is 'WHITESPACE' then text.length else 0
+    if indentation > @indent
+      @indents.push @indent
+      @indent = indentation
+      @tokens.push text:text, line:@line, value:'', type:'INDENT'
+    else if indentation < @indent
+      while @indents.length > 0 and indentation < @indent
+        @indent = @indents.pop()
+        @error 'indentation is misaligned' if indentation > @indent
+        @tokens.push text:text, line:@line, value:'', type:'DEDENT'
+      @error 'indentation is misaligned' if indentation isnt @indent
+      
   error: (message) ->
     throw message
     
