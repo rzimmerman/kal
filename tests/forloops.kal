@@ -1,0 +1,8 @@
+a = [1,2,3,4]
+i = 1
+for x in a
+  assert(x is i)
+  i += 1
+
+assert(i is 5)
+assert(a.length is 4)
