@@ -1,3 +1,4 @@
+# Testing boolean operators and constants
 assert(yes is true)
 assert(on is true)
 assert(no is false)
@@ -6,4 +7,3 @@ assert(yes or no)
 assert(not (yes and no))
 assert(not no)
 assert(0x55 xor 0x21 is 0x74)
-

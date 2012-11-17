@@ -54,7 +54,7 @@ parse_token =
   IDENTIFIER: (text) -> return text
   NEWLINE: (text) -> return ''
   WHITESPACE: (text) -> return ' '
-  COMMENT: (text) -> return (if text[1] is '#' then text[3..-4] else text[1..-2]).replace /(\/\*)|(\*\/)/g, '**'
+  COMMENT: (text) -> return (if text[1] is '#' then text[3..-4] else text[1..-1]).replace /(\/\*)|(\*\/)/g, '**'
   LITERAL: (text) -> return text.replace /[\f\r\t\v\u00A0\u2028\u2029 ]/, ''
   
 
