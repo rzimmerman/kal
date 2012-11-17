@@ -63,11 +63,17 @@ apply_generator_to_grammar = ->
     use_snippets = {}
     code = (statement.js() for statement in @statements).join '\n'
     snip = (snippet for key, snippet of use_snippets).join('\n')
-    rv = [snip, code].join '\n' 
+    rv = [snip, code].join '\n'
+    comment.written = undefined for comment in @ts.comments # reset the AST modifications in case something else wants to use it
     return pop_scope rv, yes, yes
     
   @Statement::js = ->
-    return i + @statement.js()
+    rv = ''
+    for comment in @ts.comments when comment.line <= @line and not comment.written
+      comment.written = yes
+      rv += i + '/*' + comment.value + '*/'
+    rv += i + @statement.js()
+    return rv
     
   @ReturnStatement::js = ->
     return "return #{@expr.js()};"

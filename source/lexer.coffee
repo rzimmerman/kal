@@ -1,6 +1,6 @@
 exports.tokenize = (code) ->
   lex = new Lexer(code)
-  return lex.tokens
+  return [lex.tokens, lex.comments]
 
 exports.Lexer = class Lexer
   constructor: (code, line_number) ->
@@ -12,6 +12,7 @@ exports.Lexer = class Lexer
     
   tokenize: ->
     @tokens = []
+    @comments = []
     last_token_type = null
     index = 0
     
@@ -36,7 +37,9 @@ exports.Lexer = class Lexer
             @error 'indentation is misaligned' if indentation > @indent
             @tokens.push text:text, line:@line, value:'', type:'DEDENT'
           @error 'indentation is misaligned' if indentation isnt @indent
-      if type isnt 'WHITESPACE'
+      if type is 'COMMENT'
+        @comments.push text:text, line:@line, value:value, type:type
+      else if type isnt 'WHITESPACE'
         @tokens.push text:text, line:@line, value:value, type:type
       index += text.length
       @line += /\n/.exec(text)?[0].length or 0
@@ -51,11 +54,12 @@ parse_token =
   IDENTIFIER: (text) -> return text
   NEWLINE: (text) -> return ''
   WHITESPACE: (text) -> return ' '
-  COMMENT: (text) -> return if text[1] is '#' then text[3..-4] else text[1..-2]
+  COMMENT: (text) -> return (if text[1] is '#' then text[3..-4] else text[1..-2]).replace /(\/\*)|(\*\/)/g, '**'
   LITERAL: (text) -> return text.replace /[\f\r\t\v\u00A0\u2028\u2029 ]/, ''
   
 
-token_types = [  
+token_types = [
+  [/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT'],
   [/^0x[a-f0-9]+/i, 'NUMBER'],
   [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
   [/^'([^']*(\\'))*[^']*'/, 'STRING'],
@@ -63,7 +67,6 @@ token_types = [
   [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'],
   [/^(\r*\n\r*)+/, 'NEWLINE'],
   [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'],
-  [/^[\+\-\*\/\^\=\.><\(\)\[\]\,\.\{\}\:]/, 'LITERAL'],
-  [/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT']
+  [/^[\+\-\*\/\^\=\.><\(\)\[\]\,\.\{\}\:]/, 'LITERAL']
 ]
   

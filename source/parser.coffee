@@ -1,14 +1,15 @@
 {GrammarRoot, Grammar} = require './grammar'
 
 exports.Grammar = Grammar
-exports.parse = (tokens) ->
-  ts = new TokenStream(tokens)
+exports.parse = (tokens, comments) ->
+  ts = new TokenStream(tokens, comments)
   AST = new GrammarRoot(ts)
   return AST
   
 class TokenStream
-  constructor: (tokens) ->
+  constructor: (tokens, comments) ->
     @tokens = tokens
+    @comments = comments
     @goto_token 0
     
   next: ->

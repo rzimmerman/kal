@@ -1,3 +1,4 @@
+#really basic tests of all the math operators +-*/
 assert(1 + 2 is 3)
 assert('hey' + ' ' + 'you' is 'hey you')
 assert(1 + '2' is '12')

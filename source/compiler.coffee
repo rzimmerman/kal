@@ -5,8 +5,8 @@
 
 exports.compile = (code) ->
   translated_code = translate_sugar code
-  tokens = tokenize translated_code
-  root_node = parse tokens
+  [tokens, comments] = tokenize translated_code
+  root_node = parse tokens, comments
   load Grammar
   return root_node.js()
   
