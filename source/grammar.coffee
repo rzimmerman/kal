@@ -1,5 +1,7 @@
 {ASTBase} = require './ast'
 
+KEYWORDS = ['true','false','yes','no','on','off']
+
 Nodes = [
   class File extends ASTBase
     parse: ->
@@ -89,7 +91,7 @@ Nodes = [
         @lock()
         @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<']
       else
-        @error "unexpected operator #{@op.value}" if @op.value not in ['and','or','xor','in','is']
+        @error "unexpected operator #{@op.value}" if @op.value not in ['and','or','xor','in','is','isnt']
       
   class Expression extends ASTBase
     parse: ->

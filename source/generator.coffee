@@ -1,6 +1,21 @@
+
+KEYWORD_TRANSLATE = 
+  'yes':'true'
+  'on':'true'
+  'no':'false'
+  'off':'false'
+  'is':'==='
+  'isnt':'!=='
+  '==':'==='
+  '!=':'!=='
+  'and':'&&'
+  'or':'||'
+  'xor':'^'
+  'not':'!'
+
 exports.load = (grammar) ->
-  apply_generator_to_grammar.apply grammar
-  
+  apply_generator_to_grammar.apply grammar  
+
 apply_generator_to_grammar = ->
   i = ''
   indent = -> i += '  '
@@ -73,11 +88,13 @@ apply_generator_to_grammar = ->
       return "#{@left.js()} #{opjs} #{@right.js()}"
     
   @UnaryExpression::js = ->
+    rv = ''
+    rv += KEYWORD_TRANSLATE[@preop.value] if @preop?.value?
     if @base.type is 'IDENTIFIER'
-      rv = @base.value
-      scope[@base.value] = 'closures ok' unless scope[@base.value]?
+      rv += KEYWORD_TRANSLATE[@base.value] or @base.value
+      scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue()
     else
-      rv = @base.js()
+      rv += @base.js()
     rv += accessor.js() for accessor in @accessors
     return rv
   
@@ -105,7 +122,7 @@ apply_generator_to_grammar = ->
     return rv
   
   @BinOp::js = ->
-    return @op.value;
+    return KEYWORD_TRANSLATE[@op.value] or @op.value;
     
   @IfStatement::js = ->
     rv = "if (#{@conditional.js()}) {\n#{@true_block.js()}\n#{i}}"
