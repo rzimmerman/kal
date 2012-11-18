@@ -45,9 +45,12 @@ noparen_function_calls = (tokens) ->
   # allow function calls without parentheses
   out_tokens = []
   close_paren_count = 0
+  last_token = null
   
-  for token in tokens
-    if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING']
+  i = 0
+  while i < tokens.length
+    token = tokens[i]
+    if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING'] and token.value not in ['otherwise','except','else']
       close_paren_count += 1
       out_tokens.push text:'(', line:token.line, value:'(', type:'LITERAL'
     else if close_paren_count > 0 and token.type is 'NEWLINE'
@@ -58,4 +61,5 @@ noparen_function_calls = (tokens) ->
     # push the current token unchanged
     out_tokens.push token
     last_token = token
+    i += 1
   return out_tokens

@@ -106,18 +106,22 @@ apply_generator_to_grammar = ->
     return if rv isnt "" then rv + ';' else rv
     
   @Expression::js = ->
+    rv = ''
     left_code = @left.js()
-    return left_code unless @op?
-    
-    opjs = @op.js()
-    if opjs is 'in'
-      unless use_snippets['in']?
-        use_snippets['in'] = snippets['in']
-        subscope['$kindexof'] = 'closure' for subscope in scopes
-        scope['$kindexof'] = 'closure'
-      return "$kindexof.call(#{@right.js()}, #{@left.js()}) >= 0"
+    if not @op?
+      rv += left_code
     else
-      return "#{left_code} #{opjs} #{@right.js()}"
+      opjs = @op.js()
+      if opjs is 'in'
+        unless use_snippets['in']?
+          use_snippets['in'] = snippets['in']
+          subscope['$kindexof'] = 'closure' for subscope in scopes
+          scope['$kindexof'] = 'closure'
+        rv += "$kindexof.call(#{@right.js()}, #{@left.js()}) >= 0"
+      else
+        rv += "#{left_code} #{opjs} #{@right.js()}"
+    rv = @conditional.js(rv) if @conditional?
+    return rv
     
   @UnaryExpression::js = ->
     rv = ''
@@ -129,6 +133,16 @@ apply_generator_to_grammar = ->
       rv += @base.js()
     rv += accessor.js() for accessor in @accessors
     return rv
+
+  @WhenExpression::js = (true_block_js) ->
+    conditional_js = @condition.js()
+    conditional_js = "!(#{conditional_js})" if @specifier.value is 'unless' or @specifier.value is 'except'
+    if @false_expr?
+      return "(#{conditional_js}) ? #{true_block_js} : #{@false_expr.js()}"
+    else
+      indented_js = '  ' + true_block_js.replace /\n/g, '\n  '
+      return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
+    return rv
   
   @PropertyAccess::js = ->
     if @expr.type is 'IDENTIFIER'
@@ -138,7 +152,9 @@ apply_generator_to_grammar = ->
     return ".#{rv}"
   
   @AssignmentStatement::js = ->
-    return "#{@lvalue.js()} #{@assignOp.value} #{@rvalue.js()};"
+    rv = "#{@lvalue.js()} #{@assignOp.value} #{@rvalue.js()};"
+    rv = @conditional.js(rv) if @conditional?
+    return rv
     
   @NumberConstant::js = ->
     return "#{@token.text}"
@@ -158,7 +174,7 @@ apply_generator_to_grammar = ->
     
   @IfStatement::js = ->
     conditional_js = @conditional.js()
-    conditional_js = "!(#{conditional_js})" if @condition.value is 'unless'
+    conditional_js = "!(#{conditional_js})" if @condition.value is 'unless' or @condition.value is 'except'
     
     rv = "if (#{conditional_js}) {\n#{@true_block.js()}\n#{i}}"
     

@@ -1,6 +1,6 @@
 {ASTBase} = require './ast'
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless',
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class']
 
 Nodes = [
@@ -32,15 +32,16 @@ Nodes = [
   
   class IfStatement extends ASTBase
     parse: ->
-      @condition = @req_val 'if', 'unless'
+      @condition = @req_val 'if', 'unless', 'when', 'except'
       @lock()
+      @req_val 'when' if @condition.value is 'except'
       @conditional = @req Expression
       @true_block = @req Block, Statement
       @else_block = @opt ElseStatement
         
   class ElseStatement extends ASTBase
     parse: ->
-      @req_val 'else'
+      @req_val 'else', 'otherwise'
       @lock()
       @false_block = @req Block, Statement
   
@@ -74,6 +75,8 @@ Nodes = [
       @error 'invalid assignment - the left side must be assignable' unless @lvalue.is_lvalue()
       @rvalue   = @req Expression
       @req 'NEWLINE'
+      @conditional = @rvalue.transform_when_statement()
+        
 
   class ExpressionStatement extends ASTBase
     parse: ->
@@ -95,13 +98,21 @@ Nodes = [
         @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt']
       
   class Expression extends ASTBase
+    transform_when_statement: ->
+      if @conditional? and not @conditional.false_expr?
+        rv = @conditional
+        @conditional = undefined
+        return rv
+      else
+        return undefined
     parse: ->
       @left  = @req UnaryExpression
       @op    = @opt BinOp
+      @lock()
       if @op?
-        @lock()
         @right = @req Expression
-    
+      @conditional = @opt WhenExpression
+      
   class UnaryExpression extends ASTBase
     is_lvalue: ->
       return no if @base.constructor in [NumberConstant, StringConstant]
@@ -110,10 +121,18 @@ Nodes = [
         return no if accessor instanceof FunctionCall
       return yes
     parse: ->
-      @preop     = @opt_val 'not', 'new'
-      @base      = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
-      @accessors = @opt_multi IndexExpression, FunctionCall, PropertyAccess
+      @preop      = @opt_val 'not', 'new'
+      @base        = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
+      @accessors   = @opt_multi IndexExpression, FunctionCall, PropertyAccess
       
+  class WhenExpression extends ASTBase
+    parse: ->
+      @specifier  = @req_val 'when', 'except', 'if', 'unless'
+      @lock()
+      @req_val 'when' if @specifier.value is 'except'
+      @condition  = @req Expression
+      @false_expr = @req Expression if @opt_val 'otherwise', 'else'
+    
   class NumberConstant extends ASTBase
     parse: ->
       @token = @req 'NUMBER'

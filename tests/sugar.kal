@@ -1,5 +1,6 @@
 function test(a,b)
   return a + b + 1
+x = 1 except when p otherwise 4
 
 return test(2,3)
 return test 2,
