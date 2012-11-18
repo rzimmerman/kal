@@ -9,6 +9,7 @@ KEYWORD_TRANSLATE =
   '==':'==='
   '!=':'!=='
   'and':'&&'
+  'but':'&&'
   'or':'||'
   'xor':'^'
   'not':'!'

@@ -91,7 +91,7 @@ Nodes = [
         @lock()
         @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<']
       else
-        @error "unexpected operator #{@op.value}" if @op.value not in ['and','or','xor','in','is','isnt']
+        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt']
       
   class Expression extends ASTBase
     parse: ->
