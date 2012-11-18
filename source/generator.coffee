@@ -156,7 +156,11 @@ apply_generator_to_grammar = ->
     return KEYWORD_TRANSLATE[@op.value] or @op.value;
     
   @IfStatement::js = ->
-    rv = "if (#{@conditional.js()}) {\n#{@true_block.js()}\n#{i}}"
+    conditional_js = @conditional.js()
+    conditional_js = "!(#{conditional_js})" if @condition.value is 'unless'
+    
+    rv = "if (#{conditional_js}) {\n#{@true_block.js()}\n#{i}}"
+    
     rv += @else_block.js() if @else_block?
     return rv
     

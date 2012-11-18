@@ -31,7 +31,7 @@ Nodes = [
   
   class IfStatement extends ASTBase
     parse: ->
-      @req_val 'if'
+      @condition = @req_val 'if', 'unless'
       @lock()
       @conditional = @req Expression
       @true_block = @req Block, Statement

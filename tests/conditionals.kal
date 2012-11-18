@@ -43,3 +43,14 @@ else if 5 > 1
 else
   f = no
 assert(f)
+
+
+unless 4 > 5
+  assert(yes)
+
+unless 3 > 1
+  assert(no)
+else
+  assert(yes)
+  
+
