@@ -13,7 +13,7 @@ KEYWORD_TRANSLATE =
   'xor':'^'
   'not':'!'
   'new':'new '
-  'me':'$kthis'
+  'me':'this'
 
 exports.load = (grammar) ->
   apply_generator_to_grammar.apply grammar
@@ -27,10 +27,18 @@ apply_generator_to_grammar = ->
   scope = {}
   
   class_defs = []
-  class_def = ""
-    
-  class_names = []
-  class_name = ""
+  class_def = {}
+  
+  push_class = ->
+    class_defs.push class_def
+    class_def =
+      name: ''
+      code: ''
+      args: []
+      has_constructor: no
+  pop_class = ->
+    class_def = class_defs.pop()
+    return class_def
   
   use_snippets = {}
   
@@ -69,11 +77,13 @@ apply_generator_to_grammar = ->
     scopes = []
     scope = {}
     class_defs = []
-    class_def = ""
-    class_names = []
-    class_name = ""
+    class_def =
+      name: ''
+      code: ''
+      args: []
+      has_constructor: no
     use_snippets = {}
-    code = (statement.js() for statement in @statements).join '\n'
+    code = (statement.js() for statement in @statements when not (statement.statement instanceof self.BlankStatement)).join '\n'
     snip = (snippet for key, snippet of use_snippets).join('\n')
     rv = [snip, code].join '\n'
     comment.written = undefined for comment in @ts.comments # reset the AST modifications in case something else wants to use it
@@ -207,32 +217,42 @@ apply_generator_to_grammar = ->
     return "{ #{rv} }"
 
   @FunctionExpression::js = ->
-    rv = ""
-    static_member = no
-    instance_member = no
-    if scope['this'] is 'class definition' and @name?
-      if @specifier.value is 'function'
-        static_member = yes
-        rv += "#{class_name}.prototype.#{@name.value} = "
-      else if @specifier.value is 'method'
-        instance_member = yes
-        rv += "$kthis.#{@name.value} = "
-    rv += "function "
-    if @name? and not static_member and not instance_member
-      rv += @name.value
-      scope[@name.value] = 'function'
-    arg_names = (argument.name.value for argument in @arguments)
-    rv += "(#{arg_names.join(', ')}) {\n"
+    if class_defs.length > 0 and @name? #is a member function/method
+      if @specifier.value is 'method' and @name.value is 'initialize'
+        class_def.code += @js_constructor()
+        return ""
+      else
+        return @js_class_member()
+    else
+      return @js_bare_function()
+    
+  @FunctionExpression::js_bare_function   = ->
+    rv = "function "
+    rv += @name.value if @name?
+    return rv + @js_body (argument.name.value for argument in @arguments)
+    
+  @FunctionExpression::js_class_member   = ->
+    if @specifier.value is 'method'
+      rv = "#{class_def.name}.prototype.#{@name.value} = function"
+    else
+      rv = "#{class_def.name}.#{@name.value} = function"
+    return rv + @js_body (argument.name.value for argument in @arguments)
+    
+  @FunctionExpression::js_constructor = ->
+    class_def.has_constructor = yes
+    rv = "function #{class_def.name}"
+    class_def.args = (argument.name.value for argument in @arguments)
+    rv += @js_body class_def.args
+    return rv
+
+  @FunctionExpression::js_body = (arg_names) ->
+    rv = " (#{arg_names.join(', ')}) {\n"
     push_scope()
     scope[arg_name] = 'argument' for arg_name in arg_names
     block_code = @block.js()
-    block_code = pop_scope block_code, no, no
-    rv += "#{block_code}\n#{i}}"
-    if scope['this'] is 'class definition' and @name? and @specifier.value is 'function'
-      class_def += rv
-      return ""
-    else
-      return rv
+    rv += pop_scope block_code, no, no
+    rv += "\n#{i}}"
+    return rv
     
   @FunctionCall::js = ->
     rv = (argument.js() for argument in @arguments).join ', '
@@ -242,24 +262,21 @@ apply_generator_to_grammar = ->
     return @val.js()
     
   @ClassDefinition::js = ->
-    rv = "function #{@name.value} () {\n"
-    rv += "#{i}  var $kthis = this;\n"
     push_scope()
-    class_defs.push class_def
-    class_def = ""
-    class_names.push class_name
-    class_name = @name.value
-    scope['this'] = 'class definition'
+    push_class()
+    class_def.name = @name.value
     block_code = @block.js()
     block_code = pop_scope block_code, no, no
+    rv = class_def.code
+    unless class_def.has_constructor
+      rv += "function #{class_def.name} () {}\n"
+    if @parent?
+      rv += "#{i}__extends(#{@name.value},#{@parent.value});\n"
+      use_snippets['inherits'] = snippets['inherits']
     rv += block_code
-    rv += '\n' + i + "if (typeof($kthis.constructor) === 'function') $kthis.constructor.apply($kthis, arguments);"
-    rv += '\n' + i + '}\n'
-    rv += class_def
-    class_def = class_defs.pop()
-    class_name = class_names.pop()
+    pop_class()
     return rv
   
   snippets =
     'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
-    
+    'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'

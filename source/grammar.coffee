@@ -219,8 +219,6 @@ Nodes = [
       if @opt_val 'inherits'
         @req_val 'from'
         @parent = @req 'IDENTIFIER'
-      else
-        @parent = 'Object'
       @block = @req Block
 ]
 
