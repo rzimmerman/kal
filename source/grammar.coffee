@@ -1,6 +1,7 @@
 {ASTBase} = require './ast'
 
-KEYWORDS = ['true','false','yes','no','on','off']
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless',
+            'and','or','but','xor','not','new','while','for','else','method','class']
 
 Nodes = [
   class File extends ASTBase
@@ -225,3 +226,4 @@ Nodes = [
 exports.Grammar = {}
 exports.Grammar[v.name] = v for v in Nodes when v.__super__?.constructor is ASTBase
 exports.GrammarRoot = exports.Grammar.File
+exports.KEYWORDS = KEYWORDS

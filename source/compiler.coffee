@@ -4,8 +4,8 @@
 {load} = require './generator'
 
 exports.compile = (code) ->
-  translated_code = translate_sugar code
-  [tokens, comments] = tokenize translated_code
+  [raw_tokens, comments] = tokenize code
+  tokens = translate_sugar raw_tokens
   root_node = parse tokens, comments
   load Grammar
   return root_node.js()
