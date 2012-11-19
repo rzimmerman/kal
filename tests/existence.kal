@@ -2,3 +2,5 @@ assert(not a?)
 a = 1
 assert(a?)
 assert(not a.b?)
+
+assert(not b exists)
