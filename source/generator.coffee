@@ -154,9 +154,9 @@ apply_generator_to_grammar = ->
   
   @ExisentialCheck::js = (code, undefined_unary) ->
     if undefined_unary
-      return "typeof #{code} !== 'undefined' && #{code} !== null"
+      return if @invert then "typeof #{code} === 'undefined' || #{code} === null" else "typeof #{code} !== 'undefined' && #{code} !== null"
     else
-      return "#{code} != null"
+      return if @invert then "#{code} == null" else "#{code} != null"
   
   @PropertyAccess::js = ->
     if @expr.type is 'IDENTIFIER'

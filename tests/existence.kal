@@ -1,6 +1,7 @@
-assert(not a?)
+assert not a?
 a = 1
-assert(a?)
-assert(not a.b?)
+assert a?
+assert not a.b?
 
-assert(not b exists)
+assert not b exists
+assert b doesnt exist

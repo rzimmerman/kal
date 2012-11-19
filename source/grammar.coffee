@@ -1,7 +1,7 @@
 {ASTBase} = require './ast'
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
-            'and','or','but','xor','not','new','while','for','else','method','class','exists']
+            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist']
 
 Nodes = [
   class File extends ASTBase
@@ -127,7 +127,13 @@ Nodes = [
   
   class ExisentialCheck extends ASTBase
     parse: ->
-      @req_val 'exists', '?'
+      op = @req_val 'exists', '?', 'doesnt'
+      @lock()
+      if op.value is 'doesnt'
+        @req_val 'exist'
+        @invert = yes
+      else
+        @invert = no
       
   class WhenExpression extends ASTBase
     parse: ->
