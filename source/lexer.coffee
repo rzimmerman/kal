@@ -61,10 +61,12 @@ parse_token =
   WHITESPACE: (text) -> return ' '
   COMMENT: (text) -> return (if text[1] is '#' then text[3..-4] else text[1..-1]).replace /(\/\*)|(\*\/)/g, '**'
   LITERAL: (text) -> return text.replace /[\f\r\t\v\u00A0\u2028\u2029 ]/, ''
+  REGEX: (text) -> return text
   
 
 token_types = [
   [/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT'],
+  [/^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/,'REGEX']
   [/^0x[a-f0-9]+/i, 'NUMBER'],
   [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
   [/^'([^']*(\\'))*[^']*'/, 'STRING'],

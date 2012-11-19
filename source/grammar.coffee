@@ -115,14 +115,14 @@ Nodes = [
       
   class UnaryExpression extends ASTBase
     is_lvalue: ->
-      return no if @base.constructor in [NumberConstant, StringConstant]
+      return no if @base.constructor in [NumberConstant, StringConstant, RegexConstant]
       return no if @base.value in KEYWORDS
       for accessor in @accessors
         return no if accessor instanceof FunctionCall
       return yes
     parse: ->
       @preop      = @opt_val 'not', 'new'
-      @base        = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, 'IDENTIFIER'
+      @base        = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
       @accessors   = @opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
   
   class ExisentialCheck extends ASTBase
@@ -146,10 +146,14 @@ Nodes = [
   class NumberConstant extends ASTBase
     parse: ->
       @token = @req 'NUMBER'
-    
+  
   class StringConstant extends ASTBase
     parse: ->
       @token = @req 'STRING'
+  
+  class RegexConstant extends ASTBase
+    parse: ->
+      @token = @req 'REGEX'
   
   class IndexExpression extends ASTBase
     parse: ->

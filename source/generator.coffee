@@ -203,6 +203,9 @@ apply_generator_to_grammar = ->
         m = r.exec rv
     return rv
   
+  @RegexConstant::js = ->
+    return @token.text
+  
   @BinOp::js = ->
     return KEYWORD_TRANSLATE[@op.value] or @op.value;
     
