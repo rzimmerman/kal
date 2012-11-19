@@ -151,8 +151,10 @@ apply_generator_to_grammar = ->
     for accessor in @accessors
       closeout = accessor.js_closeout(invert_closeout) + closeout
     rv += closeout
-    
-    rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})" if @preop?.value?
+    if @preop?.value is 'new'
+      rv = "#{KEYWORD_TRANSLATE[@preop.value]} #{rv}"
+    else if @preop?.value?
+      rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})"
     return rv
 
   @WhenExpression::js = (true_block_js) ->

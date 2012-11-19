@@ -1,5 +1,7 @@
 {KEYWORDS} = require './grammar'
 
+NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from']
+
 exports.translate_sugar = (tokens) ->
   out_tokens = noparen_function_calls multiline_statements clean tokens
   return out_tokens
@@ -49,7 +51,7 @@ noparen_function_calls = (tokens) ->
   i = 0
   while i < tokens.length
     token = tokens[i]
-    if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING'] and token.value not in ['is','otherwise','except','else','doesnt','exist','exists','isnt']
+    if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING'] and token.value not in NOPAREN_WORDS
       close_paren_count += 1
       out_tokens.push text:'(', line:token.line, value:'(', type:'LITERAL'
     else if close_paren_count > 0 and token.type is 'NEWLINE'
