@@ -14,5 +14,8 @@ exports.compile = (code) ->
 fs = require 'fs'
 assert = require 'assert'
 code = exports.compile fs.readFileSync process.argv[2] if process.argv[2]?
-console.log code
-console.log eval(code)
+if process.argv[3]?
+  fs.writeFileSync process.argv[3], code
+else
+  console.log code
+  console.log eval(code)
