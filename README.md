@@ -5,7 +5,7 @@ Using Kal
 ---------
 This section is still 'coming soon'. For now, you can clone the repository and use [http://coffeescript.org/](CoffeeScript) to run the compiler:
 
-    coffee source/compiler.coffee [kal file]
+    coffee source/coffee/compiler.coffee [kal file]
 
 This will print the compiled Javascript to stdout and attempt to evaluate it.
 
