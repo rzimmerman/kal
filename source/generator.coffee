@@ -125,13 +125,13 @@ apply_generator_to_grammar = ->
     
   @UnaryExpression::js = ->
     rv = ''
-    rv += KEYWORD_TRANSLATE[@preop.value] if @preop?.value?
     if @base.type is 'IDENTIFIER'
       rv += KEYWORD_TRANSLATE[@base.value] or @base.value
       scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value]
     else
       rv += @base.js()
     rv += accessor.js() for accessor in @accessors
+    rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})" if @preop?.value?
     return rv
 
   @WhenExpression::js = (true_block_js) ->

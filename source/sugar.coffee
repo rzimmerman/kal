@@ -2,7 +2,6 @@
 
 exports.translate_sugar = (tokens) ->
   out_tokens = noparen_function_calls multiline_statements clean tokens
-  console.log (token.value for token in out_tokens).join ' '
   return out_tokens
   
 clean = (tokens) ->
