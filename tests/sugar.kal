@@ -2,6 +2,12 @@ function test(a,b)
   return a + b + 1
 x = 1 except when p otherwise 4
 
+indentation = 4 when tryp otherwise 0
+
+y = 0
+z = 'hello'
+y += z.length
+
 return test(2,3)
 return test 2,
        3

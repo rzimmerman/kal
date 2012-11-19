@@ -192,7 +192,9 @@ apply_generator_to_grammar = ->
       return ""
   
   @AssignmentStatement::js = ->
-    rv = "#{@lvalue.js()} #{@assignOp.value} #{@rvalue.js()};"
+    op = @assignOp.value
+    op += '=' if op isnt '='
+    rv = "#{@lvalue.js()} #{op} #{@rvalue.js()};"
     rv = @conditional.js(rv) if @conditional?
     return rv
     
