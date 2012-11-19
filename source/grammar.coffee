@@ -1,7 +1,8 @@
 {ASTBase} = require './ast'
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
-            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist']
+            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
+              'is','isnt']
 
 Nodes = [
   class File extends ASTBase

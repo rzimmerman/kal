@@ -191,7 +191,7 @@ apply_generator_to_grammar = ->
     return rv
     
   @NumberConstant::js = ->
-    return "#{@token.text}"
+    return @token.text
   
   @StringConstant::js = ->
     rv = @token.value
