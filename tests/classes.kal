@@ -14,6 +14,7 @@ assert(a.describe() is 'steve')
 assert(A.static_thing() is 'a')
 assert(a.other_thing('rob','ert') is 'robert')
 assert(a.describe() is 'rob')
+a.other = 3
 
 class B inherits from A
   method ok_then(c)
