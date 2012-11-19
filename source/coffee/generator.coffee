@@ -15,6 +15,10 @@ KEYWORD_TRANSLATE =
   'not':'!'
   'new':'new '
   'me':'this'
+  'null':'null'
+  'nothing':'null'
+  'none':'null'
+  'break':'break'
 
 exports.load = (grammar) ->
   apply_generator_to_grammar.apply grammar

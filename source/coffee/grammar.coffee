@@ -2,7 +2,7 @@
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
-              'is','isnt','inherits','from']
+              'is','isnt','inherits','from','nothing','empty','null','break']
 
 Nodes = [
   class File extends ASTBase
