@@ -71,6 +71,13 @@ apply_generator_to_grammar = ->
     scope = scopes.pop() if scopes isnt []
     return rv
   
+  check_existence_wrapper = (code, undefined_unary, invert) ->
+    if undefined_unary
+      rv = if invert then "typeof #{code} === 'undefined' || #{code} === null" else "typeof #{code} !== 'undefined' && #{code} !== null"
+    else
+      rv = if invert then "#{code} == null" else "#{code} != null"
+    return rv
+  
   self = this
   
   @File::js = ->
@@ -130,14 +137,20 @@ apply_generator_to_grammar = ->
       scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value]
     else
       rv += @base.js()
+    
+    # an undefined unary is a simple variable access to an undeclared variable
+    # it requres we check if the variable exists before checking if it is null/undefined
+    undefined_unary = (@base.type is 'IDENTIFIER' and not scope[@base]?)
     for accessor in @accessors
-      if accessor instanceof self.ExisentialCheck
-        # an undefined unary is a simple variable access to an undeclared variable
-        # it requres we check if the variable exists before checking if it is null/undefined
-        undefined_unary = (@accessors.length is 1 and @base.type is 'IDENTIFIER' and not scope[@base]?)
-        rv = accessor.js rv, undefined_unary
-      else
-        rv += accessor.js()
+      rv = accessor.js rv, undefined_unary
+      undefined_unary = no # only possible for the first accessor
+      
+    
+    closeout = ""
+    invert_closeout = @accessors[@accessors.length-1]?.invert is true
+    for accessor in @accessors
+      closeout = accessor.js_closeout(invert_closeout) + closeout
+    rv += closeout
     
     rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})" if @preop?.value?
     return rv
@@ -153,17 +166,24 @@ apply_generator_to_grammar = ->
     return rv
   
   @ExisentialCheck::js = (code, undefined_unary) ->
-    if undefined_unary
-      return if @invert then "typeof #{code} === 'undefined' || #{code} === null" else "typeof #{code} !== 'undefined' && #{code} !== null"
-    else
-      return if @invert then "#{code} == null" else "#{code} != null"
+    return check_existence_wrapper code, undefined_unary, @invert
+  @ExisentialCheck::js_closeout = (invert) -> return ""
   
-  @PropertyAccess::js = ->
+  @PropertyAccess::js = (code, undefined_unary) ->
     if @expr.type is 'IDENTIFIER'
       rv = @expr.value
     else
       rv = @expr.js()
-    return ".#{rv}"
+    if @exisential
+      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+    else
+      base = code
+    rv = "#{base}.#{rv}"
+  @PropertyAccess::js_closeout = (invert) -> 
+    if @exisential
+      return if invert then ": true " else " : void 0" 
+    else 
+      return ""
   
   @AssignmentStatement::js = ->
     rv = "#{@lvalue.js()} #{@assignOp.value} #{@rvalue.js()};"
@@ -237,8 +257,17 @@ apply_generator_to_grammar = ->
   @ParenExpression::js = ->
     return "(#{@expr.js()})"
     
-  @IndexExpression::js = ->
-    return "[#{@expr.js()}]"
+  @IndexExpression::js = (code, undefined_unary)->
+    if @exisential
+      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+    else
+      base = code
+    return "#{base}[#{@expr.js()}]"
+  @IndexExpression::js_closeout = (invert) -> 
+      if @exisential
+        return if invert then ": true " else " : void 0" 
+      else 
+        return ""
   
   @ListExpression::js = ->
     rv = (item.js() for item in @items).join(', ')
@@ -289,9 +318,18 @@ apply_generator_to_grammar = ->
     rv += "\n#{i}}"
     return rv
     
-  @FunctionCall::js = ->
+  @FunctionCall::js = (code, undefined_unary) ->
     rv = (argument.js() for argument in @arguments).join ', '
-    return "(#{rv})"
+    if @exisential
+      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+    else
+      base = code
+    return "#{base}(#{rv})"
+  @FunctionCall::js_closeout = (invert) -> 
+      if @exisential
+        return if invert then ": true " else " : void 0" 
+      else 
+        return ""
     
   @FunctionCallArgument::js = ->
     return @val.js()

@@ -5,3 +5,11 @@ assert not a.b?
 
 assert not b exists
 assert b doesnt exist
+
+assert c?.b doesnt exist
+
+c?(d)
+
+assert a[4] doesnt exist
+
+g?[4]

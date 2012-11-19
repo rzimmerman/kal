@@ -153,14 +153,18 @@ Nodes = [
   
   class IndexExpression extends ASTBase
     parse: ->
-      @req_val '['
+      op = @req_val '[', '?'
+      @exisential = (op.value is '?')
+      @req_val '[' if @exisential
       @lock()
       @expr = @req Expression
       @req_val ']'
   
   class PropertyAccess extends ASTBase
     parse: ->
-      @req_val '.'
+      op = @req_val '.', '?'
+      @exisential = (op.value is '?')
+      @req_val '.' if @exisential
       @lock()
       @expr = @req FunctionExpression, 'IDENTIFIER'
   
@@ -173,7 +177,9 @@ Nodes = [
   
   class FunctionCall extends ASTBase
     parse: ->
-      @req_val '('
+      op = @req_val '(', '?'
+      @exisential = (op.value is '?')
+      @req_val '(' if @exisential
       @lock()
       @arguments = @opt_multi FunctionCallArgument
       @req_val ')'
