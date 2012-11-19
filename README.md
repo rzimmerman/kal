@@ -3,11 +3,13 @@ The Kal Programming Language
 
 Using Kal
 ---------
-This section is still 'coming soon'. For now, you can clone the repository and use [http://coffeescript.org/](CoffeeScript) to run the compiler:
+This section is still 'coming soon'. For now, you can clone the repository and use [CoffeeScript](http://coffeescript.org/) to run the compiler:
 
     coffee source/coffee/compiler.coffee [kal file]
 
-This will print the compiled Javascript to stdout and attempt to evaluate it.
+This will print the compiled Javascript to stdout and attempt to evaluate it. You can dump the Javascript output to a file instead of executing it:
+
+    coffee source/coffee/compiler.coffee [kal file] [.js file]
 
 The CoffeeScript implementation is being ported over to Kal, so check back soon.
 
