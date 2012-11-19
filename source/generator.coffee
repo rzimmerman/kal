@@ -130,7 +130,15 @@ apply_generator_to_grammar = ->
       scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value]
     else
       rv += @base.js()
-    rv += accessor.js() for accessor in @accessors
+    for accessor in @accessors
+      if accessor instanceof self.ExisentialCheck
+        # an undefined unary is a simple variable access to an undeclared variable
+        # it requres we check if the variable exists before checking if it is null/undefined
+        undefined_unary = (@accessors.length is 1 and @base.type is 'IDENTIFIER' and not scope[@base]?)
+        rv = accessor.js rv, undefined_unary
+      else
+        rv += accessor.js()
+    
     rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})" if @preop?.value?
     return rv
 
@@ -143,6 +151,12 @@ apply_generator_to_grammar = ->
       indented_js = '  ' + true_block_js.replace /\n/g, '\n  '
       return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
     return rv
+  
+  @ExisentialCheck::js = (code, undefined_unary) ->
+    if undefined_unary
+      return "typeof #{code} !== 'undefined' && #{code} !== null"
+    else
+      return "#{code} != null"
   
   @PropertyAccess::js = ->
     if @expr.type is 'IDENTIFIER'
