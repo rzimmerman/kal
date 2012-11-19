@@ -134,7 +134,7 @@ apply_generator_to_grammar = ->
     rv = ''
     if @base.type is 'IDENTIFIER'
       rv += KEYWORD_TRANSLATE[@base.value] or @base.value
-      scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value]
+      scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value] or @accessors.length > 0
     else
       rv += @base.js()
     
