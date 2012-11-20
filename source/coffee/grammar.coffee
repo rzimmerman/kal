@@ -1,8 +1,8 @@
-{ASTBase} = require './ast'
+{ASTBase} = require '../kal/ast'
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
-              'is','isnt','inherits','from','nothing','empty','null','break']
+              'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise','arguments']
 
 Nodes = [
   class File extends ASTBase
@@ -21,7 +21,7 @@ Nodes = [
       
   class Statement extends ASTBase
     parse: ->
-      @statement = @req ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, 
+      @statement = @req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, 
                         DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
     
   class ReturnStatement extends ASTBase
@@ -259,6 +259,15 @@ Nodes = [
         @req_val 'from'
         @parent = @req 'IDENTIFIER'
       @block = @req Block
+
+  class TryCatch extends ASTBase
+    parse: ->
+      @req_val 'try'
+      @lock()
+      @try_block = @req Block
+      if @opt_val 'catch'
+        @identifier = @req 'IDENTIFIER'
+        @catch_block = @req Block
 ]
 
 exports.Grammar = {}

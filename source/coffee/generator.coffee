@@ -20,6 +20,9 @@ KEYWORD_TRANSLATE =
   'nothing':'null'
   'none':'null'
   'break':'break'
+  'throw':'throw'
+  'raise':'throw'
+  'instanceof':'instanceof'
 
 exports.load = (grammar) ->
   apply_generator_to_grammar.apply grammar
@@ -362,6 +365,19 @@ apply_generator_to_grammar = ->
     pop_class()
     return rv
   
+  @TryCatch::js = ->
+    rv = "try {\n"
+    indent()
+    rv += @try_block.js()
+    dedent()
+    rv += "#{i}}"
+    if @catch_block?
+      rv += " catch (#{@identifier.value}) {\n"
+      indent()
+      rv += @catch_block.js()
+      rv += "}"
+    
+    
   snippets =
     'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
     'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'
