@@ -30,6 +30,7 @@ Nodes = [
       @lock()
       @expr = @opt Expression
       @req 'NEWLINE'
+      @conditional = @expr.transform_when_statement()
   
   class IfStatement extends ASTBase
     parse: ->
