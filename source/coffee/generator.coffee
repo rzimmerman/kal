@@ -15,6 +15,7 @@ KEYWORD_TRANSLATE =
   'not':'!'
   'new':'new '
   'me':'this'
+  'this':'this'
   'null':'null'
   'nothing':'null'
   'none':'null'
