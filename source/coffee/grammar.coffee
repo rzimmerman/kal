@@ -95,7 +95,7 @@ Nodes = [
         @lock()
         @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<']
       else
-        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt']
+        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt','instanceof']
       
   class Expression extends ASTBase
     transform_when_statement: ->

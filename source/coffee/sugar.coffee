@@ -1,7 +1,7 @@
 {KEYWORDS} = require './grammar'
 
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or',
-                 'xor','in','when']
+                 'xor','in','when','instanceof']
 
 exports.translate_sugar = (tokens) ->
   out_tokens = noparen_function_calls multiline_statements clean tokens
