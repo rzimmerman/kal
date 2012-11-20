@@ -1,5 +1,5 @@
 {translate_sugar} = require './sugar'
-{tokenize} = require './lexer'
+{tokenize} = require '../kal/lexer'
 {parse, Grammar} = require './parser'
 {load} = require './generator'
 

@@ -1,5 +1,6 @@
+coffee    = require 'coffee-script'
 sugar     = require '../coffee/sugar'
-lexer     = require '../coffee/lexer'
+lexer     = require './lexer'
 parser    = require '../coffee/parser'
 generator = require '../coffee/generator'
 
@@ -12,10 +13,14 @@ function compile(code)
   root_node = parser.parse tokens, comments
   generator.load parser.Grammar
   return root_node.js()
-  
+
   
 fs = require 'fs'
 assert = require 'assert'
-code = exports.compile(fs.readFileSync(process.argv[2])) when process.argv[2]?
-console.log code
-console.log eval(code)
+code = compile(fs.readFileSync(process.argv[2])) when process.argv[2] exists
+if process.argv[3] exists
+  fs.writeFileSync process.argv[3], code
+else
+  console.log code
+  console.log eval(code)
+  
