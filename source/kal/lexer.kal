@@ -59,7 +59,7 @@ class Lexer
       me.error('indentation is misaligned') when indentation isnt me.indent
       
   method error(message)
-    throw message
+    throw(message)
 
 exports.Lexer = Lexer
 

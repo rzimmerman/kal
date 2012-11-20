@@ -2,10 +2,10 @@
   var coffee, sugar, lexer, parser, generator, fs, assert, code;
   
   coffee = require('coffee-script');
-  sugar = require('../coffee/sugar');
+  sugar = require('../../source/coffee/sugar');
   lexer = require('./lexer');
-  parser = require('../coffee/parser');
-  generator = require('../coffee/generator');
+  parser = require('../../source/coffee/parser');
+  generator = require('../../source/coffee/generator');
   function compile (code) {
     var token_rv, raw_tokens, comments, tokens, root_node;
     token_rv = lexer.tokenize(code);

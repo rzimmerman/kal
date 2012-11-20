@@ -1,0 +1,76 @@
+grammar = require '../source/coffee/grammar'
+
+KEYWORDS = grammar.KEYWORDS
+NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof']
+
+function translate_sugar(tokens)
+  out_tokens = noparen_function_calls multiline_statements clean tokens
+  return out_tokens
+exports.translate_sugar = translate_sugar
+
+function clean(tokens)
+  # close out with a newline in case the user did not, remove whitespace
+  out_tokens = []
+  for token in tokens
+    out_tokens.push(token) when token.type isnt 'WHITESPACE'
+  t = {text:'\n', line:last_token?.line, value:'', type:'NEWLINE'}
+  out_tokens.push t
+  return out_tokens
+
+function multiline_statements(tokens)
+  # allow multi-line statements with line breaks after commas, colons, and equal signs
+  out_tokens = []
+  last_token = null
+  continue_line = no
+  reduce_dedent = 0
+  
+  for token in tokens
+    skip_token = no
+    if token.type is 'NEWLINE' and (last_token?.value in [',','=',':'])
+      continue_line = yes
+      skip_token = yes
+    else if continue_line
+      if token.type is 'INDENT'
+        skip_token = yes
+        reduce_dedent += 1
+      else if token.type is 'NEWLINE'
+        skip_token = yes
+      else if token.type is 'DEDENT'
+        if reduce_dedent > 0
+          reduce_dedent -= 1
+          skip_token = yes
+          if reduce_dedent is 0
+            t =  {text:'\n', line:token.line, value:'',type:'NEWLINE'}
+            out_tokens.push t
+        else
+          out_tokens.push last_token #add back in the newline
+    out_tokens.push(token) when not skip_token
+    last_token = token
+  return out_tokens
+  
+function noparen_function_calls(tokens)
+  # allow function calls without parentheses
+  out_tokens = []
+  close_paren_count = 0
+  last_token = null
+  
+  i = 0
+  while i < tokens.length
+    token = tokens[i]
+    last_ok = ((last_token?.type) is 'IDENTIFIER' and not (last_token.value in KEYWORDS))
+    current_ok = token.type in ['IDENTIFIER','NUMBER','STRING'] 
+    current_valid = not (token.value in NOPAREN_WORDS)
+    if last_ok and current_ok and current_valid
+      close_paren_count += 1
+      t = {text:'(', line:token.line, value:'(', type:'LITERAL'}
+      out_tokens.push t
+    else if close_paren_count > 0 and token.type is 'NEWLINE'
+      while close_paren_count > 0
+        close_paren_count -= 1
+        t = {text:')', line:token.line, value:')', type:'LITERAL'}
+        out_tokens.push t
+    # push the current token unchanged
+    out_tokens.push token
+    last_token = token
+    i += 1
+  return out_tokens

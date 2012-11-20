@@ -1,4 +1,4 @@
-{ASTBase} = require '../kal/ast'
+{ASTBase} = require '../../compiled/ast'
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
