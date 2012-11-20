@@ -1,4 +1,4 @@
-grammar = require '../source/coffee/grammar'
+grammar = require './grammar'
 GrammarRoot = grammar.GrammarRoot
 Grammar = grammar.Grammar
 

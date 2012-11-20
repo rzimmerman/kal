@@ -1,7 +1,7 @@
 (function () {
-  var grammar, GrammarRoot, Grammar, parse;
+  var grammar, GrammarRoot, Grammar;
   
-  grammar = require('../source/coffee/grammar');
+  grammar = require('./grammar');
   GrammarRoot = grammar.GrammarRoot;
   Grammar = grammar.Grammar;
   exports.Grammar = Grammar;
@@ -38,8 +38,7 @@
     };
     
     TokenStream.prototype.goto_token = function (index) {
-      var type, text, line, value;
-      this.index = index;
+        this.index = index;
       if (this.index > this.tokens.length - 1) {
         this.current = { type: 'EOF', text: '', line: 0, value: '' };
       } else     if (this.index < 0) {

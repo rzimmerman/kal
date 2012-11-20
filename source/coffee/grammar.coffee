@@ -67,6 +67,7 @@ Nodes = [
   class AssignmentStatement extends ASTBase
     parse: ->
       @lvalue   = @req UnaryExpression
+      @lvalue.can_be_lvalue = yes
       @assignOp = @req 'LITERAL'
       @error 'invalid operator ' + @assignOp.value if @assignOp.value not in ['+','-','*','/','=']
       if @assignOp.value isnt '='
@@ -107,6 +108,7 @@ Nodes = [
         return undefined
     parse: ->
       @left  = @req UnaryExpression
+      @left.can_be_lvalue = no
       @op    = @opt BinOp
       @lock()
       if @op?
@@ -115,6 +117,7 @@ Nodes = [
       
   class UnaryExpression extends ASTBase
     is_lvalue: ->
+      return no if @can_be_lvalue is false
       return no if @base.constructor in [NumberConstant, StringConstant, RegexConstant]
       return no if @base.value in KEYWORDS
       for accessor in @accessors
