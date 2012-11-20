@@ -1,0 +1,33 @@
+{
+  "name":         "kal",
+  "description":  "For the programming",
+  "keywords":     ["javascript", "language", "kal", "coffeescript", "compiler"],
+  "author":       "Rob Zimmerman",
+  "version":      "0.0.1",
+  "licenses":     [{
+    "type":       "MIT",
+    "url":        "https://raw.github.com/rzimmerman/kal/master/LICENSE"
+  }],
+  "engines":      {
+    "node":       ">=0.6.0"
+  },
+  "directories" : {
+    "lib" : "./source/kal"
+  },
+  "main" : "./source/kal/compiler",
+  "bin":          {
+    "kal":     "./compiled/kal"
+  },
+  "scripts": {
+    "test": "node ./compiled/kal tests/run.kal"
+  },
+  "homepage":     "https://github.com/rzimmerman/kal",
+  "bugs":         "https://github.com/rzimmerman/kal/issues",
+  "repository":   {
+    "type": "git",
+    "url": "git://github.com/rzimmerman/kal.git"
+  },
+  "dependencies": {
+    "coffee-script":  "1.4.x"
+  }
+}

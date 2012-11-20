@@ -5,15 +5,15 @@ Using Kal
 ---------
 This section is still 'coming soon'. For now, you can clone the repository and use [CoffeeScript](http://coffeescript.org/) to run the compiler:
 
-    coffee source/coffee/compiler.coffee [kal file]
+    coffee source/coffee/compiler.coffee (kal file) [js output file]
 
-This will print the compiled Javascript to stdout and attempt to evaluate it. You can dump the Javascript output to a file instead of executing it:
+This will print the compiled Javascript to stdout and attempt to evaluate it if you don't specify the output file.
 
-    coffee source/coffee/compiler.coffee [kal file] [.js file]
+The CoffeeScript implementation is being ported over to Kal, so check often. To run the Kal port of the compiler in its current state, use:
 
-The CoffeeScript implementation is being ported over to Kal, so check back soon.
+    node source/kal/compiler.js (kal file) [js output file]
 
-It's still in very debug mode.
+Right now this uses a mix of CoffeeScript and Kal, so you will need CoffeeScript installed. You can use npm install for this package.
 
 
 Goals
