@@ -14,7 +14,7 @@
   "directories" : {
     "lib" : "./source/kal"
   },
-  "main" : "./source/kal/compiler",
+  "main" : "./compiled/compiler",
   "bin":          {
     "kal":     "./compiled/kal"
   },
