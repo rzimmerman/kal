@@ -11,7 +11,6 @@ exports.translate_sugar = (tokens) ->
 clean = (tokens) ->
   # close out with a newline in case the user did not, remove whitespace
   out_tokens = (token for token in tokens when token.type isnt 'WHITESPACE')
-  out_tokens.push text:'\n', line:last_token?.line, value:'', type:'NEWLINE'
   return out_tokens
 
 multiline_statements = (tokens) ->  

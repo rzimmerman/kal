@@ -13,4 +13,3 @@ describe 'While Statement', ->
     while i < 2
       require('should').fail('while loop executed when condition was false')
     i.should.equal 75
-    

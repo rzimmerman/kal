@@ -34,6 +34,7 @@ exports.Lexer = class Lexer
       index += text.length
       @line += /\n/.exec(text)?[0].length or 0
       last_token_type = type
+    @tokens.push text:'\n',line:@line, value:'', type:'NEWLINE' #add a trailing newline in case the user didn't  
     @handleIndentation 'NEWLINE', '' #clear up any remaining indents at the end of the file
       
   handleIndentation: (type, text) ->
