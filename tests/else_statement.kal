@@ -1,28 +1,41 @@
-describe 'If Statement', ->
+describe 'Else Statement', ->
   it 'should support a blocked style', ->
     a = 4
     if a is 4
       a.should.equal 4
       x = 4
+    else
+      require('should').fail('running false block for true expression')
     if a is 3
       require('should').fail('running true block for false expression')
-    x.should.equal 4
+    else
+      a.should.equal 4
+      x = 5
+    x.should.equal 5
   
-  it 'should support all synonyms (when, unless, except when)', ->
+  it 'should support all synonyms (else, otherwise)', ->
     n = 5
     when n is 5
       n.should.equal 5
+    otherwise
+      require('should').fail('running false block for true expression')
     when n is 3
       require('should').fail('running true block for false expression')
+    otherwise
+      n.should.equal 5
     unless n is 3
       n.should.equal 5
+    else
+      require('should').fail('running false block for true expression')
     unless n is 5
       require('should').fail('running true block for false expression')
+    else
+      n.should.equal 5
     except when n is 10
       n.should.equal 5
+    otherwise
+      require('should').fail('running false block for true expression')
     except when n is 5
       require('should').fail('running true block for false expression')
-    
-    
-  
-
+    else
+      n.should.equal 5
