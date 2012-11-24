@@ -1,0 +1,102 @@
+describe 'Expression', ->
+  it 'should allow an expression as a statement', ->
+    5 + 5
+    11
+    3
+    x = 5
+    x
+    x.should.equal 5
+  
+  it 'should allow unary and binary expressions', ->
+    x = 1
+    x.should.equal 1
+    x = 5 - 2
+    x.should.equal 3
+  
+  it 'should support all arithmetic operators (+,-,*,/,^)', ->
+    (2+3).should.equal 5
+    (5*2.5).should.equal 12.5
+    (10.1 - 2.6).should.equal 7.5
+    (5/2).should.equal 2.5
+    (3^3).should.equal 27
+    (4^0.5).should.equal 2
+    
+  it 'should support logical operators (and, or, xor, not, nor, is, isnt)', ->
+    (yes and yes).should.be.true
+    (yes and no).should.be.false
+    (no and yes).should.be.false
+    (no and no).should.be.false
+    
+    (yes or yes).should.be.true
+    (yes or no).should.be.true
+    (no or yes).should.be.true
+    (no or no).should.be.false
+    
+    (yes xor yes).should.equal 0
+    (yes xor no).should.equal 1
+    (no xor yes).should.equal 1
+    (no xor no).should.equal 0
+    
+    (not yes).should.be.false
+    (not no).should.be.true
+    
+    (yes nor yes).should.be.false
+    (yes nor no).should.be.false
+    (no nor yes).should.be.false
+    (no nor no).should.be.true
+    
+    (2 is 2).should.be.true
+    (3 is 1).should.be.false
+    (3 is '3').should.be.false
+    ('3' is '3').should.be.true
+    
+    (2 isnt 2).should.be.false
+    (3 isnt 1).should.be.true
+    (3 isnt '3').should.be.true
+    ('3' isnt '3').should.be.false
+    
+    
+  it 'should support parenthetical expressions', ->
+    x = 5 * (2 + 3)
+    x.should.equal 25
+    y = 5 * (2 + 3 * (4 + 5))
+    z = (6)
+    y.should.equal 145
+    z.should.equal 6
+    
+  it 'should support order of operations', ->
+    x = 1 + 2 * 4 + 4 - 3 ^ 2 / 6
+    x.should.equal 11.5
+    
+  it 'should support variable access', ->
+    x = 3
+    y = 4
+    z = 5
+    (x^2 + y^2).should.equal z^2
+  
+  it 'should support property access', ->
+    w = {y:2,z:3}
+    w.x = {a:5,b:6}
+    w.x.c = function ()
+      return {g:7,h:8}
+    (w.x.a + w.x.b + w.y + w.z + w.x.c().g + w.x.c().h).should.be 31
+    
+  it 'should support the exisential operators', ->
+    (x exists).should.be.false
+    (x doesnt exist).should.be.true
+    (x?).should.be.false
+    (y exists).should.be.false
+    (y doesnt exist).should.be.true
+    
+    y = {a:1}
+    
+    (y exists).should.be.true
+    (y doesnt exist).should.be.false
+    (y?).should.be.true
+    
+    (y?.z exists).should.be.false
+    y.z = 3
+    (y?.z exists).should.be.true
+    (y?.z).should.equal 3
+    require('should').not.exist (y?.v)
+    #y?.b?.d?.r?.should.be.false
