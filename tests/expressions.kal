@@ -79,7 +79,7 @@ describe 'Expression', ->
     w.x = {a:5,b:6}
     w.x.c = function ()
       return {g:7,h:8}
-    (w.x.a + w.x.b + w.y + w.z + w.x.c().g + w.x.c().h).should.be 31
+    (w.x.a + w.x.b + w.y + w.z + w.x.c().g + w.x.c().h).should.equal 31
     
   it 'should support the exisential operators', ->
     (x exists).should.be.false
