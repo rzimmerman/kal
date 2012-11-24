@@ -108,6 +108,7 @@ Nodes = [
     parse: ->
       @left  = @req UnaryExpression
       @left.can_be_lvalue = no
+      return if @left.base instanceof FunctionExpression
       @op    = @opt BinOp
       @lock()
       if @op?
@@ -125,7 +126,16 @@ Nodes = [
     parse: ->
       @preop      = @opt_val 'not', 'new'
       @base        = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
-      @accessors   = @opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
+      #if a paren expression occurs immediately after the function block dedent, this would
+      #normally be interpreted as a function call on the function expression. While this may
+      #be desired it is usually just confusing, so we explicitly avoid it here.
+      if @base instanceof FunctionExpression
+        @accessors = []
+        first = @opt IndexExpression, PropertyAccess, ExisentialCheck
+        @accessors.push first if first?
+        @accessors   = @accessors.concat(@opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck) if first?
+      else
+        @accessors   = @opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
   
   class ExisentialCheck extends ASTBase
     parse: ->
