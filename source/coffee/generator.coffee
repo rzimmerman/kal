@@ -155,7 +155,7 @@ apply_generator_to_grammar = ->
     if @base.type is 'IDENTIFIER'
       base_val = @base.value
       kw_translate = KEYWORD_TRANSLATE[base_val]
-      rv += base_val
+      rv += kw_translate or base_val
       if not kw_translate?
         scope[base_val] = 'closures ok' unless scope[base_val]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value] or @accessors.length > 0
     else
