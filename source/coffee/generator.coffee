@@ -12,6 +12,7 @@ KEYWORD_TRANSLATE =
   'but':'&&'
   'or':'||'
   'xor':'^'
+  '^':'pow'
   'not':'!'
   'new':'new '
   'me':'this'
@@ -123,9 +124,12 @@ apply_generator_to_grammar = ->
     rv = @expr.js()
     return if rv isnt "" then rv + ';' else rv
     
-  @Expression::js = ->
+  @Expression::js = (oop_reverse) ->
     rv = ''
-    left_code = @left.js()
+    if oop_reverse
+      left_code = ''
+    else
+      left_code = @left.js()
     if not @op?
       rv += left_code
     else
@@ -136,10 +140,15 @@ apply_generator_to_grammar = ->
           subscope['$kindexof'] = 'closure' for subscope in scopes
           scope['$kindexof'] = 'closure'
         rv += "$kindexof.call(#{@right.js()}, #{@left.js()}) >= 0"
+      else if opjs is 'nor'
+        rv += "!(#{left_code} || #{@right.js()})"
+      else if opjs is 'pow'
+        rv += "Math.pow(#{left_code}, #{@right.left.js()}) #{@right.js(yes)}"
       else
         rv += "#{left_code} #{opjs} #{@right.js()}"
     rv = @conditional.js(rv) if @conditional?
     return rv
+    
     
   @UnaryExpression::js = ->
     rv = ''

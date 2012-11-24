@@ -3,7 +3,7 @@
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
             'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',
-            'arguments','of','in']
+            'arguments','of','in','nor']
 
 Nodes = [
   class File extends ASTBase
@@ -93,10 +93,10 @@ Nodes = [
       if @op.type is 'LITERAL'
         @error "unexpected operator #{@op.value}" if @op.value in [')',']','}',';',':',',']
         @lock()
-        @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<']
+        @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<','^']
       else
-        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt','instanceof','of']
-      
+        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','nor','in','is','isnt','instanceof','of']
+    
   class Expression extends ASTBase
     transform_when_statement: ->
       if @conditional? and not @conditional.false_expr?
