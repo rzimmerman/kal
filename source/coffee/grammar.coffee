@@ -1,8 +1,8 @@
-{ASTBase} = require '../../compiled/ast'
+{ASTBase} = require './ast'
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
-              'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise','arguments']
+              'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise','arguments','of']
 
 Nodes = [
   class File extends ASTBase
@@ -59,7 +59,7 @@ Nodes = [
       @req_val 'for'
       @lock()
       @iterant = @req UnaryExpression
-      @req_val 'in'
+      @type = @req_val 'in', 'of'
       @iterable = @req Expression
       @loop_block = @req Block
       
@@ -75,7 +75,7 @@ Nodes = [
       @lock()
       @error 'invalid assignment - the left side must be assignable' unless @lvalue.is_lvalue()
       @rvalue   = @req Expression
-      @req 'NEWLINE'
+      @req 'NEWLINE' unless @rvalue instanceof FunctionExpression
       @conditional = @rvalue.transform_when_statement()
         
 
@@ -96,7 +96,7 @@ Nodes = [
         @lock()
         @error "unexpected operator #{@op.value}" if @op.value not in ['+','-','*','/','>','<']
       else
-        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt','instanceof']
+        @error "unexpected operator #{@op.value}" if @op.value not in ['and','but','or','xor','in','is','isnt','instanceof','of']
       
   class Expression extends ASTBase
     transform_when_statement: ->
@@ -173,7 +173,7 @@ Nodes = [
       @exisential = (op.value is '?')
       @req_val '.' if @exisential
       @lock()
-      @expr = @req FunctionExpression, 'IDENTIFIER'
+      @expr = @req 'IDENTIFIER'
   
   class FunctionCallArgument extends ASTBase
     parse: ->

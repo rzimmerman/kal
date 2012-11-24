@@ -45,7 +45,7 @@ exports.Lexer = class Lexer
     else if indentation < @indent
       while @indents.length > 0 and indentation < @indent
         @indent = @indents.pop()
-        @error 'indentation is misaligned' if indentation > @indent
+        @error 'indentation is misaligned on line ' + @line if indentation > @indent
         @tokens.push text:text, line:@line, value:'', type:'DEDENT'
       @error 'indentation is misaligned' if indentation isnt @indent
       

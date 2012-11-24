@@ -23,6 +23,7 @@ KEYWORD_TRANSLATE =
   'throw':'throw'
   'raise':'throw'
   'instanceof':'instanceof'
+  'of':'in'
 
 exports.load = (grammar) ->
   apply_generator_to_grammar.apply grammar
@@ -247,10 +248,13 @@ apply_generator_to_grammar = ->
     terminator = "kobj$#{for_depth}"
     scope[iterator] = 'no closures'
     scope[terminator] = 'no closures'
-    rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+    if @type.value is 'in'
+      rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+    else
+      rv = "for (#{iterator} in #{terminator}) {\n"
     indent()
     for_depth += 1
-    rv += "#{i}#{@iterant.js()} = #{terminator}[#{iterator}];\n"
+    rv += "#{i}#{@iterant.js()} = #{terminator}[#{iterator}];\n" if @type.value is 'in'
     rv += @loop_block.js()
     for_depth -= 1
     dedent()

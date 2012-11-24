@@ -1,7 +1,7 @@
 ast = require './ast'
 ASTBase = ast.ASTBase
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise','and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',              'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise','arguments']
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise','and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',              'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise','arguments','of']
 
 
 class File inherits from ASTBase
@@ -44,26 +44,26 @@ class ElseStatement inherits from ASTBase
     me.req_val 'else', 'otherwise'
     me.lock()
     me.false_block = me.req Block, Statement
-
+    
 class WhileStatement inherits from ASTBase
   method parse()
     me.req_val 'while'
     me.lock()
     me.expr = me.req Expression
     me.block = me.req Block
-  
+    
 class ForStatement inherits from ASTBase
   method parse()
     me.req_val 'for'
     me.lock()
     me.iterant = me.req UnaryExpression
-    me.req_val 'in'
+    me.type = me.req_val 'in', 'of'
     me.iterable = me.req Expression
     me.loop_block = me.req Block
     
 class DeclarationStatement inherits from ASTBase
-  method parse()
-    return
+  method other()
+    return ""
     
 class AssignmentStatement inherits from ASTBase
   method parse()
@@ -97,8 +97,8 @@ class BinOp inherits from ASTBase
       me.lock()
       me.error("unexpected operator #{me.op.value}") except when (me.op.value in ['+','-','*','/','>','<'])
     else
-      me.error("unexpected operator #{me.op.value}") except when (me.op.value in ['and','but','or','xor','in','is','isnt','instanceof'])
-    
+      me.error("unexpected operator #{me.op.value}") except when (me.op.value in ['and','but','or','xor','in','is','isnt','instanceof','of'])
+      
 class Expression inherits from ASTBase
   method transform_when_statement()
     if me.conditional exists and me.conditional.false_expr doesnt exist
@@ -167,22 +167,22 @@ class IndexExpression inherits from ASTBase
     me.lock()
     me.expr = me.req Expression
     me.req_val ']'
-
+    
 class PropertyAccess inherits from ASTBase
   method parse()
     op = me.req_val '.', '?'
     me.exisential = (op.value is '?')
     me.req_val('.') when me.exisential
     me.lock()
-    me.expr = me.req FunctionExpression, 'IDENTIFIER'
-
+    me.expr = me.req 'IDENTIFIER'
+    
 class FunctionCallArgument inherits from ASTBase
   method parse()
     me.val = me.req Expression
     me.lock()
     if me.req_val(',',')').value is ')'
       me.ts.prev()
-
+      
 class FunctionCall inherits from ASTBase
   method parse()
     op = me.req_val '(', '?'

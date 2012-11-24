@@ -1,7 +1,7 @@
 grammar = require '../source/coffee/grammar'
 
 KEYWORDS = grammar.KEYWORDS
-NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof']
+NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of']
 
 function translate_sugar(tokens)
   out_tokens = noparen_function_calls multiline_statements clean tokens
