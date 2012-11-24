@@ -9,7 +9,7 @@ class File inherits from ASTBase
     me.lock()
     me.statements = me.opt_multi Statement
     me.req 'EOF'
-
+    
 class Block inherits from ASTBase
   method parse()
     me.req 'NEWLINE'
@@ -29,7 +29,7 @@ class ReturnStatement inherits from ASTBase
     me.expr = me.opt Expression
     me.req 'NEWLINE'
     me.conditional = me.expr.transform_when_statement()
-
+    
 class IfStatement inherits from ASTBase
   method parse()
     me.condition = me.req_val 'if', 'unless', 'when', 'except'
@@ -79,16 +79,14 @@ class AssignmentStatement inherits from ASTBase
     me.req 'NEWLINE'
     me.conditional = me.rvalue.transform_when_statement()
     
-
 class ExpressionStatement inherits from ASTBase
   method parse()
     me.expr = me.req Expression
-
     
 class BlankStatement inherits from ASTBase
   method parse()
     me.req 'NEWLINE'
-
+    
 class BinOp inherits from ASTBase
   method parse()
     me.op = me.req 'IDENTIFIER', 'LITERAL'
@@ -128,7 +126,7 @@ class UnaryExpression inherits from ASTBase
     me.preop      = me.opt_val 'not', 'new'
     me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
     me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
-
+    
 class ExisentialCheck inherits from ASTBase
   method parse()
     op = me.req_val 'exists', '?', 'doesnt'
@@ -138,7 +136,7 @@ class ExisentialCheck inherits from ASTBase
       me.invert = yes
     else
       me.invert = no
-    
+      
 class WhenExpression inherits from ASTBase
   method parse()
     me.specifier  = me.req_val 'when', 'except', 'if', 'unless'
@@ -146,19 +144,19 @@ class WhenExpression inherits from ASTBase
     me.req_val('when') if me.specifier.value is 'except'
     me.condition  = me.req Expression
     me.false_expr = me.req(Expression) when (me.opt_val 'otherwise', 'else')
-  
+    
 class NumberConstant inherits from ASTBase
   method parse()
     me.token = me.req 'NUMBER'
-
+    
 class StringConstant inherits from ASTBase
   method parse()
     me.token = me.req 'STRING'
-
+    
 class RegexConstant inherits from ASTBase
   method parse()
     me.token = me.req 'REGEX'
-
+    
 class IndexExpression inherits from ASTBase
   method parse()
     op = me.req_val '[', '?'
@@ -191,7 +189,7 @@ class FunctionCall inherits from ASTBase
     me.lock()
     me.arguments = me.opt_multi FunctionCallArgument
     me.req_val ')'
-  
+    
 class ParenExpression inherits from ASTBase
   method parse()
     me.req_val '('
@@ -212,7 +210,7 @@ class ListExpression inherits from ASTBase
       else
         item = null
     me.req_val ']'
-
+    
 class MapItem inherits from ASTBase
   method parse()
     me.key = me.req Expression
@@ -222,7 +220,7 @@ class MapItem inherits from ASTBase
     me.end_token = me.req_val ',', '}'
     if me.end_token.value is '}'
       me.ts.prev()
-    
+      
 class MapExpression inherits from ASTBase
   method parse()
     me.req_val '{'
@@ -230,14 +228,12 @@ class MapExpression inherits from ASTBase
     me.items = me.opt_multi MapItem
     me.req_val '}'
     
-  
 class Ellipsis inherits from ASTBase
   method parse()
     me.req_val '.'
     me.req_val '.'
     me.req_val '.'
-  
-  
+    
 class FunctionDefArgument inherits from ASTBase
   method parse()
     me.name = me.req 'IDENTIFIER'
@@ -254,7 +250,7 @@ class FunctionExpression inherits from ASTBase
     me.arguments = me.opt_multi FunctionDefArgument
     me.req_val ')'
     me.block = me.req Block
-
+    
 class ClassDefinition inherits from ASTBase
   method parse()
     me.req_val 'class'
@@ -264,7 +260,7 @@ class ClassDefinition inherits from ASTBase
       me.req_val 'from'
       me.parent = me.req 'IDENTIFIER'
     me.block = me.req Block
-
+    
 class TryCatch inherits from ASTBase
   method parse()
     me.req_val 'try'
@@ -273,7 +269,7 @@ class TryCatch inherits from ASTBase
     if me.opt_val 'catch'
       me.identifier = me.req 'IDENTIFIER'
       me.catch_block = me.req Block
-
+      
 Nodes = [File,Block,Statement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch]
 
 exports.Grammar = {}

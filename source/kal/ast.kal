@@ -2,11 +2,13 @@ class ParseFailed inherits from Error
   method initialize(message)
     this.message = message
     ParseFailed.__super__.constructor.apply me, arguments
+  
 
 class SyntaxError inherits from ParseFailed
   method initialize()
     SyntaxError.__super__.constructor.apply me, arguments
   
+
 exports.SyntaxError = SyntaxError
 
 class ASTBase
