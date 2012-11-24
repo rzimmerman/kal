@@ -19,7 +19,7 @@
     "kal":     "./compiled/kal"
   },
   "scripts": {
-    "test": "node_modules/mocha/bin/mocha -r should tests/*.kal --compilers coffee:coffee-script,kal:source/coffee/kal"
+    "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers coffee:coffee-script,kal:source/coffee/kal"
   },
   "homepage":     "https://github.com/rzimmerman/kal",
   "bugs":         "https://github.com/rzimmerman/kal/issues",
