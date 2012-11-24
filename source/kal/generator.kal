@@ -132,9 +132,10 @@ function apply_generator_to_grammar()
   me.UnaryExpression.prototype.js = function ()
     rv = ''
     if me.base.type is 'IDENTIFIER'
-      base_val = KEYWORD_TRANSLATE[me.base.value]
-      rv += base_val or me.base.value
-      if base_val?
+      base_val = me.base.value
+      kw_translate = KEYWORD_TRANSLATE[base_val]
+      rv += base_val
+      if kw_translate doesnt exist
         scope[base_val] = 'closures ok' except when (scope[base_val]? or not me.is_lvalue() or KEYWORD_TRANSLATE[me.base.value] or me.accessors.length > 0)
     else
       rv += me.base.js()

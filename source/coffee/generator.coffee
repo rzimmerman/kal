@@ -144,9 +144,10 @@ apply_generator_to_grammar = ->
   @UnaryExpression::js = ->
     rv = ''
     if @base.type is 'IDENTIFIER'
-      base_val = KEYWORD_TRANSLATE[@base.value]
-      rv += base_val or @base.value
-      if base_val?
+      base_val = @base.value
+      kw_translate = KEYWORD_TRANSLATE[base_val]
+      rv += base_val
+      if not kw_translate?
         scope[base_val] = 'closures ok' unless scope[base_val]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value] or @accessors.length > 0
     else
       rv += @base.js()
