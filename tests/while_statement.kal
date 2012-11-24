@@ -1,0 +1,16 @@
+describe 'While Statement', ->
+  it 'should loop until the condition is false', ->
+    i = 1
+    last_i = 0
+    while i < 10
+      i.should.equal last_i + 1
+      last_i = i
+      i += 1
+    i.should.equal 10
+  
+  it 'should not execute if the condition is already false', ->
+    i = 75
+    while i < 2
+      require('should').fail('while loop executed when condition was false')
+    i.should.equal 75
+    
