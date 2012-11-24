@@ -23,7 +23,6 @@ Nodes = [
     parse: ->
       @statement = @req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, 
                         DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
-      @req 'NEWLINE'
     
   class ReturnStatement extends ASTBase
     parse: ->
@@ -85,6 +84,7 @@ Nodes = [
       
   class BlankStatement extends ASTBase
     parse: ->
+      @req 'NEWLINE'
 
   class BinOp extends ASTBase
     parse: ->
