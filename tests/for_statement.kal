@@ -1,0 +1,37 @@
+describe 'For Statement', ->
+  it 'should loop until the condition is false', ->
+    i = 0
+    iterable = ['this','is','a','test']
+    out_s = ''
+    for s in iterable
+      out_s += s
+      i += 1
+    i.should.equal 4
+    out_s.should.equal 'thisisatest'
+  
+  it 'should not execute if the iterable is empty', ->
+    for x in []
+      require('should').fail 'executed for loop on empty input'
+  
+  it 'should define and use the conditional in the appropriate scope', ->
+    j = 1
+    x = function ()
+      for k in [1,2,3,4]
+        z = 1
+      for j in [1,2,3,4,5,6]
+        z = 1
+      return k
+    x().should.equal 4
+    j.should.equal 6
+    (k exists).should.equal.false
+  
+  it 'should only evaluate the iterable once', ->
+    n = [1,2,3,4]
+    y = function ()
+      n.push(100)
+      return n
+    i = 0
+    for x in y()
+      i += 1
+    i.should.equal 5
+    x.should.equal 100
