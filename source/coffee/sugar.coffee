@@ -48,20 +48,24 @@ noparen_function_calls = (tokens) ->
   out_tokens = []
   close_paren_count = 0
   last_token = null
+  closes_on = []
   
   i = 0
   while i < tokens.length
     token = tokens[i]
     if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING'] and token.value not in NOPAREN_WORDS
-      close_paren_count += 1
+      closes_on.push 'NEWLINE'
       out_tokens.push text:'(', line:token.line, value:'(', type:'LITERAL'
-    else if close_paren_count > 0 and token.type is 'NEWLINE'
-      while close_paren_count > 0
-        close_paren_count -= 1
-        out_tokens.push text:')', line:token.line, value:')', type:'LITERAL'
+    else if (last_token?.value is '-' and token.value is '>') or token.value is 'function'
+      closes_on[closes_on.length - 1] = 'DEDENT'
     
-    # push the current token unchanged
-    out_tokens.push token
+    if token.type is closes_on[closes_on.length - 1]
+      closes_on.pop()
+      out_tokens.push token if token.type is 'DEDENT'
+      out_tokens.push text:')', line:token.line, value:')', type:'LITERAL'
+      out_tokens.push token if token.type isnt 'DEDENT'
+    else
+      out_tokens.push token
     last_token = token
     i += 1
   return out_tokens
@@ -74,7 +78,6 @@ coffee_style_functions = (tokens) ->
   i = 0
   while i < tokens.length
     token = tokens[i]
-    console.log i, last_token?.value, token?.value
     if last_token?.value is '-' and token?.value is '>'
       out_tokens.pop() # remove the dash
       new_tokens = []
@@ -86,6 +89,8 @@ coffee_style_functions = (tokens) ->
         new_tokens.unshift t
       else
         out_tokens.push t
+        new_tokens.push text:'(', line:token.line, value:'(', type:'LITERAL'
+        new_tokens.push text:')', line:token.line, value:')', type:'LITERAL'
       f_token = {text:'function', line:token.line, value:'function', type:'IDENTIFIER'}
       new_tokens.unshift f_token
       out_tokens = out_tokens.concat new_tokens
