@@ -13,3 +13,16 @@ describe 'While Statement', ->
     while i < 2
       require('should').fail('while loop executed when condition was false')
     i.should.equal 75
+  
+  it 'should define and use the conditional in the appropriate scope', ->
+    j = 1
+    x = function ()
+      k = 1
+      while k < 4
+        k += 1
+      while j < 6
+        j += 1
+      return k
+    x().should.equal 4
+    j.should.equal 6
+    (k exists).should.equal.false
