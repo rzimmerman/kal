@@ -55,7 +55,9 @@ noparen_function_calls = (tokens) ->
   i = 0
   while i < tokens.length
     token = tokens[i]
-    if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING'] and token.value not in NOPAREN_WORDS
+    last_token_callable = (last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS)
+    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING'] or token.value is '{') and token.value not in NOPAREN_WORDS)
+    if last_token_callable and this_token_not_operator
       triggers.push 'NEWLINE'
       out_tokens.push text:'(', line:token.line, value:'(', type:'LITERAL'
       closures.push ')'
