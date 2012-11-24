@@ -4,7 +4,7 @@ NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isn
                  'xor','in','when','instanceof']
 
 exports.translate_sugar = (tokens) ->
-  out_tokens = noparen_function_calls multiline_statements clean tokens
+  out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean tokens
   return out_tokens
   
 clean = (tokens) ->
@@ -62,6 +62,36 @@ noparen_function_calls = (tokens) ->
     
     # push the current token unchanged
     out_tokens.push token
+    last_token = token
+    i += 1
+  return out_tokens
+
+coffee_style_functions = (tokens) ->
+  #allow function definitions with the -> operator
+  out_tokens = []
+  last_token = null
+  
+  i = 0
+  while i < tokens.length
+    token = tokens[i]
+    console.log i, last_token?.value, token?.value
+    if last_token?.value is '-' and token?.value is '>'
+      out_tokens.pop() # remove the dash
+      new_tokens = []
+      t = out_tokens.pop()
+      if t?.value is ')'
+        while t?.value isnt '('
+          new_tokens.unshift t
+          t = out_tokens.pop()
+        new_tokens.unshift t
+      else
+        out_tokens.push t
+      f_token = {text:'function', line:token.line, value:'function', type:'IDENTIFIER'}
+      new_tokens.unshift f_token
+      out_tokens = out_tokens.concat new_tokens
+    else
+      # push the current token unchanged
+      out_tokens.push token
     last_token = token
     i += 1
   return out_tokens

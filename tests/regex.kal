@@ -1,7 +1,0 @@
-r = /not?/g
-test = 'this is no test. it\'s not a test'
-a = test.match r
-
-assert a.length is 2
-assert a[0] is 'no'
-assert a[1] is 'not'

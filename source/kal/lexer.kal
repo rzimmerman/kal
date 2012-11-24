@@ -56,7 +56,7 @@ class Lexer
         me.error('indentation is misaligned') when indentation > me.indent
         new_token = {text:text, line:me.line, value:'', type:'DEDENT'}
         me.tokens.push new_token
-      me.error('indentation is misaligned') when indentation isnt me.indent
+      me.error('indentation is misaligned on line ' + me.line) when indentation isnt me.indent
       
   method error(message)
     throw(message)

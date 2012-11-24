@@ -1,7 +1,0 @@
-a = {'a':3,v:4}
-
-function test(m)
-  m['thing'] = 2
-
-test(a)
-test({b:3})
