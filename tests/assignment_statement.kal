@@ -17,7 +17,7 @@ describe 'Assignment Statement', ->
     f(2,3).should.equal 5
     g(5,10).should.equal 50
   
-  it 'should support compound assignment operators
+  it 'should support compound assignment operators', ->
     i = 5
     i += 1
     i.should.equal 6
