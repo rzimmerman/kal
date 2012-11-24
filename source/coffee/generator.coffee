@@ -144,14 +144,16 @@ apply_generator_to_grammar = ->
   @UnaryExpression::js = ->
     rv = ''
     if @base.type is 'IDENTIFIER'
-      rv += KEYWORD_TRANSLATE[@base.value] or @base.value
-      scope[@base.value] = 'closures ok' unless scope[@base.value]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value] or @accessors.length > 0
+      base_val = KEYWORD_TRANSLATE[@base.value]
+      rv += base_val or @base.value
+      if base_val?
+        scope[base_val] = 'closures ok' unless scope[base_val]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value] or @accessors.length > 0
     else
       rv += @base.js()
     
     # an undefined unary is a simple variable access to an undeclared variable
     # it requres we check if the variable exists before checking if it is null/undefined
-    undefined_unary = (@base.type is 'IDENTIFIER' and not scope[@base]?)
+    undefined_unary = (@base.type is 'IDENTIFIER' and not scope[base_val]?)
     for accessor in @accessors
       rv = accessor.js rv, undefined_unary
       undefined_unary = no # only possible for the first accessor
@@ -363,7 +365,10 @@ apply_generator_to_grammar = ->
     block_code = pop_scope block_code, no, no
     rv = class_def.code
     unless class_def.has_constructor
-      rv += "function #{class_def.name} () {}\n"
+      rv += "function #{class_def.name} () {"
+      if @parent?
+        rv += "\n#{i}  return #{@parent.value}.prototype.constructor.apply(this,arguments);\n"
+      rv += "}"
     if @parent?
       rv += "#{i}__extends(#{@name.value},#{@parent.value});\n"
       use_snippets['inherits'] = snippets['inherits']
