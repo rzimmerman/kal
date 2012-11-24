@@ -48,21 +48,32 @@ noparen_function_calls = (tokens) ->
   out_tokens = []
   close_paren_count = 0
   last_token = null
-  closes_on = []
+  triggers = []
+  closures = []
+  ignore_next_indent = no
   
   i = 0
   while i < tokens.length
     token = tokens[i]
     if last_token?.type is 'IDENTIFIER' and last_token.value not in KEYWORDS and token.type in ['IDENTIFIER','NUMBER','STRING'] and token.value not in NOPAREN_WORDS
-      closes_on.push 'NEWLINE'
+      triggers.push 'NEWLINE'
       out_tokens.push text:'(', line:token.line, value:'(', type:'LITERAL'
-    else if (last_token?.value is '-' and token.value is '>') or token.value is 'function'
-      closes_on[closes_on.length - 1] = 'DEDENT'
+      closures.push ')'
+    else if token.type is 'NEWLINE' and triggers[triggers.length-1] is 'NEWLINE' and tokens[i+1]?.type is 'INDENT'
+      triggers[triggers.length-1] = 'DEDENT'
+      ignore_next_indent = yes
+    else if token.type is 'INDENT'
+      if ignore_next_indent
+        ignore_next_indent = no
+      else
+        triggers.push 'DEDENT'
+        closures.push ''
     
-    if token.type is closes_on[closes_on.length - 1]
-      closes_on.pop()
+    if closures.length > 0 and token.type is triggers[triggers.length - 1]
+      triggers.pop()
+      closure = closures.pop()
       out_tokens.push token if token.type is 'DEDENT'
-      out_tokens.push text:')', line:token.line, value:')', type:'LITERAL'
+      out_tokens.push text:closure, line:token.line, value:closure, type:'LITERAL' if closure isnt ''
       out_tokens.push token if token.type isnt 'DEDENT'
     else
       out_tokens.push token

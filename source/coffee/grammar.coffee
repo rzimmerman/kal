@@ -23,13 +23,13 @@ Nodes = [
     parse: ->
       @statement = @req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, 
                         DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
+      @req 'NEWLINE'
     
   class ReturnStatement extends ASTBase
     parse: ->
       @req_val 'return'
       @lock()
       @expr = @opt Expression
-      @req 'NEWLINE'
       @conditional = @expr.transform_when_statement()
   
   class IfStatement extends ASTBase
@@ -75,7 +75,6 @@ Nodes = [
       @lock()
       @error 'invalid assignment - the left side must be assignable' unless @lvalue.is_lvalue()
       @rvalue   = @req Expression
-      @req 'NEWLINE' unless @rvalue instanceof FunctionExpression
       @conditional = @rvalue.transform_when_statement()
         
 
@@ -86,7 +85,6 @@ Nodes = [
       
   class BlankStatement extends ASTBase
     parse: ->
-      @req 'NEWLINE'
 
   class BinOp extends ASTBase
     parse: ->
