@@ -100,3 +100,15 @@ describe 'Expression', ->
     (y?.z).should.equal 3
     require('should').not.exist (y?.v)
     #y?.b?.d?.r?.should.be.false
+  
+  it 'should support unary operators (new, not)', ->
+    function test(arg1)
+      me.p = arg1
+    a = new Object
+    a.should.eql {}
+    b = new test 'tttt'
+    b.p.should.equal 'tttt'
+    
+    (not true).should.be.false
+    (not false).should.be.true
+    (not true is not true).should.be.true #order of operations
