@@ -1,0 +1,35 @@
+describe 'Return Statement', ->
+  it 'should support no arguments and return undefined', ->
+    r = function ()
+      return
+    
+    require('should').not.exist(r())
+  
+  it 'should support one argument (an expression) and return the argument', ->
+    z = function ()
+      return 5
+    
+    y = function ()
+      return 2 + 3 * 5
+    
+    z().should.equal 5
+    y().should.equal 17
+  
+  it 'should stop execution', ->
+    p = function ()
+      a = 1
+      return a
+      throw('return did not stop execution')
+    
+    p().should.equal 1
+  
+  it 'should work conditionally', ->
+    g = function ()
+      a = 9
+      return a when a is 12
+      a = 3
+      return a when a is 3
+    
+    g().should.equal 3
+  
+
