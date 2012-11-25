@@ -1,15 +1,14 @@
 ast = require './ast'
 ASTBase = ast.ASTBase
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise','and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',              'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise','arguments','of']
-
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof']
 
 class File inherits from ASTBase
   method parse()
     me.lock()
     me.statements = me.opt_multi Statement
     me.req 'EOF'
-    
+
 class Block inherits from ASTBase
   method parse()
     me.req 'NEWLINE'
@@ -20,21 +19,27 @@ class Block inherits from ASTBase
     
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
+    me.statement = me.req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
   
+class ThrowStatement inherits from ASTBase
+  method parse()
+    me.req_val 'throw', 'raise'
+    me.lock()
+    me.expr = me.req Expression
+    me.conditional = me.expr.transform_when_statement()
+    
 class ReturnStatement inherits from ASTBase
   method parse()
     me.req_val 'return'
     me.lock()
     me.expr = me.opt Expression
-    me.req 'NEWLINE'
     me.conditional = me.expr.transform_when_statement()
-    
+
 class IfStatement inherits from ASTBase
   method parse()
     me.condition = me.req_val 'if', 'unless', 'when', 'except'
     me.lock()
-    me.req_val('when') when (me.condition.value is 'except')
+    me.req_val('when') if me.condition.value is 'except'
     me.conditional = me.req Expression
     me.true_block = me.req Block, Statement
     me.else_block = me.opt ElseStatement
@@ -44,14 +49,14 @@ class ElseStatement inherits from ASTBase
     me.req_val 'else', 'otherwise'
     me.lock()
     me.false_block = me.req Block, Statement
-    
+
 class WhileStatement inherits from ASTBase
   method parse()
     me.req_val 'while'
     me.lock()
     me.expr = me.req Expression
     me.block = me.req Block
-    
+  
 class ForStatement inherits from ASTBase
   method parse()
     me.req_val 'for'
@@ -62,71 +67,83 @@ class ForStatement inherits from ASTBase
     me.loop_block = me.req Block
     
 class DeclarationStatement inherits from ASTBase
-  method other()
-    return ""
-    
+  
+
 class AssignmentStatement inherits from ASTBase
   method parse()
     me.lvalue   = me.req UnaryExpression
     me.lvalue.can_be_lvalue = yes
     me.assignOp = me.req 'LITERAL'
-    me.error('invalid operator ' + me.assignOp.value) when (not (me.assignOp.value in ['+','-','*','/','=']))
+    me.error('invalid operator ' + me.assignOp.value) except when me.assignOp.value in ['+','-','*','/','=']
     if me.assignOp.value isnt '='
       me.req_val '='
     me.lock()
-    me.error('invalid assignment - the left side must be assignable') except when (me.lvalue.is_lvalue())
+    me.error('invalid assignment - the left side must be assignable') unless me.lvalue.is_lvalue()
     me.rvalue   = me.req Expression
-    me.req('NEWLINE') except when (me.rvalue instanceof FunctionExpression)
     me.conditional = me.rvalue.transform_when_statement()
     
+
 class ExpressionStatement inherits from ASTBase
   method parse()
     me.expr = me.req Expression
-    
+
 class BlankStatement inherits from ASTBase
   method parse()
     me.req 'NEWLINE'
-    
+
 class BinOp inherits from ASTBase
   method parse()
     me.op = me.req 'IDENTIFIER', 'LITERAL'
     if me.op.type is 'LITERAL'
-      me.error("unexpected operator #{me.op.value}") when (me.op.value in [')',']','}',';',':',','])
+      me.error("unexpected operator #{this.op.value}") if me.op.value in [')',']','}',';',':',',']
       me.lock()
-      me.error("unexpected operator #{me.op.value}") except when (me.op.value in ['+','-','*','/','>','<'])
+      me.error("unexpected operator #{this.op.value}") unless me.op.value in ['+','-','*','/','>','<','^']
     else
-      me.error("unexpected operator #{me.op.value}") except when (me.op.value in ['and','but','or','xor','in','is','isnt','instanceof','of'])
-      
+      me.error("unexpected operator #{this.op.value}") unless me.op.value in ['and','but','or','xor','nor','in','is','isnt','instanceof','of']
+  
 class Expression inherits from ASTBase
   method transform_when_statement()
-    if me.conditional exists and me.conditional.false_expr doesnt exist
+    if me.conditional exists but me.conditional.false_expr doesnt exist
       rv = me.conditional
-      me.conditional = undefined
+      me.conditional = null
       return rv
     else
-      return undefined
+      return null
   method parse()
     me.left  = me.req UnaryExpression
     me.left.can_be_lvalue = no
+    if (me.left.base instanceof FunctionExpression)
+      return
     me.op    = me.opt BinOp
     me.lock()
-    if me.op exists
+    if me.op?
       me.right = me.req Expression
     me.conditional = me.opt WhenExpression
     
 class UnaryExpression inherits from ASTBase
   method is_lvalue()
-    return no except when (me.can_be_lvalue)
-    return no when (me.base.constructor in [NumberConstant, StringConstant, RegexConstant])
-    return no when (me.base.value in KEYWORDS)
+    return no if me.can_be_lvalue is false
+    return no if me.base.constructor in [NumberConstant, StringConstant, RegexConstant]
+    return no if me.base.value in KEYWORDS
     for accessor in me.accessors
-      return no when (accessor instanceof FunctionCall)
+      if (accessor instanceof FunctionCall)
+        return no 
     return yes
   method parse()
-    me.preop      = me.opt_val 'not', 'new'
+    me.preop       = me.opt_val 'not', 'new'
     me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
-    me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
-    
+    #if a paren expression occurs immediately after the function block dedent, this would
+    #normally be interpreted as a function call on the function expression. While this may
+    #be desired it is usually just confusing, so we explicitly avoid it here.
+    if (me.base instanceof FunctionExpression)
+      me.accessors = []
+      first = me.opt IndexExpression, PropertyAccess, ExisentialCheck
+      if first exists
+        me.accessors.push(first)
+        me.accessors   = me.accessors.concat(me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck)
+    else
+      me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
+
 class ExisentialCheck inherits from ASTBase
   method parse()
     op = me.req_val 'exists', '?', 'doesnt'
@@ -136,60 +153,60 @@ class ExisentialCheck inherits from ASTBase
       me.invert = yes
     else
       me.invert = no
-      
+    
 class WhenExpression inherits from ASTBase
   method parse()
     me.specifier  = me.req_val 'when', 'except', 'if', 'unless'
     me.lock()
     me.req_val('when') if me.specifier.value is 'except'
-    me.condition  = me.req Expression
-    me.false_expr = me.req(Expression) when (me.opt_val 'otherwise', 'else')
-    
+    me.condition  = me.req(Expression)
+    me.false_expr = me.req(Expression) if me.opt_val 'otherwise', 'else'
+  
 class NumberConstant inherits from ASTBase
   method parse()
     me.token = me.req 'NUMBER'
-    
+
 class StringConstant inherits from ASTBase
   method parse()
     me.token = me.req 'STRING'
-    
+
 class RegexConstant inherits from ASTBase
   method parse()
     me.token = me.req 'REGEX'
-    
+
 class IndexExpression inherits from ASTBase
   method parse()
     op = me.req_val '[', '?'
     me.exisential = (op.value is '?')
-    me.req_val('[') when me.exisential
+    me.req_val('[') if me.exisential
     me.lock()
     me.expr = me.req Expression
     me.req_val ']'
-    
+
 class PropertyAccess inherits from ASTBase
   method parse()
     op = me.req_val '.', '?'
     me.exisential = (op.value is '?')
-    me.req_val('.') when me.exisential
+    me.req_val('.') if me.exisential
     me.lock()
     me.expr = me.req 'IDENTIFIER'
-    
+
 class FunctionCallArgument inherits from ASTBase
   method parse()
     me.val = me.req Expression
     me.lock()
     if me.req_val(',',')').value is ')'
       me.ts.prev()
-      
+
 class FunctionCall inherits from ASTBase
   method parse()
     op = me.req_val '(', '?'
     me.exisential = (op.value is '?')
-    me.req_val('(') when me.exisential
+    me.req_val('(') if me.exisential
     me.lock()
     me.arguments = me.opt_multi FunctionCallArgument
     me.req_val ')'
-    
+  
 class ParenExpression inherits from ASTBase
   method parse()
     me.req_val '('
@@ -204,13 +221,13 @@ class ListExpression inherits from ASTBase
     me.items = []
     item = me.opt Expression
     while item
-      me.items.push item
-      if me.opt_val ','
+      me.items.push(item)
+      if me.opt_val(',')
         item = me.opt Expression
       else
         item = null
     me.req_val ']'
-    
+  
 class MapItem inherits from ASTBase
   method parse()
     me.key = me.req Expression
@@ -220,7 +237,7 @@ class MapItem inherits from ASTBase
     me.end_token = me.req_val ',', '}'
     if me.end_token.value is '}'
       me.ts.prev()
-      
+    
 class MapExpression inherits from ASTBase
   method parse()
     me.req_val '{'
@@ -228,12 +245,14 @@ class MapExpression inherits from ASTBase
     me.items = me.opt_multi MapItem
     me.req_val '}'
     
+  
 class Ellipsis inherits from ASTBase
   method parse()
     me.req_val '.'
     me.req_val '.'
     me.req_val '.'
-    
+  
+  
 class FunctionDefArgument inherits from ASTBase
   method parse()
     me.name = me.req 'IDENTIFIER'
@@ -250,31 +269,30 @@ class FunctionExpression inherits from ASTBase
     me.arguments = me.opt_multi FunctionDefArgument
     me.req_val ')'
     me.block = me.req Block
-    
+
 class ClassDefinition inherits from ASTBase
   method parse()
     me.req_val 'class'
     me.lock()
     me.name = me.opt 'IDENTIFIER'
-    if me.opt_val 'inherits'
+    if me.opt_val('inherits')
       me.req_val 'from'
       me.parent = me.req 'IDENTIFIER'
     me.block = me.req Block
-    
+
 class TryCatch inherits from ASTBase
   method parse()
     me.req_val 'try'
     me.lock()
     me.try_block = me.req Block
-    if me.opt_val 'catch'
+    if me.opt_val('catch')
       me.identifier = me.req 'IDENTIFIER'
       me.catch_block = me.req Block
-      
-Nodes = [File,Block,Statement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch]
+
+Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch]
 
 exports.Grammar = {}
-for v in Nodes 
-  if v.__super__?.constructor is ASTBase
+for v in Nodes
   exports.Grammar[v.name] = v
 exports.GrammarRoot = exports.Grammar.File
 exports.KEYWORDS = KEYWORDS
