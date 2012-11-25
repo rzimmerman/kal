@@ -1,0 +1,6 @@
+describe 'regex', ->
+  it 'should parse regular expressions and execute them using native JS', ->
+    r = /[0-9]+/g
+    s = '43 4 test 533 x'.replace r, 'o'
+    s.should.equal 'o o test o x'
+    
