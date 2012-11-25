@@ -131,7 +131,7 @@ Nodes = [
         return no if accessor instanceof FunctionCall
       return yes
     parse: ->
-      @preop      = @opt_val 'not', 'new'
+      @preop      = @opt_val 'not', 'new', '-'
       @base        = @req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
       #if a paren expression occurs immediately after the function block dedent, this would
       #normally be interpreted as a function call on the function expression. While this may

@@ -259,7 +259,7 @@
     };
     UnaryExpression.prototype.parse = function () {
       var first;
-      this.preop = this.opt_val('not', 'new');
+      this.preop = this.opt_val('not', 'new', '-');
       
       /*    #if a paren expression occurs immediately after the function block dedent, this would
       #normally be interpreted as a function call on the function expression. While this may

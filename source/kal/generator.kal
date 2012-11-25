@@ -179,8 +179,10 @@ function apply_generator_to_grammar()
       
     if me.preop?.value is 'new'
       rv = "#{KEYWORD_TRANSLATE[this.preop.value]} #{rv}"
-    else if me.preop?.value?
+    else if me.preop?.value is 'not'
       rv = "#{KEYWORD_TRANSLATE[this.preop.value]}(#{rv})"
+    else if me.preop?.value is '-'
+      rv = "-#{rv}"
     return rv
     
   me.WhenExpression.prototype.js = (true_block_js, must_return_value) ->

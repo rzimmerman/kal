@@ -127,3 +127,11 @@ describe 'Expression', ->
     require('should').not.exist(a?[6]?[3])
     require('should').not.exist(b?[6]?[3])
     
+  it 'should support negative unary expressions', -> #Issue 1
+    x = -3
+    y = 0
+    x.should.equal y-3
+    z = 4 + -3
+    z.should.equal 1
+    (-1).should.equal -(not false)
+    

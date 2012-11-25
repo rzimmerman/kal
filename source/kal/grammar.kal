@@ -130,7 +130,7 @@ class UnaryExpression inherits from ASTBase
         return no 
     return yes
   method parse()
-    me.preop       = me.opt_val 'not', 'new'
+    me.preop       = me.opt_val 'not', 'new', '-'
     me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
     #if a paren expression occurs immediately after the function block dedent, this would
     #normally be interpreted as a function call on the function expression. While this may

@@ -356,8 +356,11 @@
       if (((this.preop != null) ? this.preop.value : void 0) === 'new') {
         rv = "" + KEYWORD_TRANSLATE[this.preop.value] + " " + rv + "";
         
-      } else     if ((this.preop != null && this.preop.value != null)) {
+      } else     if (((this.preop != null) ? this.preop.value : void 0) === 'not') {
         rv = "" + KEYWORD_TRANSLATE[this.preop.value] + "(" + rv + ")";
+        
+      } else     if (((this.preop != null) ? this.preop.value : void 0) === '-') {
+        rv = "-" + rv + "";
         
       }
       return rv;

@@ -187,8 +187,10 @@ apply_generator_to_grammar = ->
       
     if @preop?.value is 'new'
       rv = "#{KEYWORD_TRANSLATE[@preop.value]} #{rv}"
-    else if @preop?.value?
+    else if @preop?.value is 'not'
       rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})"
+    else if @preop?.value is '-'
+      rv = "-#{rv}"
     return rv
 
   @WhenExpression::js = (true_block_js, must_return_value) ->
