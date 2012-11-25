@@ -12,6 +12,7 @@ This will print the compiled Javascript to stdout and attempt to evaluate it if 
 
 As of version 0.2.0, the CoffeeScript dependency has been removed. The .coffee source is still available but will be
 removed in version 0.3.0. The compiler now compiles itself as follows:
+
     node ./compiled/kal -c ./source/kal/*.kal (output directory)
 
 
