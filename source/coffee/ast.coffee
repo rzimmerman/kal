@@ -61,7 +61,7 @@ exports.ASTBase = class ASTBase
     list = (cls.name or cls for cls in arguments)
     @error "Expected one of #{list.join(', ')}"
     
-      
+  
   opt_multi: -> #optionally have multiple
     cls = @opt.apply this, arguments
     return [] unless cls?

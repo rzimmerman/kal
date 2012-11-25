@@ -1,14 +1,10 @@
 class ParseFailed inherits from Error
   method initialize(message)
-    this.message = message
-    ParseFailed.__super__.constructor.apply me, arguments
-  
-
+    me.message = message
+    Error.prototype.constructor.apply me, arguments
+    
 class SyntaxError inherits from ParseFailed
-  method initialize()
-    SyntaxError.__super__.constructor.apply me, arguments
   
-
 exports.SyntaxError = SyntaxError
 
 class ASTBase
@@ -19,7 +15,7 @@ class ASTBase
     me.parse()
     
   #optionally match one of the classes or tokens in the list
-  method opt()
+  method opt() 
     rv = null
     start_index = me.ts.index
     for cls in arguments
@@ -34,16 +30,17 @@ class ASTBase
           return rv
         catch e
           me.ts.goto_token start_index
-          throw(e) when e instanceof SyntaxError
+          if e instanceof SyntaxError
+            throw e
     return null
   
   #require match to one of the classes or tokens in the list
   method req() 
     rv = me.opt.apply this, arguments
-    return rv when rv exists
+    return rv if rv?
     list = []
     for cls in arguments
-      list.push cls.name or cls
+      list.push(cls.name or cls)
     if list.length is 1
       message = "Expected #{list[0]}"
     else
@@ -60,29 +57,28 @@ class ASTBase
       
   method req_val()
     rv = me.opt_val.apply this, arguments
-    return rv when rv exists
-    arglist = []
+    return rv if rv?
+    args = []
     for v in arguments
-      arglist.push v
-    me.error "Expected #{arglist.join(' or ')}"
+      args.push v
+    me.error "Expected #{args.join(' or ')}"
   
   method req_multi() #require at least one
     rv = me.opt_multi.apply this, arguments
-    return rv when rv.length > 0
+    return rv if rv.length > 0
     
     list = []
     for cls in arguments
-      list.push cls.name or cls
+      list.push(cls.name or cls)
     me.error "Expected one of #{list.join(', ')}"
-    
-    
+  
   method opt_multi() #optionally have multiple
     cls = me.opt.apply this, arguments
-    return [] when cls doesnt exist
+    return [] unless cls?
     rv = [cls]
-    while cls exists
+    while cls?
       cls = me.opt.apply this, arguments
-      rv.push(cls) when cls exists
+      rv.push cls if cls?
     return rv
   
   method parse()
@@ -94,11 +90,11 @@ class ASTBase
   method error(msg)
     full_msg = msg + ' on line ' + me.line
     if me.locked
-      throw(new SyntaxError full_msg)
+      throw new SyntaxError full_msg
     else
-      throw(new ParseFailed full_msg)
+      throw new ParseFailed full_msg
     
   method lock()
     me.locked = yes
-
+  
 exports.ASTBase = ASTBase

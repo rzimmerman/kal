@@ -1,11 +1,11 @@
 {KEYWORDS} = require './grammar'
 
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or',
-                 'xor','in','when','instanceof','of','nor']
+                 'xor','in','when','instanceof','of','nor','if','unless','except']
 
 exports.translate_sugar = (tokens) ->
   out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean tokens
-  #console.log (t.value or t.type for t in out_tokens).join ' '
+  console.log (t.value or t.type for t in out_tokens).join ' '
   return out_tokens
   
 clean = (tokens) ->
