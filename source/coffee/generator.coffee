@@ -401,6 +401,8 @@ apply_generator_to_grammar = ->
       indent()
       rv += @catch_block.js()
       rv += "}"
+    else
+      rv += "catch (k$e) {}"
     
     
   snippets =
