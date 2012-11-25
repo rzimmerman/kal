@@ -25,8 +25,8 @@ class Lexer
         if text?
           me.type = type
           break
-      me.error("invalid token '#{me.code.slice(index..index+16)}...'") unless text?
-      value = parse_token[me.type] text
+      me.error("invalid token '#{this.code.slice(index,index+16)}...'") unless text?
+      value = parse_token[me.type](text)
       if last_token_type is 'NEWLINE' #check for indent/dedent
         me.handleIndentation type, text
       if type is 'COMMENT'

@@ -162,13 +162,13 @@ apply_generator_to_grammar = ->
       kw_translate = KEYWORD_TRANSLATE[base_val]
       rv += kw_translate or base_val
       if not kw_translate?
-        scope[base_val] = 'closures ok' unless scope[base_val]? or not @is_lvalue() or KEYWORD_TRANSLATE[@base.value] or @accessors.length > 0
+        scope[base_val] = 'closures ok' unless scope[base_val]? or not @is_lvalue() or @accessors.length > 0
     else
       rv += @base.js()
     
     # an undefined unary is a simple variable access to an undeclared variable
     # it requres we check if the variable exists before checking if it is null/undefined
-    undefined_unary = (@base.type is 'IDENTIFIER' and not scope[base_val]?)
+    undefined_unary = (@base.type is 'IDENTIFIER' and not scope[base_val]? and not kw_translate?)
     existence_qualifiers = []
     
     last_accessor = @accessors[@accessors.length-1]
