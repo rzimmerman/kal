@@ -17,3 +17,4 @@ Things like:
   don't seem to work. for now they require parenthesis
   
 return x if a instanceof b doesn't work
+check if <= and >= work
