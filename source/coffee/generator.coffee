@@ -83,7 +83,7 @@ apply_generator_to_grammar = ->
   
   check_existence_wrapper = (code, undefined_unary, invert) ->
     if undefined_unary
-      rv = if invert then "typeof #{code} === 'undefined' || #{code} === null" else "typeof #{code} !== 'undefined' && #{code} !== null"
+      rv = if invert then "(typeof #{code} === 'undefined' || #{code} === null)" else "(typeof #{code} !== 'undefined' && #{code} !== null)"
     else
       rv = if invert then "#{code} == null" else "#{code} != null"
     return rv
@@ -164,16 +164,22 @@ apply_generator_to_grammar = ->
     # an undefined unary is a simple variable access to an undeclared variable
     # it requres we check if the variable exists before checking if it is null/undefined
     undefined_unary = (@base.type is 'IDENTIFIER' and not scope[base_val]?)
-    for accessor in @accessors
-      rv = accessor.js rv, undefined_unary
-      undefined_unary = no # only possible for the first accessor
-      
+    existence_qualifiers = []
     
-    closeout = ""
-    invert_closeout = @accessors[@accessors.length-1]?.invert is true
+    last_accessor = @accessors[@accessors.length-1]
     for accessor in @accessors
-      closeout = accessor.js_closeout(invert_closeout) + closeout
-    rv += closeout
+      rv += accessor.js()
+      existence_qualifiers.push accessor.js_existence rv, undefined_unary, last_accessor.invert
+      undefined_unary = no # only possible for the first accessor
+    
+    existence_check = (eq for eq in existence_qualifiers when eq isnt "").join(' && ')
+    if existence_check isnt ""
+      if last_accessor instanceof self.ExisentialCheck
+        rv = "(#{existence_check})"
+      else
+        closeout = "void 0"
+        rv = "(#{existence_check}) ? #{rv} : #{closeout}"
+      
     if @preop?.value is 'new'
       rv = "#{KEYWORD_TRANSLATE[@preop.value]} #{rv}"
     else if @preop?.value?
@@ -190,25 +196,23 @@ apply_generator_to_grammar = ->
       return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
     return rv
   
-  @ExisentialCheck::js = (code, undefined_unary) ->
-    return check_existence_wrapper code, undefined_unary, @invert
-  @ExisentialCheck::js_closeout = (invert) -> return ""
+  @ExisentialCheck::js = ->
+    return ""
+  @ExisentialCheck::js_existence = (accessor, undefined_unary, invert) ->
+    return check_existence_wrapper accessor, undefined_unary, invert
   
-  @PropertyAccess::js = (code, undefined_unary) ->
+  @PropertyAccess::js = ->
     if @expr.type is 'IDENTIFIER'
       rv = @expr.value
     else
       rv = @expr.js()
+    rv = ".#{rv}"
+    return rv
+  @PropertyAccess::js_existence = (accessor, undefined_unary, invert) ->
     if @exisential
-      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+      return check_existence_wrapper(accessor, undefined_unary, invert)
     else
-      base = code
-    rv = "#{base}.#{rv}"
-  @PropertyAccess::js_closeout = (invert) -> 
-    if @exisential
-      return if invert then ": true " else " : void 0" 
-    else 
-      return ""
+      return ''
   
   @AssignmentStatement::js = ->
     op = @assignOp.value
@@ -290,17 +294,13 @@ apply_generator_to_grammar = ->
   @ParenExpression::js = ->
     return "(#{@expr.js()})"
     
-  @IndexExpression::js = (code, undefined_unary)->
+  @IndexExpression::js = ->
+    return "[#{@expr.js()}]"
+  @IndexExpression::js_existence = (accessor, undefined_unary, invert) ->
     if @exisential
-      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+      return check_existence_wrapper(accessor, undefined_unary, invert)
     else
-      base = code
-    return "#{base}[#{@expr.js()}]"
-  @IndexExpression::js_closeout = (invert) -> 
-      if @exisential
-        return if invert then ": true " else " : void 0" 
-      else 
-        return ""
+      return ''
   
   @ListExpression::js = ->
     rv = (item.js() for item in @items).join(', ')
@@ -351,18 +351,14 @@ apply_generator_to_grammar = ->
     rv += "\n#{i}}"
     return rv
     
-  @FunctionCall::js = (code, undefined_unary) ->
+  @FunctionCall::js = ->
     rv = (argument.js() for argument in @arguments).join ', '
-    if @exisential
-      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
-    else
-      base = code
-    return "#{base}(#{rv})"
-  @FunctionCall::js_closeout = (invert) -> 
+    return "(#{rv})"
+  @FunctionCall::  js_existence = (accessor, undefined_unary, invert) ->
       if @exisential
-        return if invert then ": true " else " : void 0" 
-      else 
-        return ""
+        return check_existence_wrapper(accessor, undefined_unary, invert)
+      else
+        return ''
     
   @FunctionCallArgument::js = ->
     return @val.js()
