@@ -1,3 +1,6 @@
+TODO List
+=========
+
 * Negative unary expressions (-3) don't work
 * Fix precedence on "if" expressions:
 
@@ -9,7 +12,7 @@
 
 * Fix auto parens for regex arguments and index expressions:
 
-    a.push /ggg/g
+    a.push /rex/g
     a[3] 4
     doesn't work
 
@@ -19,5 +22,6 @@
 
     if x y
       something
+
 * return x if a instanceof b doesn't work
 * check if <= and >= work
