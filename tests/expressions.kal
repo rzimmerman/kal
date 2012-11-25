@@ -167,7 +167,7 @@ describe 'Expression', ->
     (7 in a).should.be.false
     (1 in a).should.be.false
     
-    #Issue 8
+    #Issue 5
     (3 not in a).should.be.false
     (7 not in a).should.be.true
     
