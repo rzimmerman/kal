@@ -11,3 +11,9 @@ Fix auto parens for regex arguments and index expressions:
   doesn't work
 Fix string constants so that they actually parse what is inside of the #{} blocks
 Implement 'not in'
+Things like:
+  if x y
+    something
+  don't seem to work. for now they require parenthesis
+  
+return x if a instanceof b doesn't work
