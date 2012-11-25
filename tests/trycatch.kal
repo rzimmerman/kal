@@ -1,0 +1,26 @@
+describe 'Try/Catch/Throw Statements', ->
+  it 'should accept try catch blocks and catch throw errors', ->
+    caught = no
+    try
+      x = 1
+      y = 2
+      throw 'c'
+      z = 3
+    catch e
+      e.should.equal 'c'
+      caught = yes
+    caught.should.be.true
+    (z exists).should.be.false
+    x.should.equal 1
+    y.should.equal 2
+    
+  it 'should work without a catch block (just ignore errors)', ->
+    try
+      x = 1
+      y = 2
+      throw 'c'
+      z = 3
+    (z exists).should.be.false
+    x.should.equal 1
+    y.should.equal 2
+  
