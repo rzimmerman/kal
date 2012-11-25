@@ -1,0 +1,17 @@
+describe 'Functions', ->
+  it 'should support function calls with optional parentheses', ->
+    calls = 0
+    function a(x)
+      calls += 1
+      x.should.equal 6
+    function b(y)
+      calls += 1
+      require('should').exist y
+    a 6
+    g = 6
+    a g
+    b /ra/
+    h = [a,b]
+    h[0] 6
+    h[1] /rox/
+    calls.should.equal 5

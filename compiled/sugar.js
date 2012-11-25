@@ -108,9 +108,9 @@
     while (i < tokens.length) {
         token = tokens[i];
         
-        last_token_callable = (((last_token != null) ? last_token.type : void 0) === 'IDENTIFIER' && !((($kindexof.call(KEYWORDS, last_token.value) >= 0) )));
+        last_token_callable = (((last_token != null) ? last_token.type : void 0) === 'IDENTIFIER' && !((($kindexof.call(KEYWORDS, last_token.value) >= 0) ))) || ((last_token != null) ? last_token.value : void 0) === ']';
         
-        this_token_not_operator = ((($kindexof.call(['IDENTIFIER', 'NUMBER', 'STRING'], token.type) >= 0)  || token.value === '{') && !((($kindexof.call(NOPAREN_WORDS, token.value) >= 0) )));
+        this_token_not_operator = ((($kindexof.call(['IDENTIFIER', 'NUMBER', 'STRING', 'REGEX'], token.type) >= 0)  || token.value === '{') && !((($kindexof.call(NOPAREN_WORDS, token.value) >= 0) )));
         
         if (last_token_callable && this_token_not_operator) {
           triggers.push('NEWLINE');
