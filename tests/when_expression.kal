@@ -60,3 +60,29 @@ describe 'When Expressions', ->
     t2(yes).should.equal 8
     t2(no).should.equal 9
     
+    
+  it 'should work with no-paren function calls when used as an if statement', -> #Issue 2
+    a = 'abc'
+    a = a.concat 's' if false
+    a.should.equal 'abc'
+    a = a.concat 'd' if true
+    a.should.equal 'abcd'
+    
+    a = 'abc'
+    a = a.concat 's' when no
+    a.should.equal 'abc'
+    a = a.concat 'd' when yes
+    a.should.equal 'abcd'
+    
+    a = 'abc'
+    a = a.concat 's' except when true
+    a.should.equal 'abc'
+    a = a.concat 'd' except when false
+    a.should.equal 'abcd'
+    
+    a = 'abc'
+    a = a.concat 's' unless true
+    a.should.equal 'abc'
+    a = a.concat 'd' unless false
+    a.should.equal 'abcd'
+    

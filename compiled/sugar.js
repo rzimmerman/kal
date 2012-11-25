@@ -136,11 +136,8 @@
           }
         }
         
-        if (closures.length === 0 || token.type !== triggers[triggers.length - 1]) {
-          out_tokens.push(token);
-          
-        } else       if (token.type === 'NEWLINE' && closures.length > 0 && token.type === triggers[triggers.length - 1]) {
-          while (closures.length > 0 && token.type === triggers[triggers.length - 1]) {
+        if ((token.type === 'NEWLINE' || ($kindexof.call(['if', 'unless', 'when', 'except'], token.value) >= 0) ) && closures.length > 0 && triggers[triggers.length - 1] === 'NEWLINE') {
+          while (closures.length > 0 && triggers[triggers.length - 1] === 'NEWLINE') {
               triggers.pop();
               
               closure = closures.pop();
@@ -150,7 +147,7 @@
           }
           out_tokens.push(token);
           
-        } else       if (token.type === 'DEDENT' && closures.length > 0 && token.type === triggers[triggers.length - 1]) {
+        } else       if (token.type === 'DEDENT' && closures.length > 0 && triggers[triggers.length - 1] === 'DEDENT') {
           out_tokens.push(token);
           
           triggers.pop();
@@ -159,6 +156,8 @@
           
           (closure !== '') ? out_tokens.push({ text: closure, line: token.line, value: closure, type: 'LITERAL' }) : void 0;
           
+        } else       if (closures.length === 0 || token.type !== triggers[triggers.length - 1]) {
+          out_tokens.push(token);
           
         }
         last_token = token;
