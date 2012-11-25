@@ -183,7 +183,7 @@
         
         this.lock();
         
-        (!(($kindexof.call(['+', '-', '*', '/', '>', '<', '^'], this.op.value) >= 0) )) ? this.error("unexpected operator " + this.op.value + "") : void 0;
+        (!(($kindexof.call(['+', '-', '*', '/', '>', '<', '^', '<=', '>='], this.op.value) >= 0) )) ? this.error("unexpected operator " + this.op.value + "") : void 0;
         
       } else {
         (!(($kindexof.call(['and', 'but', 'or', 'xor', 'nor', 'in', 'is', 'isnt', 'instanceof', 'of'], this.op.value) >= 0) )) ? this.error("unexpected operator " + this.op.value + "") : void 0;

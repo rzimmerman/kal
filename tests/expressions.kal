@@ -134,4 +134,24 @@ describe 'Expression', ->
     z = 4 + -3
     z.should.equal 1
     (-1).should.equal -(not false)
+  
+  it 'should support comparison operators (<, >, is, isnt)', ->
+    (3 is 3).should.be.true
+    (3 is 2).should.be.false
+    ('3' is 3).should.be.false
+    (3 isnt 2).should.be.true
+    (1 isnt 1).should.be.false
+    (1 isnt '1').should.be.true
+    (5 > 2).should.be.true
+    (5 > 5).should.be.false
+    (2 < 3).should.be.true
+    (2 < 2).should.be.false
+    
+  it 'should support comparison operators (<=, >=)', -> #Issue 7
+    (2 <= 4).should.be.true
+    (2 <= 2).should.be.true
+    (2 <= 1).should.be.false
+    (2 >= 4).should.be.false
+    (2 >= 2).should.be.true
+    (2 >= 1).should.be.true
     
