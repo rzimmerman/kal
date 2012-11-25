@@ -158,4 +158,26 @@ describe 'Expression', ->
     (2 == 1).should.be.false
     (2 != 2).should.be.false
     (2 != 1).should.be.true
+  
+  it 'should support list operators (in, not in)', ->
+    a = ['a','b','c','1',2,3]
+    (2 in a).should.be.true
+    ('a' in a).should.be.true
+    (3 in a).should.be.true
+    (7 in a).should.be.false
+    (1 in a).should.be.false
+    
+    #Issue 8
+    (3 not in a).should.be.false
+    (7 not in a).should.be.true
+    
+  it 'should support map operators (of, not of)', ->
+    b = {x:2,y:'bob',z:1}
+    ('x' of b).should.be.true
+    ('z' of b).should.be.true
+    ('a' of b).should.be.false
+    ('x' not of b).should.be.false
+    ('z' not of b).should.be.false
+    ('a' not of b).should.be.true
+    
     

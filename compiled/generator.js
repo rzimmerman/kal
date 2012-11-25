@@ -251,7 +251,7 @@
       } else {
         opjs = this.op.js();
         
-        if (opjs === 'in') {
+        if (opjs === 'in' && this.op.op.value !== 'of') {
           if (!((use_snippets['in'] != null))) {
             use_snippets['in'] = snippets['in'];
             
@@ -276,6 +276,10 @@
           rv += "" + left_code + " " + opjs + " " + this.right.js() + "";
           
         }
+      }
+      if (((this.op != null) ? this.op.invert : void 0)) {
+        rv = "!(" + rv + ")";
+        
       }
       if ((this.conditional != null)) {
     rv = this.conditional.js(rv, true);

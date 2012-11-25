@@ -126,7 +126,7 @@ function apply_generator_to_grammar()
       rv += left_code
     else
       opjs = me.op.js()
-      if opjs is 'in'
+      if opjs is 'in' and me.op.op.value isnt 'of'
         unless use_snippets['in']?
           use_snippets['in'] = snippets['in']
           for subscope in scopes
@@ -139,6 +139,8 @@ function apply_generator_to_grammar()
         rv += "Math.pow(#{left_code}, #{this.right.left.js()}) #{this.right.js(true)}"
       else
         rv += "#{left_code} #{opjs} #{this.right.js()}"
+    if me.op?.invert
+      rv = "!(#{rv})"
     rv = me.conditional.js(rv, yes) if me.conditional exists
     return rv
     
