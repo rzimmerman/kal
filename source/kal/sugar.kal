@@ -1,23 +1,21 @@
-grammar = require '../source/coffee/grammar'
-
+grammar = require './grammar'
 KEYWORDS = grammar.KEYWORDS
-NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of']
 
-function translate_sugar(tokens)
+NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of','nor','if','unless','except']
+
+exports.translate_sugar = function translate_sugar (tokens)
   out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean tokens
+  #console.log (t.value or t.type for t in out_tokens).join ' '
   return out_tokens
-exports.translate_sugar = translate_sugar
-
-function clean(tokens)
+  
+function clean (tokens)
   # close out with a newline in case the user did not, remove whitespace
   out_tokens = []
   for token in tokens
     out_tokens.push(token) when token.type isnt 'WHITESPACE'
-  t = {text:'\n', line:last_token?.line, value:'', type:'NEWLINE'}
-  out_tokens.push t
   return out_tokens
 
-function multiline_statements(tokens)
+function multiline_statements (tokens)
   # allow multi-line statements with line breaks after commas, colons, and equal signs
   out_tokens = []
   last_token = null
@@ -26,7 +24,7 @@ function multiline_statements(tokens)
   
   for token in tokens
     skip_token = no
-    if token.type is 'NEWLINE' and (last_token?.value in [',','=',':'])
+    if last_token?.value in [',','=',':'] and token.type is 'NEWLINE'
       continue_line = yes
       skip_token = yes
     else if continue_line
@@ -40,49 +38,64 @@ function multiline_statements(tokens)
           reduce_dedent -= 1
           skip_token = yes
           if reduce_dedent is 0
-            t =  {text:'\n', line:token.line, value:'',type:'NEWLINE'}
-            out_tokens.push t
+            out_tokens.push {text:'\n', line:token.line, value:'',type:'NEWLINE'}
         else
           out_tokens.push last_token #add back in the newline
-    out_tokens.push(token) when not skip_token
+    out_tokens.push(token) unless skip_token
     last_token = token
   return out_tokens
   
-function noparen_function_calls(tokens)
+function noparen_function_calls (tokens)
   # allow function calls without parentheses
   out_tokens = []
   close_paren_count = 0
   last_token = null
-  closes_on = []
-
+  triggers = []
+  closures = []
+  ignore_next_indent = no
+  
   i = 0
   while i < tokens.length
     token = tokens[i]
-    last_is_identifier = last_token?.type is 'IDENTIFIER' and not (last_token.value in KEYWORDS)
-    current_is_identifier = token.type in ['IDENTIFIER','NUMBER','STRING']
-    current_not_excluded = not (token.value in NOPAREN_WORDS)
-    if last_is_identifier and current_is_identifier and current_not_excluded
-      closes_on.push 'NEWLINE'
+    last_token_callable = (last_token?.type is 'IDENTIFIER' and not (last_token.value in KEYWORDS))
+    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING'] or token.value is '{') and not (token.value in NOPAREN_WORDS))
+    if last_token_callable and this_token_not_operator
+      triggers.push 'NEWLINE'
       out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
-    else if (last_token?.value is '-' and token.value is '>') or token.value is 'function'
-      closes_on[closes_on.length - 1] = 'DEDENT'
-
-    if token.type is closes_on[closes_on.length - 1]
-      closes_on.pop()
-      out_tokens.push token if token.type is 'DEDENT'
-      out_tokens.push {text:')', line:token.line, value:')', type:'LITERAL'}
-      out_tokens.push token if token.type isnt 'DEDENT'
-    else
+      closures.push ')'
+    else if token.type is 'NEWLINE' and triggers[triggers.length-1] is 'NEWLINE' and tokens[i+1]?.type is 'INDENT'
+      triggers[triggers.length-1] = 'DEDENT'
+      ignore_next_indent = yes
+    else if token.type is 'INDENT'
+      if ignore_next_indent
+        ignore_next_indent = no
+      else
+        triggers.push 'DEDENT'
+        closures.push ''
+    
+    if closures.length is 0 or token.type isnt triggers[triggers.length - 1]
       out_tokens.push token
+    else if token.type is 'NEWLINE' and closures.length > 0 and token.type is triggers[triggers.length - 1]
+      while closures.length > 0 and token.type is triggers[triggers.length - 1]
+        triggers.pop()
+        closure = closures.pop()
+        out_tokens.push({text:closure, line:token.line, value:closure, type:'LITERAL'}) if closure isnt ''
+      out_tokens.push token
+    else if token.type is 'DEDENT' and closures.length > 0 and token.type is triggers[triggers.length - 1]
+      out_tokens.push token
+      triggers.pop()
+      closure = closures.pop()
+      out_tokens.push({text:closure, line:token.line, value:closure, type:'LITERAL'}) if closure isnt ''
+      
     last_token = token
     i += 1
   return out_tokens
 
-function coffee_style_functions(tokens)
+function coffee_style_functions (tokens)
   #allow function definitions with the -> operator
   out_tokens = []
   last_token = null
-
+  
   i = 0
   while i < tokens.length
     token = tokens[i]
@@ -108,4 +121,3 @@ function coffee_style_functions(tokens)
     last_token = token
     i += 1
   return out_tokens
-

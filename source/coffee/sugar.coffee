@@ -71,14 +71,20 @@ noparen_function_calls = (tokens) ->
         triggers.push 'DEDENT'
         closures.push ''
     
-    if closures.length > 0 and token.type is triggers[triggers.length - 1]
+    if closures.length is 0 or token.type isnt triggers[triggers.length - 1]
+      out_tokens.push token
+    else if token.type is 'NEWLINE' and closures.length > 0 and token.type is triggers[triggers.length - 1]
+      while closures.length > 0 and token.type is triggers[triggers.length - 1]
+        triggers.pop()
+        closure = closures.pop()
+        out_tokens.push text:closure, line:token.line, value:closure, type:'LITERAL' if closure isnt ''
+      out_tokens.push token
+    else if token.type is 'DEDENT' and closures.length > 0 and token.type is triggers[triggers.length - 1]
+      out_tokens.push token
       triggers.pop()
       closure = closures.pop()
-      out_tokens.push token if token.type is 'DEDENT'
       out_tokens.push text:closure, line:token.line, value:closure, type:'LITERAL' if closure isnt ''
-      out_tokens.push token if token.type isnt 'DEDENT'
-    else
-      out_tokens.push token
+
     last_token = token
     i += 1
   return out_tokens
