@@ -3,17 +3,16 @@ The Kal Programming Language
 
 Using Kal
 ---------
-This section is still 'coming soon'. For now, you can clone the repository and use [CoffeeScript](http://coffeescript.org/) to run the compiler:
+This section is still 'coming soon'. A detailed syntax guide is in work, but if you want to try it out, the syntax is a lot like CoffeeScript with some notable exceptions. Check out the source/kal files to see some examples. For now, you can clone the repository to run the compiler as follows:
 
-    coffee source/coffee/compiler.coffee (kal file) [js output file]
+    node ./compiled/kal (kal file) [js output file]
+    node ./compiled/kal -c (source files) (output directory)
 
-This will print the compiled Javascript to stdout and attempt to evaluate it if you don't specify the output file.
+This will print the compiled Javascript to stdout and attempt to evaluate it if you don't specify "js output file".
 
-The CoffeeScript implementation is being ported over to Kal, so check often. To run the Kal port of the compiler in its current state, use:
-
-    node source/kal/compiler.js (kal file) [js output file]
-
-Right now this uses a mix of CoffeeScript and Kal, so you will need CoffeeScript installed. You can use npm install for this package.
+As of version 0.2.0, the CoffeeScript dependency has been removed. The .coffee source is still available but will be
+removed in version 0.3.0. The compiler now compiles itself as follows:
+    node ./compiled/kal -c ./source/kal/*.kal (output directory)
 
 
 Goals
