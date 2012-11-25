@@ -117,7 +117,7 @@ apply_generator_to_grammar = ->
     
   @ReturnStatement::js = ->  
     rv = "return #{@expr.js()};"
-    rv = @conditional.js(rv) if @conditional?
+    rv = @conditional.js(rv, no) if @conditional?
     return rv
     
   @ExpressionStatement::js = ->
@@ -146,7 +146,7 @@ apply_generator_to_grammar = ->
         rv += "Math.pow(#{left_code}, #{@right.left.js()}) #{@right.js(yes)}"
       else
         rv += "#{left_code} #{opjs} #{@right.js()}"
-    rv = @conditional.js(rv) if @conditional?
+    rv = @conditional.js(rv, yes) if @conditional?
     return rv
     
     
@@ -186,14 +186,17 @@ apply_generator_to_grammar = ->
       rv = "#{KEYWORD_TRANSLATE[@preop.value]}(#{rv})"
     return rv
 
-  @WhenExpression::js = (true_block_js) ->
+  @WhenExpression::js = (true_block_js, must_return_value) ->
     conditional_js = @condition.js()
     conditional_js = "!(#{conditional_js})" if @specifier.value is 'unless' or @specifier.value is 'except'
     if @false_expr?
       return "(#{conditional_js}) ? #{true_block_js} : #{@false_expr.js()}"
     else
-      indented_js = '  ' + true_block_js.replace /\n/g, '\n  '
-      return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
+      if must_return_value
+        return "(#{conditional_js}) ? #{true_block_js} : void 0"
+      else
+        indented_js = '  ' + true_block_js.replace /\n/g, '\n  '
+        return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
     return rv
   
   @ExisentialCheck::js = ->
@@ -218,7 +221,7 @@ apply_generator_to_grammar = ->
     op = @assignOp.value
     op += '=' if op isnt '='
     rv = "#{@lvalue.js()} #{op} #{@rvalue.js()};"
-    rv = @conditional.js(rv) if @conditional?
+    rv = @conditional.js(rv, no) if @conditional?
     return rv
     
   @NumberConstant::js = ->
