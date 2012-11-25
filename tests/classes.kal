@@ -1,0 +1,43 @@
+describe 'Classes and Inheritance', ->
+  it 'should support definition of class types and instantiation of said types', ->
+    class KalC
+      method initialize(val)
+        me.val = val
+      method get_val()
+        return me.val
+      function other_thing()
+        (me.val exists).should.be.false
+    i = new KalC(6)
+    j = new KalC 7
+    i.val.should.equal 6
+    i.get_val().should.equal 6
+    j.val.should.equal 7
+    j.get_val().should.equal 7
+    KalC.other_thing()
+    
+  it 'should support multilevel inheritance and method overloading', ->
+    class KalC
+      method initialize(val)
+        me.val = val
+      method get_val()
+        return me.val
+      function other_thing()
+        (me.val exists).should.be.false
+        
+    class Child inherits from KalC
+      method initialize(val)
+        KalC.prototype.constructor.apply this, [val + 1] #no support for super yet
+        
+    class GrandChild inherits from Child
+      method new_thing(a)
+        return a
+      function other_thing()
+        (me.val exists).should.be.false
+        return 2
+    k = new GrandChild(3)
+    k.val.should.equal 4
+    k.get_val().should.equal 4
+    Child.other_thing()
+    GrandChild.other_thing().should.equal 2
+    k.new_thing(1).should.equal 1
+    
