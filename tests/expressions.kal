@@ -99,7 +99,7 @@ describe 'Expression', ->
     (y?.z exists).should.be.true
     (y?.z).should.equal 3
     require('should').not.exist (y?.v)
-    #y?.b?.d?.r?.should.be.false
+    (y?.b?.d?.r?).should.be.false
   
   it 'should support unary operators (new, not)', ->
     function test(arg1)
