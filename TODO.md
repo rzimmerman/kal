@@ -10,3 +10,4 @@ Fix auto parens for regex arguments and index expressions:
   a[3] 4
   doesn't work
 Fix string constants so that they actually parse what is inside of the #{} blocks
+Implement 'not in'
