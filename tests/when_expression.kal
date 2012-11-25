@@ -1,0 +1,62 @@
+describe 'When Expressions', ->
+  it 'should allow conditional selection of values using the when, if, except when, and unless keywords', ->
+    (5 when yes).should.equal 5
+    require('should').not.exist(5 when no)
+    (5 if yes).should.equal 5
+    require('should').not.exist(5 if no)
+    (5 unless no).should.equal 5
+    require('should').not.exist(5 unless yes)
+    (5 except when no).should.equal 5
+    require('should').not.exist(5 except when yes)
+  
+  it 'should allow a false clause using the otherwise or else keywords', ->
+    (5 when yes otherwise 2).should.equal 5
+    (5 when no otherwise 2).should.equal 2
+    (5 when yes else 2).should.equal 5
+    (5 when no else 2).should.equal 2
+    (5 if yes otherwise 2).should.equal 5
+    (5 if no otherwise 2).should.equal 2
+    (5 if yes else 2).should.equal 5
+    (5 if no else 2).should.equal 2
+    (5 unless yes otherwise 2).should.equal 2
+    (5 unless no otherwise 2).should.equal 5
+    (5 unless yes else 2).should.equal 2
+    (5 unless no else 2).should.equal 5
+    (5 except when yes otherwise 2).should.equal 2
+    (5 except when no otherwise 2).should.equal 5
+    (5 except when yes else 2).should.equal 2
+    (5 except when no else 2).should.equal 5
+    
+  it 'should act as an if statement when used in an assignment statement', ->
+    a = 6 when false
+    (a exists).should.be.false
+    a = 6 when true
+    a.should.equal 6
+    b = 6 if false
+    (b exists).should.be.false
+    b = 6 if true
+    b.should.equal 6
+    c = 6 unless false
+    c.should.equal 6
+    c = 8 unless true
+    c.should.equal 6
+    d = 6 except when false
+    d.should.equal 6
+    d = 8 except when true
+    d.should.equal 6
+    
+    
+  it 'should act as an if statement when used in a return statement', ->
+    function t1(a)
+      return 6 when a
+      return 7 unless a
+      
+    function t2(a)
+      return 8 if a
+      return 9 except when a
+      
+    t1(yes).should.equal 6
+    t1(no).should.equal 7
+    t2(yes).should.equal 8
+    t2(no).should.equal 9
+    
