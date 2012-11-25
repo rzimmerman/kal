@@ -17,21 +17,23 @@ function compile(code)
   
 
 if require.extensions
-  require.extensions['.kal'] = function (module, filename)
-    content = compile fs.readFileSync(filename, 'utf8')
-    module._compile content, filename
-  
+  require.extensions['.kal'] = (module, filename) ->
+    content = compile(fs.readFileSync(filename, 'utf8'))
+    module._compile(content, filename)
 
-if process.argv[2] is '-c'
-  fnames = process.argv.slice(3,0-1)
-  out_dir = process.argv.slice(0-1)
-else
-  fnames = [process.argv[2]]
-  out_dir = process.argv[3]
-for fname in fnames
-  code = compile fs.readFileSync fname
-  if out_dir
-    fs.writeFileSync(out_dir + '/' + fname.split('/').slice(0-1)[0].replace('.kal','.js'), code)
+if not module.parent
+  fs = require 'fs'
+  assert = require 'assert'
+  if process.argv[2] is '-c'
+    fnames = process.argv.slice(3,0-1)
+    out_dir = process.argv.slice(0-1)[0]
   else
-    console.log code
-    console.log eval(code)
+    fnames = [process.argv[2]]
+    out_dir = process.argv[3]
+  for fname in fnames
+    code = compile fs.readFileSync fname
+    if out_dir
+      fs.writeFileSync(out_dir + fname.split('/').slice(0-1)[0].replace('.kal','.js'), code)
+    else
+      console.log code
+      console.log eval(code)

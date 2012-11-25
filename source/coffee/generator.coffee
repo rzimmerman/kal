@@ -73,7 +73,7 @@ apply_generator_to_grammar = ->
       indent()
       code = i + code.replace /\n/g, '\n  '
     if var_names.length > 0
-      rv += '  var ' + var_names.join(', ') + ';\n' if var_names.length > 0
+      rv += '  var ' + var_names.join(', ') + ';\n'
     rv += code
     if wrap
       dedent()
@@ -275,7 +275,7 @@ apply_generator_to_grammar = ->
     if @type.value is 'in'
       rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
     else
-      rv = "for (#{@iterant.js()} in #{terminator}) {\n"
+      rv = "#{terminator} = #{@iterable.js()};\nfor (#{@iterant.js()} in #{terminator}) {\n"
     indent()
     for_depth += 1
     rv += "#{i}#{@iterant.js()} = #{terminator}[#{iterator}];\n" if @type.value is 'in'

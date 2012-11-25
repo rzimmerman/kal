@@ -69,7 +69,7 @@ parse_token.NEWLINE = (text) ->
 parse_token.WHITESPACE = (text) ->
   return ' '
 parse_token.COMMENT = (text) ->
-  rv = text.slice(3,0-3) when text[1] is '#' otherwise text.slice(1,0-1)
+  rv = text.slice(3,0-2) when text[1] is '#' otherwise text.slice(1)
   return rv.replace(/(\/\*)|(\*\/)/g, '**')
 parse_token.LITERAL = (text) ->
   return text.replace(/[\f\r\t\v\u00A0\u2028\u2029 ]/, '')

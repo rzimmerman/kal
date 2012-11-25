@@ -44,8 +44,8 @@ function apply_generator_to_grammar()
     rv = i
     var_names = []
     for var_name of scope
-      if not (var_names[var_name] in ['closure', 'argument', 'function', 'class definition'])
-        var_names.push(var_name) 
+      if not (scope[var_name] in ['closure', 'argument', 'function', 'class definition'])
+        var_names.push(var_name)
     if wrap
       rv += '(function () {\n'
       indent()
@@ -80,10 +80,10 @@ function apply_generator_to_grammar()
     for statement in me.statements
       if not (statement.statement instanceof self.BlankStatement)
         code.push(statement.js())
-    code - code.join '\n'
+    code = code.join '\n'
     snip = []
     for key of use_snippets
-      snip.push = use_snippets[key]
+      snip.push use_snippets[key]
     snip = snip.join('\n')
     rv = [snip, code].join '\n'
     for comment in me.ts.comments # reset the AST modifications in case something else wants to use it
@@ -112,9 +112,9 @@ function apply_generator_to_grammar()
   me.ExpressionStatement.prototype.js = ->
     rv = me.expr.js()
     if rv is ""
-      return ";"
+      return ""
     else
-      return rv
+      return rv + ";"
     
   me.Expression.prototype.js = (oop_reverse) ->
     rv = ''
@@ -272,7 +272,7 @@ function apply_generator_to_grammar()
     if me.type.value is 'in'
       rv = "#{terminator} = #{this.iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
     else
-      rv = "for (#{this.iterant.js()} in #{terminator}) {\n"
+      rv = "#{terminator} = #{this.iterable.js()};\nfor (#{this.iterant.js()} in #{terminator}) {\n"
     indent()
     for_depth += 1
     if me.type.value is 'in'
