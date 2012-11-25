@@ -1,20 +1,23 @@
-Negative unary expressions (-3)
-Fix precedence on if expressions:
-  a.push x if x
-  IS:
-  a.push(x if x)
-  SHOULD BE:
-  a.push(x) if x
-Fix auto parens for regex arguments and index expressions:
-  a.push /ggg/g
-  a[3] 4
-  doesn't work
-Fix string constants so that they actually parse what is inside of the #{} blocks
-Implement 'not in'
-Things like:
-  if x y
-    something
-  don't seem to work. for now they require parenthesis
-  
-return x if a instanceof b doesn't work
-check if <= and >= work
+* Negative unary expressions (-3) don't work
+* Fix precedence on "if" expressions:
+
+    a.push x if x
+    IS:
+    a.push(x if x)
+    SHOULD BE:
+    a.push(x) if x
+
+* Fix auto parens for regex arguments and index expressions:
+
+    a.push /ggg/g
+    a[3] 4
+    doesn't work
+
+* Fix string constants so that they actually parse what is inside of the #{} blocks
+* Implement 'not in'
+* Things like this don't seem to work. for now they require parenthesis:
+
+    if x y
+      something
+* return x if a instanceof b doesn't work
+* check if <= and >= work
