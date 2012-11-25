@@ -144,7 +144,7 @@ apply_generator_to_grammar = ->
           use_snippets['in'] = snippets['in']
           subscope['$kindexof'] = 'closure' for subscope in scopes
           scope['$kindexof'] = 'closure'
-        rv += "$kindexof.call(#{@right.js()}, #{@left.js()}) >= 0"
+        rv += "($kindexof.call(#{@right.left.js()}, #{left_code}) >= 0) #{@right.js(yes)}"
       else if opjs is 'nor'
         rv += "!(#{left_code} || #{@right.js()})"
       else if opjs is 'pow'
@@ -183,7 +183,7 @@ apply_generator_to_grammar = ->
         rv = "(#{existence_check})"
       else
         closeout = "void 0"
-        rv = "(#{existence_check}) ? #{rv} : #{closeout}"
+        rv = "((#{existence_check}) ? #{rv} : #{closeout})"
       
     if @preop?.value is 'new'
       rv = "#{KEYWORD_TRANSLATE[@preop.value]} #{rv}"
