@@ -275,7 +275,7 @@ apply_generator_to_grammar = ->
     if @type.value is 'in'
       rv = "#{terminator} = #{@iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
     else
-      rv = "for (#{iterator} in #{terminator}) {\n"
+      rv = "for (#{@iterant.js()} in #{terminator}) {\n"
     indent()
     for_depth += 1
     rv += "#{i}#{@iterant.js()} = #{terminator}[#{iterator}];\n" if @type.value is 'in'
@@ -403,7 +403,7 @@ apply_generator_to_grammar = ->
       rv += "}"
     else
       rv += "catch (k$e) {}"
-    
+    return rv
     
   snippets =
     'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
