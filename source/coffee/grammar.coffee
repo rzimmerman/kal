@@ -23,8 +23,15 @@ Nodes = [
   class Statement extends ASTBase
     parse: ->
       @statement = @req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, 
-                        DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
+                        ThrowStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
     
+  class ThrowStatement extends ASTBase
+    parse: ->
+      @req_val 'throw', 'raise'
+      @lock()
+      @expr = @req Expression
+      @conditional = @expr.transform_when_statement()
+      
   class ReturnStatement extends ASTBase
     parse: ->
       @req_val 'return'

@@ -115,6 +115,11 @@ apply_generator_to_grammar = ->
     rv += i + @statement.js()
     return rv
     
+  @ThrowStatement::js = ->  
+    rv = "throw #{@expr.js()};"
+    rv = @conditional.js(rv, no) if @conditional?
+    return rv
+    
   @ReturnStatement::js = ->  
     rv = "return #{@expr.js()};"
     rv = @conditional.js(rv, no) if @conditional?
