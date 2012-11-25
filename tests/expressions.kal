@@ -98,7 +98,7 @@ describe 'Expression', ->
     y.z = 3
     (y?.z exists).should.be.true
     (y?.z).should.equal 3
-    require('should').not.exist (y?.v)
+    require('should').not.exist(y?.v)
     (y?.b?.d?.r?).should.be.false
   
   it 'should support unary operators (new, not)', ->
@@ -112,3 +112,18 @@ describe 'Expression', ->
     (not true).should.be.false
     (not false).should.be.true
     (not true is not true).should.be.true #order of operations
+    
+  it 'should support array access', ->
+    a = [1,'j',12,no,[2,'f']]
+    a[0].should.equal 1
+    a[1].should.equal 'j'
+    a[2].should.equal 12
+    a[3].should.be.false
+    a[4][0].should.equal 2
+    a[4][1].should.equal 'f'
+    (a[5]?).should.be.false
+    (a[3]?).should.be.true
+    a?[4]?[0].should.equal 2
+    require('should').not.exist(a?[6]?[3])
+    require('should').not.exist(b?[6]?[3])
+    
