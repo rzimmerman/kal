@@ -1,7 +1,7 @@
 class ParseFailed inherits from Error
   method initialize(message)
     me.message = message
-    Error.prototype.constructor.apply me, arguments
+    return Error.prototype.constructor.apply me, arguments
     
 class SyntaxError inherits from ParseFailed
   
@@ -78,7 +78,7 @@ class ASTBase
     rv = [cls]
     while cls?
       cls = me.opt.apply this, arguments
-      rv.push cls if cls?
+      rv.push(cls) if cls?
     return rv
   
   method parse()
