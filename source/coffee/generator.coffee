@@ -111,7 +111,7 @@ apply_generator_to_grammar = ->
     rv = ''
     for comment in @ts.comments when comment.line <= @line and not comment.written
       comment.written = yes
-      rv += i + '/*' + comment.value + '*/'
+      rv += i + '/*' + comment.value + '*/\n'
     rv += i + @statement.js()
     return rv
     
