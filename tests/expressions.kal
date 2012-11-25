@@ -147,11 +147,15 @@ describe 'Expression', ->
     (2 < 3).should.be.true
     (2 < 2).should.be.false
     
-  it 'should support comparison operators (<=, >=)', -> #Issue 7
+  it 'should support comparison operators (<=, >=, ==, !=)', -> #Issue 7
     (2 <= 4).should.be.true
     (2 <= 2).should.be.true
     (2 <= 1).should.be.false
     (2 >= 4).should.be.false
     (2 >= 2).should.be.true
     (2 >= 1).should.be.true
+    (2 == 2).should.be.true
+    (2 == 1).should.be.false
+    (2 != 2).should.be.false
+    (2 != 1).should.be.true
     
