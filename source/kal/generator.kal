@@ -1,8 +1,7 @@
-KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof'}
+KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','^':'pow','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof','of':'in'}
 
-function load(grammar)
+exports.load = function load (grammar)
   apply_generator_to_grammar.apply grammar
-exports.load = load
 
 function apply_generator_to_grammar()
   i = ''
@@ -20,7 +19,8 @@ function apply_generator_to_grammar()
   
   function push_class()
     class_defs.push class_def
-    class_def = {name: '', code: '', args: [], has_constructor: no}
+    class_def = {name: '', code: '',args: [],has_constructor: no}
+    
   function pop_class()
     class_def = class_defs.pop()
     return class_def
@@ -44,172 +44,190 @@ function apply_generator_to_grammar()
     rv = i
     var_names = []
     for var_name of scope
-      var_names.push(var_name) except when (scope[var_name] in ['closure', 'argument', 'function', 'class definition'])
+      if not (var_names[var_name] in ['closure', 'argument', 'function', 'class definition'])
+        var_names.push(var_name) 
     if wrap
       rv += '(function () {\n'
       indent()
       code = i + code.replace(/\n/g, '\n  ')
     if var_names.length > 0
-      rv += ('  var ' + var_names.join(', ') + ';\n') when var_names.length > 0
+      rv += '  var ' + var_names.join(', ') + ';\n'
     rv += code
     if wrap
       dedent()
       rv += "\n#{i}})()\n"
-    scope = scopes.pop() if scopes isnt []
+    if scopes isnt []
+      scope = scopes.pop()
     return rv
-    
+  
   function check_existence_wrapper(code, undefined_unary, invert)
     if undefined_unary
-      rv = "typeof #{code} === 'undefined' || #{code} === null" when invert otherwise "typeof #{code} !== 'undefined' && #{code} !== null"
+      rv = "(typeof #{code} === 'undefined' || #{code} === null)" when invert otherwise "(typeof #{code} !== 'undefined' && #{code} !== null)"
     else
       rv = "#{code} == null" when invert otherwise "#{code} != null"
     return rv
   
-  self = me
+  self = this
   
-  me.File.prototype.js = function ()
+  me.File.prototype.js = ->
     i = ''
     scopes = []
     scope = {}
     class_defs = []
-    class_def = {name: '', code: '', args: [], has_constructor: no}
+    class_def = {name: '',code: '',args: [],has_constructor: no}
     use_snippets = {}
     code = []
     for statement in me.statements
-      code.push(statement.js()) except when (statement.statement instanceof self.BlankStatement)
-    code = code.join '\n'
+      if not (statement.statement instanceof self.BlankStatement)
+        code.push(statement.js())
+    code - code.join '\n'
     snip = []
     for key of use_snippets
-      snip.push use_snippets[key]
-    snip = snip.join '\n'
+      snip.push = use_snippets[key]
+    snip = snip.join('\n')
     rv = [snip, code].join '\n'
     for comment in me.ts.comments # reset the AST modifications in case something else wants to use it
       comment.written = null
-    return pop_scope rv, yes, yes
+    return pop_scope(rv, yes, yes)
     
-  
-  me.Statement.prototype.js = function ()
+  me.Statement.prototype.js = ->
     rv = ''
     for comment in me.ts.comments
       if comment.line < me.line + 1 and not comment.written
         comment.written = yes
-        rv += i + '/*' + comment.value + '*/'
+        rv += i + '/*' + comment.value + '*/\n'
     rv += i + me.statement.js()
     return rv
     
-  
-  me.ReturnStatement.prototype.js = function ()
-    rv = "return #{me.expr.js()};"
-    rv = me.conditional.js(rv) if me.conditional?
+  me.ThrowStatement.prototype.js = ->  
+    rv = "throw #{this.expr.js()};"
+    rv = me.conditional.js(rv, no) if me.conditional?
     return rv
     
-  
-  me.ExpressionStatement.prototype.js = function ()
-    rv = me.expr.js()
-    return rv + ';' when rv isnt "" otherwise rv
+  me.ReturnStatement.prototype.js = ->  
+    rv = "return #{this.expr.js()};"
+    rv = me.conditional.js(rv, no) if me.conditional?
+    return rv
     
-  
-  me.Expression.prototype.js = function ()
+  me.ExpressionStatement.prototype.js = ->
+    rv = me.expr.js()
+    if rv is ""
+      return ";"
+    else
+      return rv
+    
+  me.Expression.prototype.js = (oop_reverse) ->
     rv = ''
-    left_code = me.left.js()
+    if oop_reverse
+      left_code = ''
+    else
+      left_code = me.left.js()
     if not me.op?
       rv += left_code
     else
       opjs = me.op.js()
       if opjs is 'in'
-        if use_snippets['in'] doesnt exist
+        unless use_snippets['in']?
           use_snippets['in'] = snippets['in']
           for subscope in scopes
             subscope['$kindexof'] = 'closure'
           scope['$kindexof'] = 'closure'
-        rv += "$kindexof.call(#{me.right.js()}, #{me.left.js()}) >= 0"
+        rv += "($kindexof.call(#{this.right.left.js()}, #{left_code}) >= 0) #{this.right.js(true)}"
+      else if opjs is 'nor'
+        rv += "!(#{left_code} || #{this.right.js()})"
+      else if opjs is 'pow'
+        rv += "Math.pow(#{left_code}, #{this.right.left.js()}) #{this.right.js(true)}"
       else
-        rv += "#{left_code} #{opjs} #{me.right.js()}"
-    rv = me.conditional.js(rv) when (me.conditional exists)
+        rv += "#{left_code} #{opjs} #{this.right.js()}"
+    rv = me.conditional.js(rv, yes) if me.conditional exists
     return rv
     
-  
-  me.UnaryExpression.prototype.js = function ()
+    
+  me.UnaryExpression.prototype.js = ->
     rv = ''
     if me.base.type is 'IDENTIFIER'
       base_val = me.base.value
       kw_translate = KEYWORD_TRANSLATE[base_val]
-      rv += base_val
+      rv += kw_translate or base_val
       if kw_translate doesnt exist
-        scope[base_val] = 'closures ok' except when (scope[base_val]? or not me.is_lvalue() or KEYWORD_TRANSLATE[me.base.value] or me.accessors.length > 0)
+        scope[base_val] = 'closures ok' unless scope[base_val] exists or (not me.is_lvalue()) or me.accessors.length > 0
     else
       rv += me.base.js()
     
     # an undefined unary is a simple variable access to an undeclared variable
     # it requres we check if the variable exists before checking if it is null/undefined
-    undefined_unary = (me.base.type is 'IDENTIFIER' and not scope[base_val]?)
+    undefined_unary = (me.base.type is 'IDENTIFIER' and scope[base_val] doesnt exist and kw_translate doesnt exist)
+    existence_qualifiers = []
+    
+    last_accessor = me.accessors[me.accessors.length-1]
     for accessor in me.accessors
-      rv = accessor.js rv, undefined_unary
+      existence_qualifiers.push accessor.js_existence rv, undefined_unary, last_accessor.invert
+      rv += accessor.js()
       undefined_unary = no # only possible for the first accessor
+    
+    existence_check = []
+    for eq in existence_qualifiers
+      if eq isnt ""
+        existence_check.push eq
+    existence_check = existence_check.join(' && ')
+    if existence_check isnt ""
+      if last_accessor instanceof self.ExisentialCheck
+        rv = "(#{existence_check})"
+      else
+        closeout = "void 0"
+        rv = "((#{existence_check}) ? #{rv} : #{closeout})"
       
-    closeout = ""
-    invert_closeout = (me.accessors[me.accessors.length-1]?.invert) is true
-    for accessor in me.accessors
-      closeout = accessor.js_closeout(invert_closeout) + closeout
-    rv += closeout
     if me.preop?.value is 'new'
-      rv = "#{KEYWORD_TRANSLATE[me.preop.value]} #{rv}"
+      rv = "#{KEYWORD_TRANSLATE[this.preop.value]} #{rv}"
     else if me.preop?.value?
-      rv = "#{KEYWORD_TRANSLATE[me.preop.value]}(#{rv})"
+      rv = "#{KEYWORD_TRANSLATE[this.preop.value]}(#{rv})"
     return rv
     
-  
-  me.WhenExpression.prototype.js = function (true_block_js)
+  me.WhenExpression.prototype.js = (true_block_js, must_return_value) ->
     conditional_js = me.condition.js()
-    conditional_js = "!(#{conditional_js})" when (me.specifier.value is 'unless' or me.specifier.value is 'except')
+    if me.specifier.value is 'unless' or me.specifier.value is 'except'
+      conditional_js = "!(#{conditional_js})" 
     if me.false_expr exists
-      return "(#{conditional_js}) ? #{true_block_js} : #{me.false_expr.js()}"
+      return "(#{conditional_js}) ? #{true_block_js} : #{this.false_expr.js()}"
     else
-      indented_js = '  ' + true_block_js.replace(/\n/g, '\n  ')
-      return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
+      if must_return_value
+        return "(#{conditional_js}) ? #{true_block_js} : void 0"
+      else
+        indented_js = '  ' + true_block_js.replace(/\n/g, '\n  ')
+        return "if (#{conditional_js}) {\n#{indented_js}\n#{i}}"
     return rv
-    
   
-  me.ExisentialCheck.prototype.js = function (code, undefined_unary)
-    return check_existence_wrapper code, undefined_unary, me.invert
-    
-  
-  me.ExisentialCheck.prototype.js_closeout = function (invert)
+  me.ExisentialCheck.prototype.js = ->
     return ""
     
+  me.ExisentialCheck.prototype.js_existence = (accessor, undefined_unary, invert) ->
+    return check_existence_wrapper(accessor, undefined_unary, invert)
   
-  me.PropertyAccess.prototype.js = function (code, undefined_unary)
+  me.PropertyAccess.prototype.js = ->
     if me.expr.type is 'IDENTIFIER'
       rv = me.expr.value
     else
       rv = me.expr.js()
+    rv = ".#{rv}"
+    return rv
+  me.PropertyAccess.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
-      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+      return check_existence_wrapper(accessor, undefined_unary, invert)
     else
-      base = code
-    rv = "#{base}.#{rv}"
-    
+      return ''
   
-  me.PropertyAccess.prototype.js_closeout = function (invert)
-    if me.exisential
-      return ": true " when invert otherwise " : void 0"
-    else 
-      return ""
-    
-  
-  me.AssignmentStatement.prototype.js = function ()
+  me.AssignmentStatement.prototype.js = ->
     op = me.assignOp.value
-    op += '=' if op isnt '='
-    rv = "#{me.lvalue.js()} #{op} #{me.rvalue.js()};"
-    rv = me.conditional.js(rv) when (me.conditional exists)
+    if op isnt '='
+      op += '='
+    rv = "#{this.lvalue.js()} #{op} #{this.rvalue.js()};"
+    rv = me.conditional.js(rv, no) if me.conditional exists
     return rv
     
-  
-  me.NumberConstant.prototype.js = function ()
+  me.NumberConstant.prototype.js = ->
     return me.token.text
-    
   
-  me.StringConstant.prototype.js = function ()
+  me.StringConstant.prototype.js = ->
     rv = me.token.value
     if me.token.value[0] is '"'
       r = /#{.*?}/g
@@ -218,67 +236,62 @@ function apply_generator_to_grammar()
         rv = rv.slice(0,m.index) + '" + ' + rv.slice(m.index+2,m.index+m[0].length-1) + ' + "' + rv.slice(m.index+m[0].length)
         m = r.exec rv
     return rv
-    
   
-  me.RegexConstant.prototype.js = function ()
+  me.RegexConstant.prototype.js = ->
     return me.token.text
-    
   
-  me.BinOp.prototype.js = function ()
+  me.BinOp.prototype.js = ->
     return KEYWORD_TRANSLATE[me.op.value] or me.op.value
-    
   
-  me.IfStatement.prototype.js = function ()
+  me.IfStatement.prototype.js = ->
     conditional_js = me.conditional.js()
-    conditional_js = "!(#{conditional_js})" when (me.condition.value is 'unless' or me.condition.value is 'except')
+    if me.condition.value is 'unless' or me.condition.value is 'except'
+      conditional_js = "!(#{conditional_js})"
     
-    rv = "if (#{conditional_js}) {\n#{me.true_block.js()}\n#{i}}"
+    rv = "if (#{conditional_js}) {\n#{this.true_block.js()}\n#{i}}"
     
-    rv += me.else_block.js() if me.else_block?
+    if me.else_block exists
+      rv += me.else_block.js()
     return rv
     
-  
-  me.ElseStatement.prototype.js = function ()
-    if (me.false_block instanceof self.Statement) and (me.false_block.statement instanceof self.IfStatement)
-      return " else #{me.false_block.js()}"
+  me.ElseStatement.prototype.js = ->
+    if me.false_block instanceof self.Statement and (me.false_block.statement instanceof self.IfStatement)
+      return " else #{this.false_block.js()}"
     else
-      return " else {\n#{me.false_block.js()}\n#{i}}"
+      return " else {\n#{this.false_block.js()}\n#{i}}"
+      
+  me.BlankStatement.prototype.js = ->
+    return ''
     
-  
-  me.BlankStatement.prototype.js = function ()
-    return ""
-    
-  
   for_depth = 1
-  me.ForStatement.prototype.js = function ()
+  me.ForStatement.prototype.js = ->
     iterator   = "ki$#{for_depth}"
     terminator = "kobj$#{for_depth}"
     scope[iterator] = 'no closures'
     scope[terminator] = 'no closures'
     if me.type.value is 'in'
-      rv = "#{terminator} = #{me.iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+      rv = "#{terminator} = #{this.iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
     else
-      rv = "for (#{iterator} in #{terminator}) {\n"
+      rv = "for (#{this.iterant.js()} in #{terminator}) {\n"
     indent()
     for_depth += 1
-    rv += "#{i}#{me.iterant.js()} = #{terminator}[#{iterator}];\n" if me.type.value is 'in'
+    if me.type.value is 'in'
+      rv += "#{i}#{this.iterant.js()} = #{terminator}[#{iterator}];\n"
     rv += me.loop_block.js()
     for_depth -= 1
     dedent()
     rv += "\n#{i}}"
     return rv
     
-  
-  me.WhileStatement.prototype.js = function ()
-    rv = "while (#{me.expr.js()}) {\n"
+  me.WhileStatement.prototype.js = ->
+    rv = "while (#{this.expr.js()}) {\n"
     indent()
     rv += me.block.js()
     dedent()
     rv += "\n#{i}}"
     return rv
     
-  
-  me.Block.prototype.js = function ()
+  me.Block.prototype.js = ->
     indent()
     rv = []
     for statement in me.statements
@@ -286,48 +299,36 @@ function apply_generator_to_grammar()
     rv = rv.join '\n'
     dedent()
     return rv
-    
   
-  me.ParenExpression.prototype.js = function ()
-    return "(#{me.expr.js()})"
+  me.ParenExpression.prototype.js = ->
+    return "(#{this.expr.js()})"
     
-  
-  me.IndexExpression.prototype.js = function (code, undefined_unary)
+  me.IndexExpression.prototype.js = ->
+    return "[#{this.expr.js()}]"
+  me.IndexExpression.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
-      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+      return check_existence_wrapper(accessor, undefined_unary, invert)
     else
-      base = code
-    return "#{base}[#{me.expr.js()}]"
-    
+      return ''
   
-  me.IndexExpression.prototype.js_closeout = function (invert)
-    if me.exisential
-      return ": true " when invert otherwise " : void 0" 
-    else 
-      return ""
-    
-  
-  me.ListExpression.prototype.js = function ()
+  me.ListExpression.prototype.js = ->
     rv = []
     for item in me.items
       rv.push item.js()
-    rv = rv.join ', '
+    rv = rv.join(', ')
     return "[#{rv}]"
     
-  
-  me.MapItem.prototype.js = function ()
-    return "#{me.key.js()}: #{me.val.js()}"
+  me.MapItem.prototype.js = ->
+    return "#{this.key.js()}: #{this.val.js()}"
     
-  
-  me.MapExpression.prototype.js = function ()
+  me.MapExpression.prototype.js = ->
     rv = []
     for item in me.items
       rv.push item.js()
-    rv = rv.join ', '
+    rv = rv.join(', ')
     return "{ #{rv} }"
     
-  
-  me.FunctionExpression.prototype.js = function ()
+  me.FunctionExpression.prototype.js = ->
     if class_defs.length > 0 and me.name exists #is a member function/method
       if me.specifier.value is 'method' and me.name.value is 'initialize'
         class_def.code += me.js_constructor()
@@ -337,104 +338,93 @@ function apply_generator_to_grammar()
     else
       return me.js_bare_function()
     
-  
-  me.FunctionExpression.prototype.js_bare_function   = function ()
+  me.FunctionExpression.prototype.js_bare_function   = ->
     rv = "function "
-    rv += me.name.value when (me.name exists)
+    if me.name exists
+      rv += me.name.value
     args = []
     for argument in me.arguments
       args.push argument.name.value
     return rv + me.js_body(args)
     
-  
-  me.FunctionExpression.prototype.js_class_member   = function ()
+  me.FunctionExpression.prototype.js_class_member   = ->
     if me.specifier.value is 'method'
-      rv = "#{class_def.name}.prototype.#{me.name.value} = function"
+      rv = "#{class_def.name}.prototype.#{this.name.value} = function"
     else
-      rv = "#{class_def.name}.#{me.name.value} = function"
+      rv = "#{class_def.name}.#{this.name.value} = function"
     args = []
     for argument in me.arguments
       args.push argument.name.value
     return rv + me.js_body(args)
     
-  
-  me.FunctionExpression.prototype.js_constructor = function ()
+  me.FunctionExpression.prototype.js_constructor = ->
     class_def.has_constructor = yes
     rv = "function #{class_def.name}"
-    args = []
+    class_def.args = []
     for argument in me.arguments
-      args.push argument.name.value
-    class_def.args = args
+      class_def.args.push argument.name.value 
     rv += me.js_body class_def.args
     return rv
     
-  
-  me.FunctionExpression.prototype.js_body = function (arg_names)
+  me.FunctionExpression.prototype.js_body = (arg_names) ->
     rv = " (#{arg_names.join(', ')}) {\n"
     push_scope()
     for arg_name in arg_names
       scope[arg_name] = 'argument'
     block_code = me.block.js()
-    rv += pop_scope block_code, no, no
+    rv += pop_scope(block_code, no, no)
     rv += "\n#{i}}"
     return rv
     
-  
-  me.FunctionCall.prototype.js = function (code, undefined_unary)
-    args = []
+  me.FunctionCall.prototype.js = ->
+    rv = []
     for argument in me.arguments
-      args.push argument.js()
-    rv = args.join ', '
+      rv.push argument.js()
+    rv = rv.join ', '
+    return "(#{rv})"
+  me.FunctionCall.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
-      base = check_existence_wrapper(code, undefined_unary, no, yes) + ' ? ' + code
+      return check_existence_wrapper(accessor, undefined_unary, invert)
     else
-      base = code
-    return "#{base}(#{rv})"
+      return ''
     
-  
-  me.FunctionCall.prototype.js_closeout = function (invert) 
-    if me.exisential
-      rv = ": true " when invert otherwise " : void 0"
-    else 
-      rv = ""
-    return rv
-    
-  
-  me.FunctionCallArgument.prototype.js = function ()
+  me.FunctionCallArgument.prototype.js = ->
     return me.val.js()
     
-  
-  me.ClassDefinition.prototype.js = function ()
+  me.ClassDefinition.prototype.js = ->
     push_scope()
     push_class()
     class_def.name = me.name.value
     block_code = me.block.js()
     block_code = pop_scope block_code, no, no
     rv = class_def.code
-    if not class_def.has_constructor
+    unless class_def.has_constructor
       rv += "function #{class_def.name} () {"
       if me.parent?
-        rv += "\n#{i}  return #{me.parent.value}.constructor.apply(this,arguments);\n"
+        rv += "\n#{i}  return #{this.parent.value}.prototype.constructor.apply(this,arguments);\n"
       rv += "}"
-    if me.parent exists
-      rv += "#{i}__extends(#{me.name.value},#{me.parent.value});\n"
+    if me.parent?
+      rv += "#{i}__extends(#{this.name.value},#{this.parent.value});\n"
       use_snippets['inherits'] = snippets['inherits']
     rv += block_code
     pop_class()
     return rv
-    
   
-  me.TryCatch.prototype.js = function ()
+  me.TryCatch.prototype.js = ->
     rv = "try {\n"
     indent()
     rv += me.try_block.js()
     dedent()
     rv += "#{i}}"
     if me.catch_block exists
-      rv += " catch (#{me.identifier.value}) {\n"
+      rv += " catch (#{this.identifier.value}) {\n"
       indent()
       rv += me.catch_block.js()
       rv += "}"
+    else
+      rv += "catch (k$e) {}"
+    return rv
     
-  
+    
   snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'}
+  
