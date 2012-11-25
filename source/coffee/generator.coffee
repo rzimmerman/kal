@@ -168,8 +168,8 @@ apply_generator_to_grammar = ->
     
     last_accessor = @accessors[@accessors.length-1]
     for accessor in @accessors
-      rv += accessor.js()
       existence_qualifiers.push accessor.js_existence rv, undefined_unary, last_accessor.invert
+      rv += accessor.js()
       undefined_unary = no # only possible for the first accessor
     
     existence_check = (eq for eq in existence_qualifiers when eq isnt "").join(' && ')
