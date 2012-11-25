@@ -1,9 +1,6 @@
-function tokenize(code)
+exports.tokenize = function tokenize(code)
   lex = new Lexer(code)
   return [lex.tokens, lex.comments]
-exports.tokenize = tokenize
-
-token_types = {}
 
 class Lexer
   method initialize(code, line_number)
@@ -17,62 +14,75 @@ class Lexer
     me.tokens = []
     me.comments = []
     last_token_type = null
-    index = 0    
+    index = 0
+    
     while index < me.code.length
       chunk = me.code.slice(index)
       for tt in token_types
         regex = tt[0]
         type = tt[1]
-        e = regex.exec(chunk)
-        text = e?[0]
+        text = regex.exec(chunk)?[0]
         if text?
           me.type = type
           break
-      me.error("invalid token '#{me.code.slice(index,index+15)}...'") unless text exists
-      value = text
+      me.error("invalid token '#{me.code.slice(index..index+16)}...'") unless text?
+      value = parse_token[me.type] text
       if last_token_type is 'NEWLINE' #check for indent/dedent
         me.handleIndentation type, text
-      new_token = {text:text, line:me.line, value:value, type:type}
       if type is 'COMMENT'
-        me.comments.push new_token
+        me.comments.push {text:text, line:me.line, value:value, type:type}
       else if type isnt 'WHITESPACE'
-        me.tokens.push new_token
+        me.tokens.push {text:text, line:me.line, value:value, type:type}
       index += text.length
-      l = /\n/.exec(text)
-      me.line += l?[0].length or 0
+      me.line += (/\n/.exec(text)?[0].length) or 0
       last_token_type = type
+    me.tokens.push {text:'\n',line:me.line, value:'', type:'NEWLINE'} #add a trailing newline in case the user didn't  
     me.handleIndentation 'NEWLINE', '' #clear up any remaining indents at the end of the file
     
   method handleIndentation(type, text)
-    indentation = text.length when type is 'WHITESPACE' otherwise 0
+    indentation = text.length if type is 'WHITESPACE' otherwise 0
     if indentation > me.indent
       me.indents.push me.indent
       me.indent = indentation
-      new_token = {text:text, line:me.line, value:'', type:'INDENT'}
-      me.tokens.push new_token
+      me.tokens.push {text:text, line:me.line, value:'', type:'INDENT'}
     else if indentation < me.indent
       while me.indents.length > 0 and indentation < me.indent
         me.indent = me.indents.pop()
-        me.error('indentation is misaligned') when indentation > me.indent
-        new_token = {text:text, line:me.line, value:'', type:'DEDENT'}
-        me.tokens.push new_token
-      me.error('indentation is misaligned on line ' + me.line) when indentation isnt me.indent
+        me.error('indentation is misaligned on line ' + me.line) if indentation > me.indent
+        me.tokens.push {text:text, line:me.line, value:'', type:'DEDENT'}
+      me.error('indentation is misaligned') if indentation isnt me.indent
       
   method error(message)
-    throw(message)
+    throw message
 
 exports.Lexer = Lexer
 
+parse_token = {}
+parse_token.NUMBER = (text) ->
+  return Number(text)
+parse_token.STRING = (text) ->
+  return text
+parse_token.IDENTIFIER = (text) ->
+  return text
+parse_token.NEWLINE = (text) ->
+  return ''
+parse_token.WHITESPACE = (text) ->
+  return ' '
+parse_token.COMMENT = (text) ->
+  rv = text.slice(3,0-3) when text[1] is '#' otherwise text.slice(1,0-1)
+  return rv.replace(/(\/\*)|(\*\/)/g, '**')
+parse_token.LITERAL = (text) ->
+  return text.replace(/[\f\r\t\v\u00A0\u2028\u2029 ]/, '')
+parse_token.REGEX = (text) ->
+  return text
 
 token_types = [[/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT'],
-    [/^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/,'REGEX'],
-    [/^0x[a-f0-9]+/i, 'NUMBER'],
-    [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
-    [/^'([^']*(\\'))*[^']*'/, 'STRING'],
-    [/^"([^"]*(\\"))*[^"]*"/, 'STRING'],
-    [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'],
-    [/^(\r*\n\r*)+/, 'NEWLINE'],
-    [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'],
-    [/^[\+\-\*\/\^\=\.><\(\)\[\]\,\.\{\}\:\?]/, 'LITERAL']]
-    
-
+  [/^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/,'REGEX'],
+  [/^0x[a-f0-9]+/i, 'NUMBER'],
+  [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
+  [/^'([^']*(\\'))*[^']*'/, 'STRING'],
+  [/^"([^"]*(\\"))*[^"]*"/, 'STRING'],
+  [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'],
+  [/^\r*\n\r*/, 'NEWLINE'],
+  [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'],
+  [/^[\+\-\*\/\^\=\.><\(\)\[\]\,\.\{\}\:\?]/, 'LITERAL']]
