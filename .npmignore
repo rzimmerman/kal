@@ -1,0 +1,12 @@
+.DS_Store
+Thumbs.db
+ehthumbs.db
+$RECYCLE.BIN
+
+.git*
+*.kal
+dev
+source
+tests
+CHANGELOG.md
+
