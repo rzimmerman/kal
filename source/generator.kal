@@ -234,12 +234,6 @@ function apply_generator_to_grammar()
   
   me.StringConstant.prototype.js = ->
     rv = me.token.value
-    if me.token.value[0] is '"'
-      r = /#{.*?}/g
-      m = r.exec rv
-      while m
-        rv = rv.slice(0,m.index) + '" + ' + rv.slice(m.index+2,m.index+m[0].length-1) + ' + "' + rv.slice(m.index+m[0].length)
-        m = r.exec rv
     return rv
   
   me.RegexConstant.prototype.js = ->

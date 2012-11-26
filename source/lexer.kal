@@ -37,9 +37,11 @@ class Lexer
       index += text.length
       me.line += (/\n/.exec(text)?[0].length) or 0
       last_token_type = type
-    me.tokens.push {text:'\n',line:me.line, value:'', type:'NEWLINE'} #add a trailing newline in case the user didn't  
+    #add a trailing newline in case the user didn't
+    me.tokens.push {text:'\n',line:me.line, value:'', type:'NEWLINE'} 
     me.handleIndentation 'NEWLINE', '' #clear up any remaining indents at the end of the file
-    
+    #remove the newline if it wasn't needed
+    me.tokens.pop() if me.tokens[me.tokens.length-1].type is 'NEWLINE'
   method handleIndentation(type, text)
     indentation = text.length if type is 'WHITESPACE' otherwise 0
     if indentation > me.indent

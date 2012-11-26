@@ -1,0 +1,8 @@
+describe 'Strings', ->
+  it 'should parse and compile code in #{} blocks in double-quoted strings', -> #Issue 4
+    d = 'e'
+    ("abc#{d}").should.equal 'abce'
+    function g(n)
+      return n + 1
+    ("xyz #{d+d} #{d exists} #{f exists} #{g(3)}").should.equal 'xyz ee true false 4'
+    

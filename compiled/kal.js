@@ -15,7 +15,7 @@
     comments = token_rv[1];
     
     
-    tokens = sugar.translate_sugar(raw_tokens, show_tokens);
+    tokens = sugar.translate_sugar(raw_tokens, show_tokens, lexer.tokenize);
     
     root_node = parser.parse(tokens, comments);
     

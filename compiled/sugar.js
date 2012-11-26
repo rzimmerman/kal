@@ -4,9 +4,9 @@
   grammar = require('./grammar');
   KEYWORDS = grammar.KEYWORDS;
   NOPAREN_WORDS = ['is', 'otherwise', 'except', 'else', 'doesnt', 'exist', 'exists', 'isnt', 'inherits', 'from', 'and', 'or', 'xor', 'in', 'when', 'instanceof', 'of', 'nor', 'if', 'unless', 'except'];
-  exports.translate_sugar = function translate_sugar (tokens, show_tokens) {
+  function translate_sugar (tokens, show_tokens, tokenizer) {
     var out_tokens, debug, ki$1, kobj$1, t;
-    out_tokens = coffee_style_functions(noparen_function_calls(multiline_statements(clean(tokens))));
+    out_tokens = coffee_style_functions(noparen_function_calls(multiline_statements(clean(code_in_strings(tokens, tokenizer)))));
     
     if (show_tokens) {
       debug = [];
@@ -236,6 +236,62 @@
         
     }
     return out_tokens;
+    
+    
+  };
+  /*  #allow double-quoted strings with embedded code, like: "x is #{x}"*/
+  function code_in_strings (tokens, tokenizer) {
+    var out_tokens, ki$1, kobj$1, token, rv, r, m, new_token_text;
+    if ((tokenizer == null)) {
+    return tokens;
+    }
+    
+    
+    out_tokens = [];
+    
+    kobj$1 = tokens;
+    for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+      token = kobj$1[ki$1];
+        if (token.type === 'STRING' && token.value[0] === '"') {
+          rv = token.value;
+          
+          r = /#{.*?}/g;
+          
+          m = r.exec(rv);
+          
+          while (m) {
+              new_token_text = rv.slice(0, m.index) + '"';
+              
+              out_tokens.push({ text: new_token_text, line: token.line, value: new_token_text, type: 'STRING' });
+              
+              out_tokens.push({ text: '+', line: token.line, value: '+', type: 'LITERAL' });
+              
+              out_tokens = out_tokens.concat(tokenizer(rv.slice(m.index + 2, m.index + m[0].length - 1))[0]);
+              
+              rv = '"' + rv.slice(m.index + m[0].length);
+              
+              /*void adding a (+ "") to strings that end with #{expr*/
+              if (rv === '""') {
+                rv = '';
+                
+              } else {
+                out_tokens.push({ text: '+', line: token.line, value: '+', type: 'LITERAL' });
+                
+              }
+              r = /#{.*?}/g;
+              
+              m = r.exec(rv);
+              
+          }
+          (rv !== '') ? out_tokens.push({ text: rv, line: token.line, value: rv, type: 'STRING' }) : void 0;
+          
+        } else {
+          out_tokens.push(token);
+          
+        }
+    }
+    return out_tokens;
+    
     
   };
 })()

@@ -456,21 +456,9 @@
     };
     
     this.StringConstant.prototype.js = function  () {
-      var rv, r, m;
+      var rv;
       rv = this.token.value;
       
-      if (this.token.value[0] === '"') {
-        r = /#{.*?}/g;
-        
-        m = r.exec(rv);
-        
-        while (m) {
-            rv = rv.slice(0, m.index) + '" + ' + rv.slice(m.index + 2, m.index + m[0].length - 1) + ' + "' + rv.slice(m.index + m[0].length);
-            
-            m = r.exec(rv);
-            
-        }
-      }
       return rv;
       
     };

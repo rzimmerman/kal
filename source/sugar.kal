@@ -3,8 +3,8 @@ KEYWORDS = grammar.KEYWORDS
 
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of','nor','if','unless','except']
 
-exports.translate_sugar = function translate_sugar (tokens, show_tokens)
-  out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean tokens
+function translate_sugar (tokens, show_tokens, tokenizer)
+  out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean code_in_strings tokens,  tokenizer
   if show_tokens
     debug = []
     for t in out_tokens
@@ -127,4 +127,31 @@ function coffee_style_functions (tokens)
       out_tokens.push token
     last_token = token
     i += 1
+  return out_tokens
+  
+function code_in_strings (tokens, tokenizer)
+  #allow double-quoted strings with embedded code, like: "x is #{x}"
+  return tokens when tokenizer doesnt exist
+  
+  out_tokens = []
+  for token in tokens
+    if token.type is 'STRING' and token.value[0] is '"'
+      rv = token.value
+      r = /#{.*?}/g
+      m = r.exec rv
+      while m
+        new_token_text = rv.slice(0,m.index) + '"'
+        out_tokens.push {text:new_token_text, line:token.line, value:new_token_text, type:'STRING'}
+        out_tokens.push {text:'+', line:token.line, value:'+', type:'LITERAL'}
+        out_tokens = out_tokens.concat tokenizer(rv.slice(m.index+2,m.index+m[0].length-1))[0]
+        rv = '"' + rv.slice(m.index+m[0].length)
+        if rv is '""' #avoid adding a (+ "") to strings that end with #{expr}"
+          rv = ''
+        else
+          out_tokens.push {text:'+', line:token.line, value:'+', type:'LITERAL'}
+        r = /#{.*?}/g
+        m = r.exec rv
+      out_tokens.push({text:rv, line:token.line, value:rv, type:'STRING'}) when rv isnt ''
+    else
+      out_tokens.push token
   return out_tokens

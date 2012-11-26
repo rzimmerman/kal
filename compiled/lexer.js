@@ -72,15 +72,17 @@
           
           this.line += (((/\n/.exec(text) != null) ? /\n/.exec(text)[0].length : void 0)) || 0;
           
+          /*    #add a trailing newline in case the user didn't*/
           last_token_type = type;
           
       }
-      /*dd a trailing newline in case the user didn't*/
       this.tokens.push({ text: '\n', line: this.line, value: '', type: 'NEWLINE' });
       
-      /*lear up any remaining indents at the end of the fi*/
+      /*lear up any remaining indents at the end of the file
+      #remove the newline if it wasn't need*/
       this.handleIndentation('NEWLINE', '');
       
+      (this.tokens[this.tokens.length - 1].type === 'NEWLINE') ? this.tokens.pop() : void 0;
       
     };
     Lexer.prototype.handleIndentation = function (type, text) {
