@@ -9,12 +9,12 @@ Installation
 ------------
 Install using npm:
 
-   npm install -g kal
-   
+    npm install -g kal
+
 You may need to run this as administrator depending on how you installed node/npm and your account setup:
 
-   sudo npm install -g kal
-   
+    sudo npm install -g kal
+
 You can also install kal locally as a project dependency by including 'kal' in your package.json.
 
 Compiling and Running Kal Files
