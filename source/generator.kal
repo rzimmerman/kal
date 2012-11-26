@@ -375,12 +375,12 @@ function apply_generator_to_grammar()
     rv += "\n#{i}}"
     return rv
     
-  me.FunctionCall.prototype.js = ->
+  me.FunctionCall.prototype.js = (as_list) ->
     rv = []
     for argument in me.arguments
       rv.push argument.js()
     rv = rv.join ', '
-    return "(#{rv})"
+    return "[#{rv}]" when as_list otherwise "(#{rv})"
   me.FunctionCall.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
       return check_existence_wrapper(accessor, undefined_unary, invert)
@@ -394,6 +394,7 @@ function apply_generator_to_grammar()
     push_scope()
     push_class()
     class_def.name = me.name.value
+    class_def.parent = me.parent?.value
     block_code = me.block.js()
     block_code = pop_scope block_code, no, no
     rv = class_def.code
@@ -424,6 +425,15 @@ function apply_generator_to_grammar()
       rv += "catch (k$e) {}"
     return rv
     
+  me.SuperStatement.prototype.js = ->
+    return "" when class_def.parent doesnt exist
+    rv = "#{class_def.parent}.prototype.constructor.apply(this,"
+    if me.accessor exists
+      rv += me.accessor.js(yes)
+    else
+      rv += "arguments"
+    rv += ");"
+    return rv
     
   snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'}
   

@@ -740,7 +740,7 @@
       
       
     };
-    this.FunctionCall.prototype.js = function  () {
+    this.FunctionCall.prototype.js = function  (as_list) {
       var rv, ki$1, kobj$1, argument;
       rv = [];
       
@@ -752,7 +752,7 @@
       }
       rv = rv.join(', ');
       
-      return "(" + rv + ")";
+      return (as_list) ? "[" + rv + "]" : "(" + rv + ")";
       
     };
     this.FunctionCall.prototype.js_existence = function  (accessor, undefined_unary, invert) {
@@ -777,6 +777,8 @@
       push_class();
       
       class_def.name = this.name.value;
+      
+      class_def.parent = ((this.parent != null) ? this.parent.value : void 0);
       
       block_code = this.block.js();
       
@@ -835,6 +837,26 @@
       }
       return rv;
       
+      
+    };
+    this.SuperStatement.prototype.js = function  () {
+      var rv;
+      if ((class_def.parent == null)) {
+    return "";
+      }
+      
+      rv = "" + class_def.parent + ".prototype.constructor.apply(this,";
+      
+      if ((this.accessor != null)) {
+        rv += this.accessor.js(true);
+        
+      } else {
+        rv += "arguments";
+        
+      }
+      rv += ");";
+      
+      return rv;
       
       
     };

@@ -78,4 +78,41 @@ describe 'Classes and Inheritance', ->
     n.should.equal 1
     n = 3 if b instanceof A
     n.should.equal 3
+  
+  it 'should support the super keyword', ->
+    #Issue gh-10
+    class X
+      method initialize(a,b,c)
+         me.a = a when a exists otherwise 99
+         me.b = b
+         me.c = c
+    
+    class Y inherits from X
+      method initialize(a,b)
+         super a, b, 10
+    
+    class Z inherits from X
+      method initialize(a,b,c)
+         super
+    
+    class OMEGA inherits from X
+      method other()
+        return
+    
+    x = new X 1, 2, 3
+    y = new Y 8, 9
+    z = new Z 10, 11, 12
+    om = new OMEGA
+    
+    x.a.should.equal 1
+    x.b.should.equal 2
+    x.c.should.equal 3
+    y.a.should.equal 8
+    y.b.should.equal 9
+    y.c.should.equal 10
+    z.a.should.equal 10
+    z.b.should.equal 11
+    z.c.should.equal 12
+    om.a.should.equal 99
+    
     

@@ -36,7 +36,7 @@
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(Statement,ASTBase);
     Statement.prototype.parse = function () {
-        this.statement = this.req(TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement);
+        this.statement = this.req(TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement);
       
     };
     
@@ -574,7 +574,19 @@
         
       }
     };
-  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch];
+    
+  function SuperStatement () {
+    return ASTBase.prototype.constructor.apply(this,arguments);
+  }__extends(SuperStatement,ASTBase);
+    SuperStatement.prototype.parse = function () {
+        this.req_val('super');
+      
+      this.lock();
+      
+      this.accessor = this.opt(FunctionCall);
+      
+    };
+  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement];
   exports.Grammar = {  };
   kobj$1 = Nodes;
   for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {

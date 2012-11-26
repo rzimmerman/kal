@@ -19,7 +19,7 @@ class Block inherits from ASTBase
     
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
+    me.statement = me.req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
   
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -292,8 +292,14 @@ class TryCatch inherits from ASTBase
     if me.opt_val('catch')
       me.identifier = me.req 'IDENTIFIER'
       me.catch_block = me.req Block
+  
+class SuperStatement inherits from ASTBase
+  method parse()
+    me.req_val 'super'
+    me.lock()
+    me.accessor = me.opt FunctionCall
 
-Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch]
+Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement]
 
 exports.Grammar = {}
 for v in Nodes
