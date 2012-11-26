@@ -1,5 +1,5 @@
 (function () {
-  var fs, path, optimist, Kal;
+  var fs, path, optimist, Kal, run;
   
   /* External dependencies.*/
   fs = require('fs');
@@ -37,7 +37,7 @@
     return optimist.argv;
     
   };
-  exports.run = function run () {
+  run = function run () {
     var options, ki$1, kobj$1, file_name, js_output;
     options = parseOptions();
     
@@ -72,10 +72,10 @@
         } else {
           printLine(eval(js_output));
           
-          
         }
     }
   };
+  exports.run = run;
   function version () {
     printLine("Kal version " + Kal.VERSION + "");
     

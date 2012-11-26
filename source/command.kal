@@ -22,7 +22,7 @@ function parseOptions()
   optimist = optimist.options('output',{alias:'o',description:'the output directory for the compiled source'})
   return optimist.argv
 
-exports.run = function run()
+run = function run()
   options = parseOptions()
   return version() if options.version
   return usage() if optimist.argv.help or optimist.argv._.length is 0
@@ -38,7 +38,8 @@ exports.run = function run()
       fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
     else
       printLine eval(js_output)
-      
+exports.run = run
+
 function version()
   printLine "Kal version #{Kal.VERSION}"
   return 0

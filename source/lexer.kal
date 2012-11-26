@@ -1,6 +1,7 @@
-exports.tokenize = function tokenize(code)
+function tokenize(code)
   lex = new Lexer(code)
   return [lex.tokens, lex.comments]
+exports.tokenize = tokenize
 
 class Lexer
   method initialize(code, line_number)

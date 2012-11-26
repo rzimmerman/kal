@@ -14,16 +14,21 @@
       kobj$1 = out_tokens;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         t = kobj$1[ki$1];
-          debug.push(t.value || t.type);
-          
+          if (t.value === '\n') {
+            debug.push(t.type);
+            
+          } else {
+            debug.push(t.value || t.type);
+            
+          }
       }
       console.log(debug.join(' '));
       
     }
     return out_tokens;
     
-    
   };
+  exports.translate_sugar = translate_sugar;
   /*  # close out with a newline in case the user did not, remove whitespace*/
   function clean (tokens) {
     var out_tokens, ki$1, kobj$1, token;

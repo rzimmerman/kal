@@ -1,11 +1,12 @@
 (function () {
-  var KEYWORD_TRANSLATE;
+  var KEYWORD_TRANSLATE, load;
   var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
   KEYWORD_TRANSLATE = { 'yes': 'true', 'on': 'true', 'no': 'false', 'off': 'false', 'is': '===', 'isnt': '!==', '==': '===', '!=': '!==', 'and': '&&', 'but': '&&', 'or': '||', 'xor': '^', '^': 'pow', 'not': '!', 'new': 'new ', 'me': 'this', 'this': 'this', 'null': 'null', 'nothing': 'null', 'none': 'null', 'break': 'break', 'throw': 'throw', 'raise': 'throw', 'instanceof': 'instanceof', 'of': 'in' };
-  exports.load = function load (grammar) {
+  load = function load (grammar) {
     apply_generator_to_grammar.apply(grammar);
     
   };
+  exports.load = load;
   function apply_generator_to_grammar () {
     var i, scopes, scope, class_defs, class_def, use_snippets, self, for_depth, snippets;
     i = '';

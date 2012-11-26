@@ -1,13 +1,14 @@
 (function () {
   var parse_token, token_types;
   
-  exports.tokenize = function tokenize (code) {
+  function tokenize (code) {
     var lex;
     lex = new  Lexer(code);
     
     return [lex.tokens, lex.comments];
     
   };
+  exports.tokenize = tokenize;
   function Lexer (code, line_number) {
         this.code = code;
       

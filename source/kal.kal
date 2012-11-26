@@ -5,7 +5,7 @@ generator = require './generator'
 
 exports.VERSION = '0.2.5'
 
-exports.compile = function compile(code, show_tokens)
+function compile(code, show_tokens)
   token_rv = lexer.tokenize code
   raw_tokens = token_rv[0]
   comments   = token_rv[1]
@@ -14,9 +14,9 @@ exports.compile = function compile(code, show_tokens)
   root_node = parser.parse tokens, comments
   generator.load parser.Grammar
   return root_node.js()
-  
+exports.compile = compile
 
 if require.extensions
   require.extensions['.kal'] = (module, filename) ->
-    content = compile(fs.readFileSync(filename, 'utf8'))
+    content = compile(require('fs').readFileSync(filename, 'utf8'))
     module._compile(content, filename)
