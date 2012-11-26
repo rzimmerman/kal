@@ -41,3 +41,41 @@ describe 'Classes and Inheritance', ->
     GrandChild.other_thing().should.equal 2
     k.new_thing(1).should.equal 1
     
+  it 'should support the Javascript instanceof operator', ->
+    class A
+      method x()
+        return 2
+    class B inherits from A
+      method y()
+        return 1
+    class C inherits from A
+      method x()
+        return 3
+    class D inherits from B
+      method z()
+        return 4
+    a = new A
+    b = new B
+    c = new C
+    d = new D
+    (b instanceof A).should.be.true
+    (a instanceof B).should.be.false
+    (c instanceof B).should.be.false
+    (c instanceof A).should.be.true
+    (d instanceof B).should.be.true
+    (d instanceof A).should.be.true
+    
+    #Issue 6
+    function p(x,y)
+      return 1 if x instanceof y
+      return 2
+    
+    p(b,A).should.equal 1
+    p(a,B).should.equal 2
+    
+    n = 1
+    n = 2 if a instanceof B
+    n.should.equal 1
+    n = 3 if b instanceof A
+    n.should.equal 3
+    
