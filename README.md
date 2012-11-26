@@ -9,11 +9,17 @@ Installation
 ------------
 Install using npm:
 
-   npm install kal
+   npm install -g kal
+   
+You may need to run this as administrator depending on how you installed node/npm and your account setup:
+
+   sudo npm install -g kal
+   
+You can also install kal locally as a project dependency by including 'kal' in your package.json.
 
 Compiling and Running Kal Files
 -------------------------------
-You can use the kal utility to run or compile files. Run kal -h for the full option set.
+You can use the kal utility to run or compile files. Run kal -h for the full option set. If you installed kal locally (didn't use the -g option), you will need to specify the path to the kal executable, usually located at node_modules/kal/scripts/kal.
 
     kal path/to/file.kal                                            --runs the specified file
     kal -o path/for/output path/to/file1.kal path/to/file2.kal ...  --compiles all files (wildcards ok) listed to javascript

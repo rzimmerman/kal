@@ -3,7 +3,7 @@ lexer     = require './lexer'
 parser    = require './parser'
 generator = require './generator'
 
-exports.VERSION = '0.2.4'
+exports.VERSION = '0.2.5'
 
 exports.compile = function compile(code, show_tokens)
   token_rv = lexer.tokenize code
