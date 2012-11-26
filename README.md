@@ -3,18 +3,32 @@ The Kal Programming Language
 
 Using Kal
 ---------
-This section is still 'coming soon'. A detailed syntax guide is in work, but if you want to try it out, the syntax is a lot like CoffeeScript with some notable exceptions. Check out the source/kal files to see some examples. For now, you can clone the repository to run the compiler as follows:
+This section is still 'coming soon'. A detailed syntax guide is in work, but if you want to try it out, the syntax is a lot like CoffeeScript with some notable exceptions. Check out the source/*.kal files to see some examples.
 
-    node ./compiled/kal (kal file) [js output file]
-    node ./compiled/kal -c (source files) (output directory)
+Installation
+------------
+Install using npm:
 
-This will print the compiled Javascript to stdout and attempt to evaluate it if you don't specify "js output file".
+   npm install kal
 
-As of version 0.2.0, the CoffeeScript dependency has been removed. The .coffee source is still available but will be
-removed in version 0.3.0. The compiler now compiles itself as follows:
+Compiling and Running Kal Files
+-------------------------------
+You can use the kal utility to run or compile files. Run kal -h for the full option set.
 
-    node ./compiled/kal -c ./source/kal/*.kal (output directory)
+    kal path/to/file.kal                                            --runs the specified file
+    kal -o path/for/output path/to/file1.kal path/to/file2.kal ...  --compiles all files (wildcards ok) listed to javascript
+                                                                      and writes the output into the folder specified by -o
 
+Using the -j or --javascript switches will show the output of the compiler.
+
+As of version 0.2.0, the CoffeeScript dependency has been removed. The compiler now compiles itself as follows:
+
+    kal -o /output/path source/*.kal
+
+If you import kal in your Javascript code, it installs a compile hook that allows you to directly import .kal files:
+
+    require('kal');
+    require('./mykalfile'); //refers to mykalfile.kal
 
 Goals
 -----

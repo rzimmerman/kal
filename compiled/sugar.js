@@ -4,14 +4,22 @@
   grammar = require('./grammar');
   KEYWORDS = grammar.KEYWORDS;
   NOPAREN_WORDS = ['is', 'otherwise', 'except', 'else', 'doesnt', 'exist', 'exists', 'isnt', 'inherits', 'from', 'and', 'or', 'xor', 'in', 'when', 'instanceof', 'of', 'nor', 'if', 'unless', 'except'];
-  exports.translate_sugar = function translate_sugar (tokens) {
-    var out_tokens;
-    /*  #debug = []
-    #for t in out_tokens
-    #  debug.push t.value or t.type
-    #console.log debug.join ' '*/
+  exports.translate_sugar = function translate_sugar (tokens, show_tokens) {
+    var out_tokens, debug, ki$1, kobj$1, t;
     out_tokens = coffee_style_functions(noparen_function_calls(multiline_statements(clean(tokens))));
     
+    if (show_tokens) {
+      debug = [];
+      
+      kobj$1 = out_tokens;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        t = kobj$1[ki$1];
+          debug.push(t.value || t.type);
+          
+      }
+      console.log(debug.join(' '));
+      
+    }
     return out_tokens;
     
     

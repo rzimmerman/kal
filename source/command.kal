@@ -1,0 +1,48 @@
+# External dependencies.
+fs             = require 'fs'
+path           = require 'path'
+optimist       = require 'optimist'
+Kal            = require './kal'
+
+function printLine(line)
+  process.stdout.write line + '\n'
+function printWarn(line)
+  process.stderr.write line + '\n'
+
+function hidden(file)
+  /^\.|~$/.test file
+
+function parseOptions()
+  BANNER = 'Usage: kal [options] path/to/script.kal\n\nIf called without options, `kal` will run your script.\n$0'
+  optimist = optimist.usage(BANNER)
+  optimist = optimist.options('help',{alias:'h',boolean:yes,description:'show the command line usage options'})
+  optimist = optimist.options('tokens',{alias:'t',boolean:yes,description:'print out the tokens that the lexer/sugar produce'})
+  optimist = optimist.options('javascript',{alias:'j',boolean:yes,description:'print out the javascript output of the compiler'})
+  optimist = optimist.options('version',{alias:'v',boolean:yes,description:'display the version number'})
+  optimist = optimist.options('output',{alias:'o',description:'the output directory for the compiled source'})
+  return optimist.argv
+
+exports.run = function run()
+  options = parseOptions()
+  return version() if options.version
+  return usage() if optimist.argv.help or optimist.argv._.length is 0
+  if options.output exists and not fs.existsSync(options.output)
+    printWarn('output path does not exist!')
+    return usage()
+  process.argv[0] = 'kal'
+  process.execPath = require.main.filename
+  for file_name in options._
+    js_output = Kal.compile fs.readFileSync(file_name), options.tokens
+    printLine js_output if options.javascript
+    if options.output exists
+      fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
+    else
+      printLine eval(js_output)
+      
+function version()
+  printLine "Kal version #{Kal.VERSION}"
+  return 0
+  
+function usage()
+  optimist.showHelp()
+  return 2

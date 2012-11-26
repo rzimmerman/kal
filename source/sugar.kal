@@ -3,12 +3,13 @@ KEYWORDS = grammar.KEYWORDS
 
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of','nor','if','unless','except']
 
-exports.translate_sugar = function translate_sugar (tokens)
+exports.translate_sugar = function translate_sugar (tokens, show_tokens)
   out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean tokens
-  #debug = []
-  #for t in out_tokens
-  #  debug.push t.value or t.type
-  #console.log debug.join ' '
+  if show_tokens
+    debug = []
+    for t in out_tokens
+      debug.push t.value or t.type
+    console.log debug.join ' '
   return out_tokens
   
 function clean (tokens)

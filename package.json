@@ -3,7 +3,7 @@
   "description":  "For the programming",
   "keywords":     ["javascript", "language", "kal", "coffeescript", "compiler"],
   "author":       "Rob Zimmerman",
-  "version":      "0.2.2",
+  "version":      "0.2.3",
   "licenses":     [{
     "type":       "MIT",
     "url":        "https://raw.github.com/rzimmerman/kal/master/LICENSE"
@@ -15,6 +15,9 @@
     "lib" : "./source/kal"
   },
   "main" : "./compiled/kal",
+  "bin":          {
+    "kal":     "./scripts/kal"
+  },
   "scripts": {
     "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
   },
@@ -23,6 +26,9 @@
   "repository":   {
     "type": "git",
     "url": "git://github.com/rzimmerman/kal.git"
+  },
+  "dependencies": {
+    "optimist": "0.3.5"
   },
   "devDependencies": {
     "mocha": "1.6.x",
