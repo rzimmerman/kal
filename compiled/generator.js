@@ -103,7 +103,7 @@
       if (wrap) {
         dedent();
         
-        rv += "\n" + i + "})()\n";
+        rv += ("\n" + i + "})()\n");
         
       }
       if (scopes !== []) {
@@ -117,10 +117,10 @@
     function check_existence_wrapper (code, undefined_unary, invert) {
       var rv;
       if (undefined_unary) {
-        rv = (invert) ? "(typeof " + code + " === 'undefined' || " + code + " === null)" : "(typeof " + code + " !== 'undefined' && " + code + " !== null)";
+        rv = (invert) ? ("(typeof " + code + " === 'undefined' || " + code + " === null)") : ("(typeof " + code + " !== 'undefined' && " + code + " !== null)");
         
       } else {
-        rv = (invert) ? "" + code + " == null" : "" + code + " != null";
+        rv = (invert) ? ("" + code + " == null") : ("" + code + " != null");
         
       }
       return rv;
@@ -200,7 +200,7 @@
     };
     this.ThrowStatement.prototype.js = function  () {
       var rv;
-      rv = "throw " + this.expr.js() + ";";
+      rv = ("throw " + (this.expr.js()) + ";");
       
       if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);
@@ -212,7 +212,7 @@
     };
     this.ReturnStatement.prototype.js = function  () {
       var rv;
-      rv = "return " + this.expr.js() + ";";
+      rv = ("return " + (this.expr.js()) + ";");
       
       if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);
@@ -265,21 +265,21 @@
             scope['$kindexof'] = 'closure';
             
           }
-          rv += "($kindexof.call(" + this.right.left.js() + ", " + left_code + ") >= 0) " + this.right.js(true) + "";
+          rv += ("($kindexof.call(" + (this.right.left.js()) + ", " + left_code + ") >= 0) " + (this.right.js(true)));
           
         } else       if (opjs === 'nor') {
-          rv += "!(" + left_code + " || " + this.right.js() + ")";
+          rv += ("!(" + left_code + " || " + (this.right.js()) + ")");
           
         } else       if (opjs === 'pow') {
-          rv += "Math.pow(" + left_code + ", " + this.right.left.js() + ") " + this.right.js(true) + "";
+          rv += ("Math.pow(" + left_code + ", " + (this.right.left.js()) + ") " + (this.right.js(true)));
           
         } else {
-          rv += "" + left_code + " " + opjs + " " + this.right.js() + "";
+          rv += ("" + left_code + " " + opjs + " " + (this.right.js()));
           
         }
       }
       if (((this.op != null) ? this.op.invert : void 0)) {
-        rv = "!(" + rv + ")";
+        rv = ("!(" + rv + ")");
         
       }
       if ((this.conditional != null)) {
@@ -348,24 +348,24 @@
       
       if (existence_check !== "") {
         if (last_accessor instanceof self.ExisentialCheck) {
-          rv = "(" + existence_check + ")";
+          rv = ("(" + existence_check + ")");
           
         } else {
           closeout = "void 0";
           
-          rv = "((" + existence_check + ") ? " + rv + " : " + closeout + ")";
+          rv = ("((" + existence_check + ") ? " + rv + " : " + closeout + ")");
           
         }
         
       }
       if (((this.preop != null) ? this.preop.value : void 0) === 'new') {
-        rv = "" + KEYWORD_TRANSLATE[this.preop.value] + " " + rv + "";
+        rv = ("" + (KEYWORD_TRANSLATE[this.preop.value]) + " " + rv);
         
       } else     if (((this.preop != null) ? this.preop.value : void 0) === 'not') {
-        rv = "" + KEYWORD_TRANSLATE[this.preop.value] + "(" + rv + ")";
+        rv = ("" + (KEYWORD_TRANSLATE[this.preop.value]) + "(" + rv + ")");
         
       } else     if (((this.preop != null) ? this.preop.value : void 0) === '-') {
-        rv = "-" + rv + "";
+        rv = ("-" + rv);
         
       }
       return rv;
@@ -377,20 +377,20 @@
       conditional_js = this.condition.js();
       
       if (this.specifier.value === 'unless' || this.specifier.value === 'except') {
-        conditional_js = "!(" + conditional_js + ")";
+        conditional_js = ("!(" + conditional_js + ")");
         
       }
       if ((this.false_expr != null)) {
-        return "(" + conditional_js + ") ? " + true_block_js + " : " + this.false_expr.js() + "";
+        return ("(" + conditional_js + ") ? " + true_block_js + " : " + (this.false_expr.js()));
         
       } else {
         if (must_return_value) {
-          return "(" + conditional_js + ") ? " + true_block_js + " : void 0";
+          return ("(" + conditional_js + ") ? " + true_block_js + " : void 0");
           
         } else {
           indented_js = '  ' + true_block_js.replace(/\n/g, '\n  ');
           
-          return "if (" + conditional_js + ") {\n" + indented_js + "\n" + i + "}";
+          return ("if (" + conditional_js + ") {\n" + indented_js + "\n" + i + "}");
           
         }
       }
@@ -417,7 +417,7 @@
         rv = this.expr.js();
         
       }
-      rv = "." + rv + "";
+      rv = ("." + rv);
       
       return rv;
       
@@ -440,7 +440,7 @@
         op += '=';
         
       }
-      rv = "" + this.lvalue.js() + " " + op + " " + this.rvalue.js() + ";";
+      rv = ("" + (this.lvalue.js()) + " " + op + " " + (this.rvalue.js()) + ";");
       
       if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);
@@ -478,11 +478,11 @@
       conditional_js = this.conditional.js();
       
       if (this.condition.value === 'unless' || this.condition.value === 'except') {
-        conditional_js = "!(" + conditional_js + ")";
+        conditional_js = ("!(" + conditional_js + ")");
         
       }
       
-      rv = "if (" + conditional_js + ") {\n" + this.true_block.js() + "\n" + i + "}";
+      rv = ("if (" + conditional_js + ") {\n" + (this.true_block.js()) + "\n" + i + "}");
       
       
       if ((this.else_block != null)) {
@@ -495,10 +495,10 @@
     };
     this.ElseStatement.prototype.js = function  () {
         if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
-        return " else " + this.false_block.js() + "";
+        return (" else " + (this.false_block.js()));
         
       } else {
-        return " else {\n" + this.false_block.js() + "\n" + i + "}";
+        return (" else {\n" + (this.false_block.js()) + "\n" + i + "}");
         
         
       }
@@ -512,19 +512,19 @@
     
     this.ForStatement.prototype.js = function  () {
       var iterator, terminator, rv;
-      iterator = "ki$" + for_depth + "";
+      iterator = ("ki$" + for_depth);
       
-      terminator = "kobj$" + for_depth + "";
+      terminator = ("kobj$" + for_depth);
       
       scope[iterator] = 'no closures';
       
       scope[terminator] = 'no closures';
       
       if (this.type.value === 'in') {
-        rv = "" + terminator + " = " + this.iterable.js() + ";\n" + i + "for (" + iterator + " = 0; " + iterator + " < " + terminator + ".length; " + iterator + "++) {\n";
+        rv = ("" + terminator + " = " + (this.iterable.js()) + ";\n" + i + "for (" + iterator + " = 0; " + iterator + " < " + terminator + ".length; " + iterator + "++) {\n");
         
       } else {
-        rv = "" + terminator + " = " + this.iterable.js() + ";\nfor (" + this.iterant.js() + " in " + terminator + ") {\n";
+        rv = ("" + terminator + " = " + (this.iterable.js()) + ";\nfor (" + (this.iterant.js()) + " in " + terminator + ") {\n");
         
       }
       indent();
@@ -532,7 +532,7 @@
       for_depth += 1;
       
       if (this.type.value === 'in') {
-        rv += "" + i + "" + this.iterant.js() + " = " + terminator + "[" + iterator + "];\n";
+        rv += ("" + i + "" + (this.iterant.js()) + " = " + terminator + "[" + iterator + "];\n");
         
       }
       rv += this.loop_block.js();
@@ -541,7 +541,7 @@
       
       dedent();
       
-      rv += "\n" + i + "}";
+      rv += ("\n" + i + "}");
       
       return rv;
       
@@ -549,7 +549,7 @@
     };
     this.WhileStatement.prototype.js = function  () {
       var rv;
-      rv = "while (" + this.expr.js() + ") {\n";
+      rv = ("while (" + (this.expr.js()) + ") {\n");
       
       indent();
       
@@ -557,7 +557,7 @@
       
       dedent();
       
-      rv += "\n" + i + "}";
+      rv += ("\n" + i + "}");
       
       return rv;
       
@@ -584,12 +584,12 @@
     };
     
     this.ParenExpression.prototype.js = function  () {
-        return "(" + this.expr.js() + ")";
+        return ("(" + (this.expr.js()) + ")");
       
       
     };
     this.IndexExpression.prototype.js = function  () {
-        return "[" + this.expr.js() + "]";
+        return ("[" + (this.expr.js()) + "]");
       
     };
     this.IndexExpression.prototype.js_existence = function  (accessor, undefined_unary, invert) {
@@ -614,12 +614,12 @@
       }
       rv = rv.join(', ');
       
-      return "[" + rv + "]";
+      return ("[" + rv + "]");
       
       
     };
     this.MapItem.prototype.js = function  () {
-        return "" + this.key.js() + ": " + this.val.js() + "";
+        return ("" + (this.key.js()) + ": " + (this.val.js()));
       
       
     };
@@ -635,7 +635,7 @@
       }
       rv = rv.join(', ');
       
-      return "{ " + rv + " }";
+      return ("{ " + rv + " }");
       
       
     };
@@ -680,10 +680,10 @@
     this.FunctionExpression.prototype.js_class_member = function  () {
       var rv, args, ki$1, kobj$1, argument;
       if (this.specifier.value === 'method') {
-        rv = "" + class_def.name + ".prototype." + this.name.value + " = function";
+        rv = ("" + (class_def.name) + ".prototype." + (this.name.value) + " = function");
         
       } else {
-        rv = "" + class_def.name + "." + this.name.value + " = function";
+        rv = ("" + (class_def.name) + "." + (this.name.value) + " = function");
         
       }
       args = [];
@@ -702,7 +702,7 @@
       var rv, ki$1, kobj$1, argument;
       class_def.has_constructor = true;
       
-      rv = "function " + class_def.name + "";
+      rv = ("function " + (class_def.name));
       
       class_def.args = [];
       
@@ -720,7 +720,7 @@
     };
     this.FunctionExpression.prototype.js_body = function  (arg_names) {
       var rv, ki$1, kobj$1, arg_name, block_code;
-      rv = " (" + arg_names.join(', ') + ") {\n";
+      rv = (" (" + (arg_names.join(', ')) + ") {\n");
       
       push_scope();
       
@@ -734,7 +734,7 @@
       
       rv += pop_scope(block_code, false, false);
       
-      rv += "\n" + i + "}";
+      rv += ("\n" + i + "}");
       
       return rv;
       
@@ -752,7 +752,7 @@
       }
       rv = rv.join(', ');
       
-      return (as_list) ? "[" + rv + "]" : "(" + rv + ")";
+      return (as_list === true) ? (("[" + rv + "]")) : (("(" + rv + ")"));
       
     };
     this.FunctionCall.prototype.js_existence = function  (accessor, undefined_unary, invert) {
@@ -787,17 +787,17 @@
       rv = class_def.code;
       
       if (!(class_def.has_constructor)) {
-        rv += "function " + class_def.name + " () {";
+        rv += ("function " + (class_def.name) + " () {");
         
         if ((this.parent != null)) {
-          rv += "\n" + i + "  return " + this.parent.value + ".prototype.constructor.apply(this,arguments);\n";
+          rv += ("\n" + i + "  return " + (this.parent.value) + ".prototype.constructor.apply(this,arguments);\n");
           
         }
         rv += "}";
         
       }
       if ((this.parent != null)) {
-        rv += "" + i + "__extends(" + this.name.value + "," + this.parent.value + ");\n";
+        rv += ("" + i + "__extends(" + (this.name.value) + "," + (this.parent.value) + ");\n");
         
         use_snippets['inherits'] = snippets['inherits'];
         
@@ -820,10 +820,10 @@
       
       dedent();
       
-      rv += "" + i + "}";
+      rv += ("" + i + "}");
       
       if ((this.catch_block != null)) {
-        rv += " catch (" + this.identifier.value + ") {\n";
+        rv += (" catch (" + (this.identifier.value) + ") {\n");
         
         indent();
         
@@ -845,7 +845,7 @@
     return "";
       }
       
-      rv = "" + class_def.parent + ".prototype.constructor.apply(this,";
+      rv = ("" + (class_def.parent) + ".prototype.constructor.apply(this,");
       
       if ((this.accessor != null)) {
         rv += this.accessor.js(true);

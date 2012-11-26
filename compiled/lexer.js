@@ -52,7 +52,7 @@
                 
               }
           }
-          (!((text != null))) ? this.error("invalid token '" + this.code.slice(index,index+16) + "...'") : void 0;
+          (!((text != null))) ? this.error(("invalid token '" + (this.code.slice(index, index + 16)) + "...'")) : void 0;
           
           value = parse_token[this.type](text);
           

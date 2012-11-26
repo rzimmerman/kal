@@ -380,7 +380,7 @@ function apply_generator_to_grammar()
     for argument in me.arguments
       rv.push argument.js()
     rv = rv.join ', '
-    return "[#{rv}]" when as_list otherwise "(#{rv})"
+    return ("[#{rv}]") when as_list is yes otherwise ("(#{rv})")
   me.FunctionCall.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
       return check_existence_wrapper(accessor, undefined_unary, invert)

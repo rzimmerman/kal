@@ -139,11 +139,16 @@ function code_in_strings (tokens, tokenizer)
       rv = token.value
       r = /#{.*?}/g
       m = r.exec rv
+      add_parens = yes if m otherwise no
+      out_tokens.push({text:'(', line:token.line, value:'(', type:'LITERAL'}) when add_parens
       while m
         new_token_text = rv.slice(0,m.index) + '"'
         out_tokens.push {text:new_token_text, line:token.line, value:new_token_text, type:'STRING'}
         out_tokens.push {text:'+', line:token.line, value:'+', type:'LITERAL'}
-        out_tokens = out_tokens.concat tokenizer(rv.slice(m.index+2,m.index+m[0].length-1))[0]
+        new_tokens = tokenizer(rv.slice(m.index+2,m.index+m[0].length-1))[0]
+        out_tokens.push({text:'(', line:token.line, value:'(', type:'LITERAL'}) when new_tokens.length isnt 1
+        out_tokens = out_tokens.concat new_tokens
+        out_tokens.push({text:')', line:token.line, value:')', type:'LITERAL'}) when new_tokens.length isnt 1
         rv = '"' + rv.slice(m.index+m[0].length)
         if rv is '""' #avoid adding a (+ "") to strings that end with #{expr}"
           rv = ''
@@ -152,6 +157,7 @@ function code_in_strings (tokens, tokenizer)
         r = /#{.*?}/g
         m = r.exec rv
       out_tokens.push({text:rv, line:token.line, value:rv, type:'STRING'}) when rv isnt ''
+      out_tokens.push({text:')', line:token.line, value:')', type:'LITERAL'}) when add_parens
     else
       out_tokens.push token
   return out_tokens

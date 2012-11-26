@@ -181,11 +181,11 @@
       this.op = this.req('IDENTIFIER', 'LITERAL');
       
       if (this.op.type === 'LITERAL') {
-        (($kindexof.call([')', ']', '}', ';', ':', ','], this.op.value) >= 0) ) ? this.error("unexpected operator " + this.op.value + "") : void 0;
+        (($kindexof.call([')', ']', '}', ';', ':', ','], this.op.value) >= 0) ) ? this.error(("unexpected operator " + (this.op.value))) : void 0;
         
         this.lock();
         
-        (!(($kindexof.call(['+', '-', '*', '/', '>', '<', '^', '<=', '>=', '==', '!='], this.op.value) >= 0) )) ? this.error("unexpected operator " + this.op.value + "") : void 0;
+        (!(($kindexof.call(['+', '-', '*', '/', '>', '<', '^', '<=', '>=', '==', '!='], this.op.value) >= 0) )) ? this.error(("unexpected operator " + (this.op.value))) : void 0;
         
       } else {
         if (this.op.value === 'not') {
@@ -194,7 +194,7 @@
           this.invert = true;
           
         }
-        (!(($kindexof.call(['and', 'but', 'or', 'xor', 'nor', 'in', 'is', 'isnt', 'instanceof', 'of'], this.op.value) >= 0) )) ? this.error("unexpected operator " + this.op.value + "") : void 0;
+        (!(($kindexof.call(['and', 'but', 'or', 'xor', 'nor', 'in', 'is', 'isnt', 'instanceof', 'of'], this.op.value) >= 0) )) ? this.error(("unexpected operator " + (this.op.value))) : void 0;
         
       }
     };

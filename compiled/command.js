@@ -77,7 +77,7 @@
   };
   exports.run = run;
   function version () {
-    printLine("Kal version " + Kal.VERSION + "");
+    printLine("Kal version " + (Kal.VERSION));
     
     return 0;
     

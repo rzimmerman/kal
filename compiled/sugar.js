@@ -241,7 +241,7 @@
   };
   /*  #allow double-quoted strings with embedded code, like: "x is #{x}"*/
   function code_in_strings (tokens, tokenizer) {
-    var out_tokens, ki$1, kobj$1, token, rv, r, m, new_token_text;
+    var out_tokens, ki$1, kobj$1, token, rv, r, m, add_parens, new_token_text, new_tokens;
     if ((tokenizer == null)) {
     return tokens;
     }
@@ -259,6 +259,10 @@
           
           m = r.exec(rv);
           
+          add_parens = (m) ? true : false;
+          
+          (add_parens) ? out_tokens.push({ text: '(', line: token.line, value: '(', type: 'LITERAL' }) : void 0;
+          
           while (m) {
               new_token_text = rv.slice(0, m.index) + '"';
               
@@ -266,7 +270,13 @@
               
               out_tokens.push({ text: '+', line: token.line, value: '+', type: 'LITERAL' });
               
-              out_tokens = out_tokens.concat(tokenizer(rv.slice(m.index + 2, m.index + m[0].length - 1))[0]);
+              new_tokens = tokenizer(rv.slice(m.index + 2, m.index + m[0].length - 1))[0];
+              
+              (new_tokens.length !== 1) ? out_tokens.push({ text: '(', line: token.line, value: '(', type: 'LITERAL' }) : void 0;
+              
+              out_tokens = out_tokens.concat(new_tokens);
+              
+              (new_tokens.length !== 1) ? out_tokens.push({ text: ')', line: token.line, value: ')', type: 'LITERAL' }) : void 0;
               
               rv = '"' + rv.slice(m.index + m[0].length);
               
@@ -284,6 +294,8 @@
               
           }
           (rv !== '') ? out_tokens.push({ text: rv, line: token.line, value: rv, type: 'STRING' }) : void 0;
+          
+          (add_parens) ? out_tokens.push({ text: ')', line: token.line, value: ')', type: 'LITERAL' }) : void 0;
           
         } else {
           out_tokens.push(token);

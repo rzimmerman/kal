@@ -80,13 +80,13 @@
             
         }
         if (list.length === 1) {
-          message = "Expected " + list[0] + "";
+          message = ("Expected " + (list[0]));
           
         } else {
-          message = "Expected one of " + list.join(', ') + "";
+          message = ("Expected one of " + (list.join(', ')));
           
         }
-        this.error("" + message + "");
+        this.error("" + message);
         
       };
       
@@ -122,7 +122,7 @@
             args.push(v);
             
         }
-        this.error("Expected " + args.join(' or ') + "");
+        this.error("Expected " + (args.join(' or ')));
         
       };
       
@@ -144,7 +144,7 @@
             list.push(cls.name || cls);
             
         }
-        this.error("Expected one of " + list.join(', ') + "");
+        this.error("Expected one of " + (list.join(', ')));
         
       };
       
