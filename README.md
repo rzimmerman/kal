@@ -19,19 +19,19 @@ You can also install kal locally as a project dependency by including 'kal' in y
 
 Compiling and Running Kal Files
 -------------------------------
-You can use the kal utility to run or compile files. Run kal -h for the full option set. If you installed kal locally (didn't use the -g option), you will need to specify the path to the kal executable, usually located at node_modules/kal/scripts/kal.
+You can use the kal utility to run or compile files. Run `kal -h` for the full option set. If you installed kal locally (didn't use the -g option), you will need to specify the path to the kal executable, usually located at `node_modules/kal/scripts/kal`.
 
     kal path/to/file.kal                                            --runs the specified file
     kal -o path/for/output path/to/file1.kal path/to/file2.kal ...  --compiles all files (wildcards ok) listed to javascript
                                                                       and writes the output into the folder specified by -o
 
-Using the -j or --javascript switches will show the output of the compiler.
+Using the `-j` or `--javascript` switches will show the output of the compiler.
 
 As of version 0.2.0, the CoffeeScript dependency has been removed. The compiler now compiles itself as follows:
 
     kal -o /output/path source/*.kal
 
-If you import kal in your Javascript code, it installs a compile hook that allows you to directly import .kal files:
+If you import Kal in your Javascript code, it installs a compile hook that allows you to directly import .kal files:
 
     require('kal');
     require('./mykalfile'); //refers to mykalfile.kal
