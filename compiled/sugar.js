@@ -102,7 +102,7 @@
   };
   /*  # allow function calls without parentheses*/
   function noparen_function_calls (tokens) {
-    var out_tokens, close_paren_count, last_token, triggers, closures, ignore_next_indent, i, token, last_token_callable, this_token_not_operator, closure;
+    var out_tokens, close_paren_count, last_token, triggers, closures, ignore_next_indent, i, token, last_token_isnt_reserved, last_token_callable, token_isnt_reserved, this_token_not_operator, closure;
     out_tokens = [];
     
     close_paren_count = 0;
@@ -121,9 +121,13 @@
     while (i < tokens.length) {
         token = tokens[i];
         
-        last_token_callable = (((last_token != null) ? last_token.type : void 0) === 'IDENTIFIER' && !((($kindexof.call(KEYWORDS, last_token.value) >= 0) ))) || ((last_token != null) ? last_token.value : void 0) === ']';
+        last_token_isnt_reserved = !((($kindexof.call(KEYWORDS, ((last_token != null) ? last_token.value : void 0)) >= 0) )) || ((tokens[i - 2] != null) ? tokens[i - 2].value : void 0) === '.';
         
-        this_token_not_operator = ((($kindexof.call(['IDENTIFIER', 'NUMBER', 'STRING', 'REGEX'], token.type) >= 0)  || token.value === '{') && !((($kindexof.call(NOPAREN_WORDS, token.value) >= 0) )));
+        last_token_callable = (((last_token != null) ? last_token.type : void 0) === 'IDENTIFIER' && last_token_isnt_reserved) || ((last_token != null) ? last_token.value : void 0) === ']';
+        
+        token_isnt_reserved = !((($kindexof.call(NOPAREN_WORDS, token.value) >= 0) ));
+        
+        this_token_not_operator = ((($kindexof.call(['IDENTIFIER', 'NUMBER', 'STRING', 'REGEX'], token.type) >= 0)  || token.value === '{') && token_isnt_reserved);
         
         if (last_token_callable && this_token_not_operator) {
           triggers.push('NEWLINE');

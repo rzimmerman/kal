@@ -65,8 +65,10 @@ function noparen_function_calls (tokens)
   i = 0
   while i < tokens.length
     token = tokens[i]
-    last_token_callable = (last_token?.type is 'IDENTIFIER' and not (last_token.value in KEYWORDS)) or last_token?.value is ']'
-    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'] or token.value is '{') and not (token.value in NOPAREN_WORDS))
+    last_token_isnt_reserved = not (last_token?.value in KEYWORDS) or tokens[i-2]?.value is '.'
+    last_token_callable = (last_token?.type is 'IDENTIFIER' and last_token_isnt_reserved) or last_token?.value is ']'
+    token_isnt_reserved = not (token.value in NOPAREN_WORDS)
+    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'] or token.value is '{') and token_isnt_reserved)
     if last_token_callable and this_token_not_operator
       triggers.push 'NEWLINE'
       out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
