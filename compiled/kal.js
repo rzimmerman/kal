@@ -5,7 +5,7 @@
   lexer = require('./lexer');
   parser = require('./parser');
   generator = require('./generator');
-  exports.VERSION = '0.2.6';
+  exports.VERSION = '0.2.7';
   function compile (code, show_tokens) {
     var token_rv, raw_tokens, comments, tokens, root_node;
     token_rv = lexer.tokenize(code);
