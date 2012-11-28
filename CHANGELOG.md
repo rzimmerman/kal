@@ -1,5 +1,10 @@
 #Change Log
 
+### [0.2.7](https://github.com/rzimmerman/kal/compare/r0.2.6...r0.2.7)
+* Added a proper npmignore file to reduce the package size
+* Added this change log
+* Added support for reserved words as properties and function calls to reserved word properties
+
 ### [0.2.6](https://github.com/rzimmerman/kal/compare/r0.2.5...r0.2.6)
 * Now correctly parses and compiles expressions inside of double-quoted strings. Previous versions just
   treated these as Javascript
