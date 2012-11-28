@@ -182,10 +182,11 @@ describe 'Expression', ->
     
   it 'should support the use of reserved words as properties', -> #gh-26
     tobj = {}
-    tobj['on'] = function ()
-      return 2
+    tobj['on'] = function (a)
+      return 2 + a
     tobj['in'] = 3
     
     tobj.in.should.equal 3
-    tobj.on().should.equal 2
+    x = tobj.on 5
+    x.should.equal 7
     
