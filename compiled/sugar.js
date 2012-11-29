@@ -14,8 +14,8 @@
       kobj$1 = out_tokens;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         t = kobj$1[ki$1];
-          if (t.value === '\n') {
-            debug.push(t.type);
+          if (t.type === 'NEWLINE') {
+            debug.push('\n');
             
           } else {
             debug.push(t.value || t.type);
@@ -136,7 +136,7 @@
           
           closures.push(')');
           
-        } else       if (token.type === 'NEWLINE' && triggers[triggers.length - 1] === 'NEWLINE' && ((tokens[i + 1] != null) ? tokens[i + 1].type : void 0) === 'INDENT') {
+        } else       if ((token.value === 'function' || (token.value === '>' && ((last_token != null) ? last_token.value : void 0) === '-')) && triggers[triggers.length - 1] === 'NEWLINE') {
           triggers[triggers.length - 1] = 'DEDENT';
           
           ignore_next_indent = true;
@@ -151,6 +151,9 @@
             closures.push('');
             
           }
+        } else       if (token.type === 'NEWLINE' && ((tokens[i + 1] != null) ? tokens[i + 1].type : void 0) !== 'INDENT') {
+          ignore_next_indent = false;
+          
         }
         
         if ((token.type === 'NEWLINE' || ($kindexof.call(['if', 'unless', 'when', 'except'], token.value) >= 0) ) && closures.length > 0 && triggers[triggers.length - 1] === 'NEWLINE') {

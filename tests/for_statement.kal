@@ -35,3 +35,12 @@ describe 'For Statement', ->
       i += 1
     i.should.equal 5
     x.should.equal 100
+    
+  it 'should accept an expression as an iterable', ->
+    s = "a,b,c,def"
+    t = ','
+    y = ''
+    for x in s.split t
+      y += x
+    y.should.equal "abcdef"
+    
