@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 #Change Log
 
 ### [0.2.9](https://github.com/rzimmerman/kal/compare/r0.2.8...r0.2.9)
