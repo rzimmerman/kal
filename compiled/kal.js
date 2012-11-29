@@ -5,9 +5,13 @@
   lexer = require('./lexer');
   parser = require('./parser');
   generator = require('./generator');
-  exports.VERSION = '0.2.7';
+  exports.VERSION = '0.2.8';
   function compile (code, options) {
     var token_rv, raw_tokens, comments, tokens, root_node;
+    if ((options == null)) {
+      options = { bare: false };
+      
+    }
     token_rv = lexer.tokenize(code);
     
     raw_tokens = token_rv[0];

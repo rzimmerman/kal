@@ -3,9 +3,11 @@ lexer     = require './lexer'
 parser    = require './parser'
 generator = require './generator'
 
-exports.VERSION = '0.2.7'
+exports.VERSION = '0.2.8'
 
 function compile(code, options)
+  if options doesnt exist
+    options = {bare:no}
   token_rv = lexer.tokenize code
   raw_tokens = token_rv[0]
   comments   = token_rv[1]
