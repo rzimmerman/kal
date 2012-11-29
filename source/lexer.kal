@@ -38,7 +38,7 @@ class Lexer
       else if type isnt 'WHITESPACE'
         me.tokens.push {text:text, line:me.line, value:value, type:type}
       index += text.length
-      me.line += (/\n/.exec(text)?[0].length) or 0
+      me.line += text.match(/\n/g)?.length or 0
       last_token_type = type
     #add a trailing newline in case the user didn't
     me.tokens.push {text:'\n',line:me.line, value:'', type:'NEWLINE'} 

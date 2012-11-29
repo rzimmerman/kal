@@ -76,7 +76,7 @@
           }
           index += text.length;
           
-          this.line += (((/\n/.exec(text) != null) ? /\n/.exec(text)[0].length : void 0)) || 0;
+          this.line += ((text.match(/\n/g) != null) ? text.match(/\n/g).length : void 0) || 0;
           
           /*    #add a trailing newline in case the user didn't*/
           last_token_type = type;

@@ -6,20 +6,25 @@ KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unles
 class File inherits from ASTBase
   method parse()
     me.lock()
-    me.statements = me.opt_multi Statement
-    me.req 'EOF'
+    me.statements = []
+    while not me.opt('EOF')
+      me.statements.push me.req Statement
+      me.lock()
 
 class Block inherits from ASTBase
   method parse()
     me.req 'NEWLINE'
+    me.lock()
     me.req 'INDENT'
     me.lock()
-    me.statements = me.opt_multi Statement
-    me.req 'DEDENT'
+    me.statements = []
+    while not me.opt('DEDENT')
+      me.statements.push me.req Statement
+      me.lock()
     
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
   
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -76,11 +81,11 @@ class AssignmentStatement inherits from ASTBase
     me.lvalue   = me.req UnaryExpression
     me.lvalue.can_be_lvalue = yes
     me.assignOp = me.req 'LITERAL'
-    me.error('invalid operator ' + me.assignOp.value) except when me.assignOp.value in ['+','-','*','/','=']
+    me.error("invalid operator #{me.assignOp.value}") except when me.assignOp.value in ['+','-','*','/','=']
     if me.assignOp.value isnt '='
       me.req_val '='
     me.lock()
-    me.error('invalid assignment - the left side must be assignable') unless me.lvalue.is_lvalue()
+    me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
     me.rvalue   = me.req Expression
     me.conditional = me.rvalue.transform_when_statement()
     

@@ -11,10 +11,14 @@
     File.prototype.parse = function () {
         this.lock();
       
-      this.statements = this.opt_multi(Statement);
+      this.statements = [];
       
-      this.req('EOF');
-      
+      while (!(this.opt('EOF'))) {
+          this.statements.push(this.req(Statement));
+          
+          this.lock();
+          
+      }
     };
   function Block () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -22,21 +26,27 @@
     Block.prototype.parse = function () {
         this.req('NEWLINE');
       
+      this.lock();
+      
       this.req('INDENT');
       
       this.lock();
       
-      this.statements = this.opt_multi(Statement);
+      this.statements = [];
       
-      this.req('DEDENT');
-      
+      while (!(this.opt('DEDENT'))) {
+          this.statements.push(this.req(Statement));
+          
+          this.lock();
+          
+      }
       
     };
   function Statement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(Statement,ASTBase);
     Statement.prototype.parse = function () {
-        this.statement = this.req(TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement);
+        this.statement = this.req(BlankStatement, TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement);
       
     };
     
@@ -146,7 +156,7 @@
       
       this.assignOp = this.req('LITERAL');
       
-      (!(($kindexof.call(['+', '-', '*', '/', '='], this.assignOp.value) >= 0) )) ? this.error('invalid operator ' + this.assignOp.value) : void 0;
+      (!(($kindexof.call(['+', '-', '*', '/', '='], this.assignOp.value) >= 0) )) ? this.error(("invalid operator " + (this.assignOp.value))) : void 0;
       
       if (this.assignOp.value !== '=') {
         this.req_val('=');
@@ -154,7 +164,7 @@
       }
       this.lock();
       
-      (!(this.lvalue.is_lvalue())) ? this.error('invalid assignment - the left side must be assignable') : void 0;
+      (!(this.lvalue.is_lvalue())) ? this.error("invalid assignment - the left side must be assignable") : void 0;
       
       this.rvalue = this.req(Expression);
       

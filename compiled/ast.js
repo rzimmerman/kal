@@ -1,18 +1,17 @@
   (function () {
-    var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }
-  var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+    var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
   function ParseFailed (message) {
         this.message = message;
       
-      return Error.prototype.constructor.apply(this, arguments);
+      
+    }  
+  function SyntaxError (message) {
+        this.message = message;
+      
+      this.locked = true;
       
       
-    }__extends(ParseFailed,Error);
-    
-  function SyntaxError () {
-    return ParseFailed.prototype.constructor.apply(this,arguments);
-  }__extends(SyntaxError,ParseFailed);
-    
+    }  
   exports.SyntaxError = SyntaxError;
   function ASTBase (ts) {
         this.locked = false;
@@ -52,7 +51,7 @@
                           } catch (e) {
                 this.ts.goto_token(start_index);
                 
-                if (e instanceof SyntaxError) {
+                if (e.locked) {
                   throw e;
                   
                 }}
@@ -122,7 +121,7 @@
             args.push(v);
             
         }
-        this.error("Expected " + (args.join(' or ')));
+        this.error("Expected '" + (args.join(' or ')) + "'");
         
       };
       
@@ -194,6 +193,8 @@
       };
       ASTBase.prototype.lock = function () {
             this.locked = true;
+        
+        this.line = this.ts.line;
         
       };
       
