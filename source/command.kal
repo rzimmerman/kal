@@ -17,7 +17,8 @@ function parseOptions()
   optimist = optimist.usage(BANNER)
   optimist = optimist.options('help',{alias:'h',boolean:yes,description:'show the command line usage options'})
   optimist = optimist.options('tokens',{alias:'t',boolean:yes,description:'print out the tokens that the lexer/sugar produce'})
-  optimist = optimist.options('javascript',{alias:'j',boolean:yes,description:'print out the javascript output of the compiler'})
+  optimist = optimist.options('tokens',{alias:'t',boolean:yes,description:'print out the tokens that the lexer/sugar produce'})
+  optimist = optimist.options('bare',{alias:'b',boolean:yes,description:'don\'t wrap the output in a function'})
   optimist = optimist.options('version',{alias:'v',boolean:yes,description:'display the version number'})
   optimist = optimist.options('output',{alias:'o',description:'the output directory for the compiled source'})
   return optimist.argv
@@ -31,6 +32,11 @@ run = function run()
     return usage()
   process.argv[0] = 'kal'
   process.execPath = require.main.filename
+  
+  compile_options = {}
+  compile_options.show_tokens = options.tokens
+  compile_options.bare = no
+  
   for file_name in options._
     js_output = Kal.compile fs.readFileSync(file_name), options.tokens
     printLine js_output if options.javascript

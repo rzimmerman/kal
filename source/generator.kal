@@ -70,7 +70,7 @@ function apply_generator_to_grammar()
   
   self = this
   
-  me.File.prototype.js = ->
+  me.File.prototype.js = (options) ->
     i = ''
     scopes = []
     scope = {}
@@ -89,7 +89,7 @@ function apply_generator_to_grammar()
     rv = [snip, code].join '\n'
     for comment in me.ts.comments # reset the AST modifications in case something else wants to use it
       comment.written = null
-    return pop_scope(rv, yes, yes)
+    return pop_scope(rv, yes, not options.bare)
     
   me.Statement.prototype.js = ->
     rv = ''

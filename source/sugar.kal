@@ -3,9 +3,9 @@ KEYWORDS = grammar.KEYWORDS
 
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of','nor','if','unless','except']
 
-function translate_sugar (tokens, show_tokens, tokenizer)
-  out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean code_in_strings tokens,  tokenizer
-  if show_tokens
+function translate_sugar (tokens, options, tokenizer)
+  out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean code_in_strings tokens, tokenizer
+  if options?.show_tokens
     debug = []
     for t in out_tokens
       if t.value is '\n'

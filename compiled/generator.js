@@ -130,7 +130,7 @@
     self = this;
     
     
-    this.File.prototype.js = function  () {
+    this.File.prototype.js = function  (options) {
       var code, ki$1, kobj$1, statement, snip, key, rv, comment;
       i = '';
       
@@ -174,7 +174,7 @@
           comment.written = null;
           
       }
-      return pop_scope(rv, true, true);
+      return pop_scope(rv, true, !(options.bare));
       
       
     };

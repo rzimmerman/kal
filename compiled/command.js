@@ -28,7 +28,9 @@
     
     optimist = optimist.options('tokens', { alias: 't', boolean: true, description: 'print out the tokens that the lexer/sugar produce' });
     
-    optimist = optimist.options('javascript', { alias: 'j', boolean: true, description: 'print out the javascript output of the compiler' });
+    optimist = optimist.options('tokens', { alias: 't', boolean: true, description: 'print out the tokens that the lexer/sugar produce' });
+    
+    optimist = optimist.options('bare', { alias: 'b', boolean: true, description: 'don\'t wrap the output in a function' });
     
     optimist = optimist.options('version', { alias: 'v', boolean: true, description: 'display the version number' });
     
@@ -38,7 +40,7 @@
     
   };
   run = function run () {
-    var options, ki$1, kobj$1, file_name, js_output;
+    var options, compile_options, ki$1, kobj$1, file_name, js_output;
     options = parseOptions();
     
     if (options.version) {
@@ -58,6 +60,14 @@
     process.argv[0] = 'kal';
     
     process.execPath = require.main.filename;
+    
+    
+    compile_options = {  };
+    
+    compile_options.show_tokens = options.tokens;
+    
+    compile_options.bare = false;
+    
     
     kobj$1 = options._;
     for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {

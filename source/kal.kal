@@ -5,18 +5,66 @@ generator = require './generator'
 
 exports.VERSION = '0.2.7'
 
-function compile(code, show_tokens)
+function compile(code, options)
   token_rv = lexer.tokenize code
   raw_tokens = token_rv[0]
   comments   = token_rv[1]
   
-  tokens = sugar.translate_sugar raw_tokens, show_tokens, lexer.tokenize
+  tokens = sugar.translate_sugar raw_tokens, options, lexer.tokenize
   root_node = parser.parse tokens, comments
   generator.load parser.Grammar
-  return root_node.js()
+  return root_node.js(options)
 exports.compile = compile
 
 if require.extensions
   require.extensions['.kal'] = (module, filename) ->
     content = compile(require('fs').readFileSync(filename, 'utf8'))
     module._compile(content, filename)
+
+exports.eval = (code, options) ->
+  code = code.trim()
+  return if code is ""
+  
+  Script = vm.Script
+  if Script
+    if options.sandbox exists
+      if options.sandbox instanceof Script.createContext().constructor
+        sandbox = options.sandbox
+      else
+        sandbox = Script.createContext()
+        for k of options.sandbox
+          sandbox[k] = options.sandbox[k] if options.sanbox.hasOwnProperty k
+      sandbox.GLOBAL = sandbox
+      sandbox.root   = sandbox
+      sandbox.global = sandbox
+    else
+      sandbox = global
+    sandbox.__filename = options.filename or 'eval'
+    sandbox.__dirname  = path.dirname sandbox.__filename
+    # define module/require only if they chose not to specify their own
+    unless sandbox isnt global or sandbox.module or sandbox.require
+      Module = require 'module'
+      _module  = new Module(options.modulename or 'eval')
+      sandbox.module  = _module
+      _require = (path) ->
+        Module._load path, _module, true
+      sandbox.require = _require
+      _module.filename = sandbox.__filename
+      for r in Object.getOwnPropertyNames require
+        if r isnt 'paths'
+          _require[r] = require[r] 
+      # use the same hack node currently uses for their own REPL
+      _module.paths = Module._nodeModulePaths process.cwd()
+      _require.paths = _module.paths
+      _require.resolve = (request) ->
+        Module._resolveFilename request, _module
+  o = {}
+  for k of options
+    if options.hasOwnProperty k
+      o[k] = options[k]
+  o.bare = on # ensure return value
+  js = compile code, o
+  if sandbox is global
+    return vm.runInThisContext js
+  else
+    return vm.runInContext js, sandbox
