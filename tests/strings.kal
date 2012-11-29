@@ -5,4 +5,9 @@ describe 'Strings', ->
     function g(n)
       return n + 1
     ("xyz #{d+d} #{d exists} #{f exists} #{g(3)}").should.equal 'xyz ee true false 4'
+  it 'should support single quoted strings', ->
+    #gh-27
+    r = '\n'
+    r.should.equal "\n"
+    
     

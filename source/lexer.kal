@@ -26,7 +26,10 @@ class Lexer
         if text?
           me.type = type
           break
-      me.error("invalid token '#{this.code.slice(index,index+16)}...'") unless text?
+      unless text
+        code = this.code.toString().trim()
+        context_len = 16 when code.length >= 16 otherwise code.length
+        me.error("invalid token '#{code.slice(index,index+context_len)}...' on line #{this.line}") unless text?
       value = parse_token[me.type](text)
       if last_token_type is 'NEWLINE' #check for indent/dedent
         me.handleIndentation type, text
@@ -83,7 +86,7 @@ token_types = [[/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).
   [/^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/,'REGEX'],
   [/^0x[a-f0-9]+/i, 'NUMBER'],
   [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'],
-  [/^'([^']*(\\'))*[^']*'/, 'STRING'],
+  [/^\'([^\']*(\\\'))*[^\']*'/, 'STRING'],
   [/^"([^"]*(\\"))*[^"]*"/, 'STRING'],
   [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'],
   [/^\r*\n\r*/, 'NEWLINE'],

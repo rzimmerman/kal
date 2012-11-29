@@ -23,7 +23,7 @@
       
     }  
     Lexer.prototype.tokenize = function () {
-      var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, value;
+      var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, code, context_len, value;
       this.tokens = [];
       
       this.comments = [];
@@ -52,8 +52,14 @@
                 
               }
           }
-          (!((text != null))) ? this.error(("invalid token '" + (this.code.slice(index, index + 16)) + "...'")) : void 0;
-          
+          if (!(text)) {
+            code = this.code.toString().trim();
+            
+            context_len = (code.length >= 16) ? 16 : code.length;
+            
+            (!((text != null))) ? this.error(("invalid token '" + (code.slice(index, index + context_len)) + "...' on line " + (this.line))) : void 0;
+            
+          }
           value = parse_token[this.type](text);
           
           /*heck for indent/dede*/
@@ -151,5 +157,5 @@
     return text;
     
   };
-  token_types = [[/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT'], [/^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/, 'REGEX'], [/^0x[a-f0-9]+/i, 'NUMBER'], [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'], [/^'([^']*(\\'))*[^']*'/, 'STRING'], [/^"([^"]*(\\"))*[^"]*"/, 'STRING'], [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'], [/^\r*\n\r*/, 'NEWLINE'], [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'], [/^[\<\>\!\=]\=/, 'LITERAL'], [/^[\+\-\*\/\^\=\.><\(\)\[\]\,\.\{\}\:\?]/, 'LITERAL']];
+  token_types = [[/^###([^#][\s\S]*?)(?:###[^\n\S]*|(?:###)?$)|^(?:\s*#(?!##[^#]).*)+/, 'COMMENT'], [/^(\/(?![\s=])[^[\/\n\\]*(?:(?:\\[\s\S]|\[[^\]\n\\]*(?:\\[\s\S][^\]\n\\]*)*])[^[\/\n\\]*)*\/)([imgy]{0,4})(?!\w)/, 'REGEX'], [/^0x[a-f0-9]+/i, 'NUMBER'], [/^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?/i, 'NUMBER'], [/^\'([^\']*(\\\'))*[^\']*'/, 'STRING'], [/^"([^"]*(\\"))*[^"]*"/, 'STRING'], [/^[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/, 'IDENTIFIER'], [/^\r*\n\r*/, 'NEWLINE'], [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'], [/^[\<\>\!\=]\=/, 'LITERAL'], [/^[\+\-\*\/\^\=\.><\(\)\[\]\,\.\{\}\:\?]/, 'LITERAL']];
 })()
