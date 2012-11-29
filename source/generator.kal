@@ -34,7 +34,7 @@ function apply_generator_to_grammar()
     for k of scope
       v = scope[k]
       if v is 'no closures'
-        #do nothing
+        v = v #do nothing
       else if v is 'closures ok' or v is 'argument' or v is 'function'
         new_scope[k] = 'closure'
       else if v is 'closure'

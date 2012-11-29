@@ -58,9 +58,10 @@
   for (k in kobj$1) {
           v = scope[k];
           
-          /*        #do nothing*/
           if (v === 'no closures') {
-          
+            /*o nothi*/
+            v = v;
+            
           } else         if (v === 'closures ok' || v === 'argument' || v === 'function') {
             new_scope[k] = 'closure';
             

@@ -26,9 +26,9 @@
     
     optimist = optimist.options('help', { alias: 'h', boolean: true, description: 'show the command line usage options' });
     
-    optimist = optimist.options('tokens', { alias: 't', boolean: true, description: 'print out the tokens that the lexer/sugar produce' });
+    optimist = optimist.options('tokens', { alias: 't', boolean: true, description: 'print out the tokens that the lexer/sugarer produce' });
     
-    optimist = optimist.options('tokens', { alias: 't', boolean: true, description: 'print out the tokens that the lexer/sugar produce' });
+    optimist = optimist.options('javascript', { alias: 'j', boolean: true, description: 'print out the compiled javascript' });
     
     optimist = optimist.options('bare', { alias: 'b', boolean: true, description: 'don\'t wrap the output in a function' });
     
