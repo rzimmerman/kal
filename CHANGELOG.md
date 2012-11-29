@@ -1,6 +1,12 @@
 <<<<<<< Updated upstream
 #Change Log
 
+### [0.2.9](https://github.com/rzimmerman/kal/compare/r0.2.8...r0.2.9)
+* Significant performance improvements for compile time
+* Fixed the command line options to the `kal` executable
+* Much better error reporting for syntax errors
+* Fixed a bug to allow no-parentheses function calls in for and while loop headers
+
 ### [0.2.8](https://github.com/rzimmerman/kal/compare/r0.2.7...r0.2.8)
 * Fixed some issues with escape sequences in strings
 * Fixed some issues with conditional return statements
