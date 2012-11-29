@@ -17,6 +17,14 @@ You may need to run this as administrator depending on how you installed node/np
 
 You can also install kal locally as a project dependency by including 'kal' in your package.json.
 
+Interactive Shell
+-----------------
+If you install Kal globally (using the `-g` option), you can run the interactive shell by running `kal` with no arguments.
+
+    $ kal
+    kal> 'hello' + ' ' + 'world'
+    'hello world'
+
 Compiling and Running Kal Files
 -------------------------------
 You can use the kal utility to run or compile files. Run `kal -h` for the full option set. If you installed kal locally (didn't use the -g option), you will need to specify the path to the kal executable, usually located at `node_modules/kal/scripts/kal`.
