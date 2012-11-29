@@ -212,7 +212,13 @@
     };
     this.ReturnStatement.prototype.js = function  () {
       var rv;
-      rv = ("return " + (this.expr.js()) + ";");
+      rv = "return";
+      
+      if ((this.expr != null)) {
+    rv += (" " + (this.expr.js()));
+      }
+      
+      rv += ";";
       
       if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);

@@ -62,10 +62,14 @@
       
       this.lock();
       
-      this.expr = this.opt(Expression);
+      this.conditional = this.opt(WhenExpression);
       
-      this.conditional = this.expr.transform_when_statement();
-      
+      if (!((this.conditional != null))) {
+        this.expr = this.opt(Expression);
+        
+        this.conditional = this.expr.transform_when_statement();
+        
+      }
     };
   function IfStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);

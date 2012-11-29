@@ -32,8 +32,10 @@ class ReturnStatement inherits from ASTBase
   method parse()
     me.req_val 'return'
     me.lock()
-    me.expr = me.opt Expression
-    me.conditional = me.expr.transform_when_statement()
+    me.conditional = me.opt WhenExpression
+    except when me.conditional exists
+      me.expr = me.opt Expression
+      me.conditional = me.expr.transform_when_statement()
 
 class IfStatement inherits from ASTBase
   method parse()

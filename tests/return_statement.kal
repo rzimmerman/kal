@@ -28,4 +28,11 @@ describe 'Return Statement', ->
       return a when a is 3
     g().should.equal 3
   
-
+  it 'should work conditionally when bare', ->
+    a = 0
+    g = function ()
+      a = 9
+      return unless a is 4
+      a = 3
+    g()
+    a.should.equal 9

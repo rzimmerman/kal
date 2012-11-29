@@ -106,8 +106,10 @@ function apply_generator_to_grammar()
     return rv
     
   me.ReturnStatement.prototype.js = ->  
-    rv = "return #{this.expr.js()};"
-    rv = me.conditional.js(rv, no) if me.conditional?
+    rv = "return"
+    rv += " #{this.expr.js()}" when me.expr exists
+    rv += ";"
+    rv = me.conditional.js(rv, no) when me.conditional exists
     return rv
     
   me.ExpressionStatement.prototype.js = ->
