@@ -26,30 +26,33 @@ function parseOptions()
 run = function run()
   options = parseOptions()
   return version() if options.version
-  return usage() if optimist.argv.help or optimist.argv._.length is 0
+  return usage() if optimist.argv.help 
   if options.output exists and not fs.existsSync(options.output)
     printWarn('output path does not exist!')
     return usage()
+  return require('./interactive') if options._.length is 0
   process.argv[0] = 'kal'
   process.execPath = require.main.filename
   
   compile_options = {}
   compile_options.show_tokens = options.tokens
   compile_options.bare = no
+  compile_options.show_js = options.javascript
+  
   
   for file_name in options._
-    js_output = Kal.compile fs.readFileSync(file_name), options.tokens
-    printLine js_output if options.javascript
     if options.output exists
+      js_output = Kal.compile fs.readFileSync(file_name), compile_options
+      printLine js_output if options.javascript
       fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
     else
-      printLine eval(js_output)
+      Kal.eval fs.readFileSync(file_name), compile_options
 exports.run = run
 
 function version()
   printLine "Kal version #{Kal.VERSION}"
-  return 0
+  process.exit(0)
   
 function usage()
   optimist.showHelp()
-  return 2
+  process.exit(2)

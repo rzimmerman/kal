@@ -47,7 +47,7 @@
     return version();
     }
     
-    if (optimist.argv.help || optimist.argv._.length === 0) {
+    if (optimist.argv.help) {
     return usage();
     }
     
@@ -57,6 +57,10 @@
       return usage();
       
     }
+    if (options._.length === 0) {
+    return require('./interactive');
+    }
+    
     process.argv[0] = 'kal';
     
     process.execPath = require.main.filename;
@@ -68,19 +72,22 @@
     
     compile_options.bare = false;
     
+    compile_options.show_js = options.javascript;
+    
+    
     
     kobj$1 = options._;
     for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
       file_name = kobj$1[ki$1];
-        js_output = Kal.compile(fs.readFileSync(file_name), options.tokens);
-        
-        (options.javascript) ? printLine(js_output) : void 0;
-        
         if ((options.output != null)) {
+          js_output = Kal.compile(fs.readFileSync(file_name), compile_options);
+          
+          (options.javascript) ? printLine(js_output) : void 0;
+          
           fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal', '.js'), js_output);
           
         } else {
-          printLine(eval(js_output));
+          Kal.eval(fs.readFileSync(file_name), compile_options);
           
         }
     }
@@ -89,14 +96,14 @@
   function version () {
     printLine("Kal version " + (Kal.VERSION));
     
-    return 0;
+    process.exit(0);
     
     
   };
   function usage () {
     optimist.showHelp();
     
-    return 2;
+    process.exit(2);
     
     
   };
