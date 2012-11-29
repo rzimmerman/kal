@@ -1,6 +1,11 @@
 <<<<<<< Updated upstream
 #Change Log
 
+### [0.2.8](https://github.com/rzimmerman/kal/compare/r0.2.7...r0.2.8)
+* Fixed some issues with escape sequences in strings
+* Fixed some issues with conditional return statements
+* Included an interactive shell which now runs be default if you run `kal` with no arguments.
+
 ### [0.2.7](https://github.com/rzimmerman/kal/compare/r0.2.6...r0.2.7)
 * Added a proper npmignore file to reduce the package size
 * Added this change log
