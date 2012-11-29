@@ -9,5 +9,18 @@ describe 'Strings', ->
     #gh-27
     r = '\n'
     r.should.equal "\n"
+    s = '\n(press a key)'
+    s.should.equal "\n(press a key)"
+    x = {}
+    x["on"] = function (a,b)
+      return a + b
+    y = x.on 'line', r
+    #this comment has a ' in it
+    y.should.equal "line\n"
+    #this comment has a ' in it
+    z = "\\"
+    z.should.equal '\\'
+    if z isnt '\\'
+      require('should').fail("couldn't parse string with slashes")
     
     
