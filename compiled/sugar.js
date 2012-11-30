@@ -29,8 +29,7 @@
     
   };
   exports.translate_sugar = translate_sugar;
-  /*  # close out with a newline in case the user did not, remove whitespace*/
-  function clean (tokens) {
+  function clean (tokens) { /*close out with a newline in case the user did not, remove whitespace*/
     var out_tokens, ki$1, kobj$1, token;
     out_tokens = [];
     
@@ -43,8 +42,7 @@
     return out_tokens;
     
   };
-  /*  # allow multi-line statements with line breaks after commas, colons, and equal signs*/
-  function multiline_statements (tokens) {
+  function multiline_statements (tokens) { /*allow multi-line statements with line breaks after commas, colons, and equal signs*/
     var out_tokens, last_token, continue_line, reduce_dedent, ki$1, kobj$1, token, skip_token;
     out_tokens = [];
     
@@ -84,8 +82,7 @@
                 
               }
             } else {
-              /*dd back in the newli*/
-              out_tokens.push(last_token);
+              out_tokens.push(last_token); /*add back in the newline*/
               
             }
           }
@@ -98,8 +95,7 @@
     return out_tokens;
     
   };
-  /*  # allow function calls without parentheses*/
-  function noparen_function_calls (tokens) {
+  function noparen_function_calls (tokens) { /*allow function calls without parentheses*/
     var out_tokens, close_paren_count, last_token, triggers, closures, ignore_next_indent, i, token, last_token_isnt_reserved, last_token_callable, token_isnt_reserved, this_token_not_operator, closure;
     out_tokens = [];
     
@@ -184,8 +180,7 @@
     return out_tokens;
     
   };
-  /*  #allow function definitions with the -> operator*/
-  function coffee_style_functions (tokens) {
+  function coffee_style_functions (tokens) { /*allow function definitions with the -> operator*/
     var out_tokens, last_token, i, token, new_tokens, t, f_token;
     out_tokens = [];
     
@@ -197,8 +192,7 @@
         token = tokens[i];
         
         if (((last_token != null) ? last_token.value : void 0) === '-' && ((token != null) ? token.value : void 0) === '>') {
-          /*remove the da*/
-          out_tokens.pop();
+          out_tokens.pop(); /*remove the dash*/
           
           new_tokens = [];
           
@@ -228,8 +222,7 @@
           out_tokens = out_tokens.concat(new_tokens);
           
         } else {
-          /*      # push the current token unchanged*/
-          out_tokens.push(token);
+          out_tokens.push(token); /*push the current token unchanged*/
           
         }
         last_token = token;
@@ -240,8 +233,7 @@
     return out_tokens;
     
   };
-  /*  #allow double-quoted strings with embedded code, like: "x is #{x}"*/
-  function code_in_strings (tokens, tokenizer) {
+  function code_in_strings (tokens, tokenizer) { /*allow double-quoted strings with embedded code, like: "x is #{x}"*/
     var out_tokens, ki$1, kobj$1, token, rv, r, m, add_parens, new_token_text, new_tokens;
     if ((tokenizer == null)) {
     return tokens;
@@ -280,8 +272,7 @@
               
               rv = '"' + rv.slice(m.index + m[0].length);
               
-              /*void adding a (+ "") to strings that end with #{expr*/
-              if (rv === '""') {
+              if (rv === '""') { /*avoid adding a (+ "") to strings that end with #{expr}"*/
                 rv = '';
                 
               } else {

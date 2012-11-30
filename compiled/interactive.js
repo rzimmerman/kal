@@ -1,11 +1,11 @@
     (function () {
   var stdin, stdout, Kal, readline, util, inspect, vm, Script, Module, REPL_PROMPT, REPL_PROMPT_MULTILINE, REPL_PROMPT_CONTINUATION, enableColors, ACCESSOR, SIMPLEVAR, backlog, pipedInput, repl, multilineMode;
       var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-  /* The interactive shell. Compiles one line to Javascript and
-  # executes it
-  
-  # Start by opening up `stdin` and `stdout`.*/
   stdin = process.openStdin();
+  /*The interactive shell. Compiles one line to Javascript and
+   * executes it
+   * 
+   * Start by opening up `stdin` and `stdout`.*/
   stdout = process.stdout;
   Kal = require('./kal');
   readline = require('readline');
@@ -13,37 +13,28 @@
   inspect = util.inspect;
   vm = require('vm');
   Script = vm.Script;
-  /*
-  # Config*/
-  Module = require('module');
+  Module = require('module'); /*Config*/
   REPL_PROMPT = 'kal> ';
   REPL_PROMPT_MULTILINE = '------> ';
   REPL_PROMPT_CONTINUATION = '......> ';
   enableColors = false;
   if (!(process.platform === 'win32')) {
-    /*  
-  # Log an error.*/
-    enableColors = !(process.env.NODE_DISABLE_COLORS);
+    enableColors = !(process.env.NODE_DISABLE_COLORS); /*Log an error.*/
     
   }
   function error (err) {
     stdout.write(err.stack || err.toString());
     
-    /*
-  ## Autocompletion
-  
-  # Regexes to match complete-able bits of text.*/
     stdout.write('\n');
+  /*Autocompletion
+   * 
+   * Regexes to match complete-able bits of te*/
     
   };
   ACCESSOR = /\s*([\w\.]+)(?:\.(\w*))$/;
-  /*
-  # Returns a list of completions, and the completed text.*/
-  SIMPLEVAR = /(\w+)$/i;
+  SIMPLEVAR = /(\w+)$/i; /*Returns a list of completions, and the completed text.*/
   function autocomplete (text) {
-    /*
-  # Attempt to autocomplete a chained dotted attribute: `one.two.three`.*/
-    return completeAttribute(text) || completeVariable(text) || [[], text];
+    return completeAttribute(text) || completeVariable(text) || [[], text]; /*Attempt to autocomplete a chained dotted attribute: `one.two.three`.*/
     
   };
   function completeAttribute (text) {
@@ -84,9 +75,7 @@
         }
         completions = getCompletions(prefix, candidates);
         
-        /*
-  # Attempt to autocomplete an in-scope free variable: `one`.*/
-        return [completions, prefix];
+        return [completions, prefix]; /*Attempt to autocomplete an in-scope free variable: `one`.*/
         
       }
     };
@@ -119,9 +108,7 @@
         }
         completions = getCompletions(free, candidates);
         
-        /*
-  # Return elements of candidates for which `prefix` is a prefix.*/
-        return [completions, free];
+        return [completions, free]; /*Return elements of candidates for which `prefix` is a prefix.*/
         
       }
     };
@@ -135,24 +122,17 @@
           (0 === el.indexOf(prefix)) ? rv.push(el) : void 0;
           
       }
-      /*
-  # Make sure that uncaught exceptions don't kill the REPL.*/
-      return rv;
+      return rv; /*Make sure that uncaught exceptions don't kill the REPL.*/
       
     };
-    /*
-  # The current backlog of multi-line code.*/
-    process.on('uncaughtException', error);
-    /*
-  # The main REPL function. **run** is called every time a line of code is entered.
-  # Attempt to evaluate the command. If there's an exception, print it out instead
-  # of exiting.*/
+    process.on('uncaughtException', error); /*The current backlog of multi-line code.*/
     backlog = '';
-    /*  # remove single-line comments*/
-    function run (buffer) {
+  /*The main REPL function. **run** is called every time a line of code is entered.
+   * Attempt to evaluate the command. If there's an exception, print it out instead
+   * of exiting.*/
+    function run (buffer) { /*remove single-line comments*/
         var code, _, returnValue;
-      /*  # remove trailing newlines*/
-      buffer = buffer.replace(/(^|[\r\n]+)(\s*)##?(?:[^#\r\n][^\r\n]*|)($|[\r\n])/, "$1$2$3");
+      buffer = buffer.replace(/(^|[\r\n]+)(\s*)##?(?:[^#\r\n][^\r\n]*|)($|[\r\n])/, "$1$2$3"); /*remove trailing newlines*/
       
       buffer = buffer.replace(/[\r\n]+$/, "");
       
@@ -206,8 +186,7 @@
         repl.prompt();
         
       };
-      /*  # handle piped input*/
-      if (stdin.readable && stdin.isRaw) {
+      if (stdin.readable && stdin.isRaw) { /*handle piped input*/
         pipedInput = '';
         
         repl = {  };
@@ -273,8 +252,7 @@
           
         });
       } else {
-        /*  # Create the REPL by listening to **stdin**.*/
-        if (readline.createInterface.length < 3) {
+        if (readline.createInterface.length < 3) { /*Create the REPL by listening to **stdin**.*/
           repl = readline.createInterface(stdin, autocomplete);
           
           stdin.on('data', function  (buffer) {
@@ -286,11 +264,8 @@
           
         }
       }
-      /*
-  # Handle multi-line mode switch*/
-      multilineMode = false;
-      /*  # test for Ctrl-v*/
-      repl.input.on('keypress', function  (char, key) {
+      multilineMode = false; /*Handle multi-line mode switch*/
+      repl.input.on('keypress', function  (char, key) { /*test for Ctrl-v*/
         var cursorPos, newPrompt;
         if (!(key && key.ctrl && !(key.meta) && !(key.shift) && key.name === 'v')) {
     return;
@@ -318,14 +293,11 @@
         
         repl.cursor = cursorPos;
         
-        /*
-  # Handle Ctrl-d press at end of last line in multiline mode*/
-        repl.output.cursorTo(newPrompt.length + (repl.cursor));
+        repl.output.cursorTo(newPrompt.length + (repl.cursor)); /*Handle Ctrl-d press at end of last line in multiline mode*/
         
       });
       repl.input.on('keypress', function  (char, key) {
-            /*  # test for Ctrl-d*/
-        if (!(multilineMode && repl.line)) {
+            if (!(multilineMode && repl.line)) { /*test for Ctrl-d*/
     return;
         }
         

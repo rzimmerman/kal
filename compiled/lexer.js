@@ -22,7 +22,7 @@
       
     }  
     Lexer.prototype.tokenize = function () {
-      var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, code, context_len, value;
+      var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, code, context_len, value, comment_token;
       this.tokens = [];
       
       this.comments = [];
@@ -60,13 +60,28 @@
           }
           value = parse_token[this.type](text);
           
-          /*heck for indent/dede*/
-          if (last_token_type === 'NEWLINE') {
+          if (last_token_type === 'NEWLINE') { /*check for indent/dedent*/
             this.handleIndentation(type, text);
             
           }
           if (type === 'COMMENT') {
-            this.comments.push({ text: text, line: this.line, value: value, type: type });
+            comment_token = { text: text, line: this.line, value: value, type: type };
+            
+            if (((this.tokens[this.tokens.length - 1] != null) ? this.tokens[this.tokens.length - 1].type : void 0) === 'NEWLINE') {
+              comment_token.post_fix = false;
+              
+            } else {
+              comment_token.post_fix = true;
+              
+            }
+            if (value.match(/\n/)) {
+              comment_token.multiline = true;
+              
+            } else {
+              comment_token.multiline = false;
+              
+            }
+            this.comments.push(comment_token);
             
           } else         if (type !== 'WHITESPACE') {
             this.tokens.push({ text: text, line: this.line, value: value, type: type });
@@ -76,15 +91,14 @@
           
           this.line += ((text.match(/\n/g) != null) ? text.match(/\n/g).length : void 0) || 0;
           
-          /*    #add a trailing newline in case the user didn't*/
-          last_token_type = type;
+          last_token_type = type; /*add a trailing newline in case the user didn't*/
           
       }
       this.tokens.push({ text: '\n', line: this.line, value: '', type: 'NEWLINE' });
       
-      /*lear up any remaining indents at the end of the file
-      #remove the newline if it wasn't need*/
       this.handleIndentation('NEWLINE', '');
+  /*clear up any remaining indents at the end of the file
+   * remove the newline if it wasn't needed*/
       
       (this.tokens[this.tokens.length - 1].type === 'NEWLINE') ? this.tokens.pop() : void 0;
       
@@ -141,7 +155,13 @@
   };
   parse_token.COMMENT = function  (text) {
     var rv;
-    rv = (text[1] === '#') ? text.slice(3, 0 - 2) : text.slice(1);
+    rv = text.trim();
+    
+    rv = (rv[1] === '#') ? rv.slice(3, -3) : rv.slice(1);
+    
+    rv = rv.replace(/^\s+/, "");
+    
+    rv = rv.replace(/\n[\f\r\t\v\u00A0\u2028\u2029 ]*#*[\f\r\t\v\u00A0\u2028\u2029 ]*/g, '\n * ');
     
     return rv.replace(/(\/\*)|(\*\/)/g, '**');
     

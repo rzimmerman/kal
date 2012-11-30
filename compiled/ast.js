@@ -18,9 +18,7 @@
       
       this.line = ts.line;
       
-      /*    
-    #optionally match one of the classes or tokens in the list*/
-      this.parse();
+      this.parse(); /*optionally match one of the classes or tokens in the list*/
       
     }    
     ASTBase.prototype.opt = function () {
@@ -55,9 +53,7 @@
                 }}
             }
         }
-        /*  
-    #require match to one of the classes or tokens in the list*/
-        return null;
+        return null; /*require match to one of the classes or tokens in the list*/
         
       };
       ASTBase.prototype.req = function () {
@@ -86,8 +82,7 @@
         this.error("" + message);
         
       };
-      /*equire token val*/
-      ASTBase.prototype.opt_val = function () {
+      ASTBase.prototype.opt_val = function () { /*require token value*/
         var rv;
         if (($kindexof.call(arguments, this.ts.value) >= 0) ) {
           rv = this.ts.current;
@@ -120,8 +115,7 @@
         this.error("Expected '" + (args.join(' or ')) + "'");
         
       };
-      /*equire at least o*/
-      ASTBase.prototype.req_multi = function () {
+      ASTBase.prototype.req_multi = function () { /*require at least one*/
         var rv, list, ki$1, kobj$1, cls;
         rv = this.opt_multi.apply(this, arguments);
         
@@ -140,8 +134,7 @@
         this.error("Expected one of " + (list.join(', ')));
         
       };
-      /*ptionally have multip*/
-      ASTBase.prototype.opt_multi = function () {
+      ASTBase.prototype.opt_multi = function () { /*optionally have multiple*/
         var cls, rv;
         cls = this.opt.apply(this, arguments);
         

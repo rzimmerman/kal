@@ -93,11 +93,22 @@ function apply_generator_to_grammar()
     
   me.Statement.prototype.js = ->
     rv = ''
+    pf = ''
     for comment in me.ts.comments
       if comment.line < me.line + 1 and not comment.written
         comment.written = yes
-        rv += i + '/*' + comment.value + '*/\n'
+        if comment.post_fix
+          pf += '\n' when comment.multiline
+          pf += ' ' when not comment.multiline
+          pf += '/*' + comment.value + '*/'
+        else
+          rv += i + '/*' + comment.value + '*/\n'
     rv += i + me.statement.js()
+    if pf isnt ''
+      if rv.match /\n/
+        rv = rv.replace /\n/, pf + '\n'
+      else
+        rv += pf
     return rv
     
   me.ThrowStatement.prototype.js = ->  

@@ -139,8 +139,7 @@
   function DeclarationStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(DeclarationStatement,ASTBase);
-    /*ntil the spec is changed to allow empty definitio*/
-    DeclarationStatement.prototype.tmp = function () {
+    DeclarationStatement.prototype.tmp = function () { /*until the spec is changed to allow empty definitions*/
         return;
       
     };
@@ -278,10 +277,10 @@
       var first;
       this.preop = this.opt_val('not', 'new', '-');
       
-      /*    #if a paren expression occurs immediately after the function block dedent, this would
-      #normally be interpreted as a function call on the function expression. While this may
-      #be desired it is usually just confusing, so we explicitly avoid it here.*/
       this.base = this.req(ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER');
+  /*if a paren expression occurs immediately after the function block dedent, this would
+   * normally be interpreted as a function call on the function expression. While this may
+   * be desired it is usually just confusing, so we explicitly avoid it here.*/
       
       if ((this.base instanceof FunctionExpression)) {
         this.accessors = [];

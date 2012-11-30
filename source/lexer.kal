@@ -34,7 +34,16 @@ class Lexer
       if last_token_type is 'NEWLINE' #check for indent/dedent
         me.handleIndentation type, text
       if type is 'COMMENT'
-        me.comments.push {text:text, line:me.line, value:value, type:type}
+        comment_token = {text:text, line:me.line, value:value, type:type}
+        if me.tokens[me.tokens.length-1]?.type is 'NEWLINE'
+          comment_token.post_fix = no
+        else
+          comment_token.post_fix = yes
+        if value.match(/\n/)
+          comment_token.multiline = yes
+        else
+          comment_token.multiline = no
+        me.comments.push comment_token
       else if type isnt 'WHITESPACE'
         me.tokens.push {text:text, line:me.line, value:value, type:type}
       index += text.length
@@ -75,7 +84,10 @@ parse_token.NEWLINE = (text) ->
 parse_token.WHITESPACE = (text) ->
   return ' '
 parse_token.COMMENT = (text) ->
-  rv = text.slice(3,0-2) when text[1] is '#' otherwise text.slice(1)
+  rv = text.trim()
+  rv = rv.slice(3,-3) when rv[1] is '#' otherwise rv.slice(1)
+  rv = rv.replace /^\s+/, ""
+  rv = rv.replace /\n[\f\r\t\v\u00A0\u2028\u2029 ]*#*[\f\r\t\v\u00A0\u2028\u2029 ]*/g, '\n * '
   return rv.replace(/(\/\*)|(\*\/)/g, '**')
 parse_token.LITERAL = (text) ->
   return text.replace(/[\f\r\t\v\u00A0\u2028\u2029 ]/, '')

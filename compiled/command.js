@@ -1,8 +1,7 @@
 (function () {
   var fs, path, optimist, Kal, run;
   
-  /* External dependencies.*/
-  fs = require('fs');
+  fs = require('fs'); /*External dependencies.*/
   path = require('path');
   optimist = require('optimist');
   Kal = require('./kal');

@@ -52,8 +52,7 @@
           v = scope[k];
           
           if (v === 'no closures') {
-            /*o nothi*/
-            v = v;
+            v = v; /*do nothing*/
             
           } else         if (v === 'closures ok' || v === 'argument' || v === 'function') {
             new_scope[k] = 'closure';
@@ -157,8 +156,7 @@
       
       rv = [snip, code].join('\n');
       
-      /*reset the AST modifications in case something else wants to use */
-      kobj$1 = this.ts.comments;
+      kobj$1 = this.ts.comments; /*reset the AST modifications in case something else wants to use it*/
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         comment = kobj$1[ki$1];
           comment.written = null;
@@ -168,8 +166,10 @@
       
     };
     this.Statement.prototype.js = function  () {
-      var rv, ki$1, kobj$1, comment;
+      var rv, pf, ki$1, kobj$1, comment;
       rv = '';
+      
+      pf = '';
       
       kobj$1 = this.ts.comments;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
@@ -177,12 +177,34 @@
           if (comment.line < this.line + 1 && !(comment.written)) {
             comment.written = true;
             
-            rv += i + '/*' + comment.value + '*/\n';
-            
+            if (comment.post_fix) {
+              if (comment.multiline) {
+    pf += '\n';
+              }
+              
+              if (!(comment.multiline)) {
+    pf += ' ';
+              }
+              
+              pf += '/*' + comment.value + '*/';
+              
+            } else {
+              rv += i + '/*' + comment.value + '*/\n';
+              
+            }
           }
       }
       rv += i + this.statement.js();
       
+      if (pf !== '') {
+        if (rv.match(/\n/)) {
+          rv = rv.replace(/\n/, pf + '\n');
+          
+        } else {
+          rv += pf;
+          
+        }
+      }
       return rv;
       
     };
@@ -298,10 +320,9 @@
           
         }
       } else {
-        /*    
-      # an undefined unary is a simple variable access to an undeclared variable
-      # it requres we check if the variable exists before checking if it is null/undefined*/
         rv += this.base.js();
+  /*an undefined unary is a simple variable access to an undeclared variable
+   * it requres we check if the variable exists before checking if it is null/undefined*/
         
       }
       undefined_unary = (this.base.type === 'IDENTIFIER' && (scope[base_val] == null) && (kw_translate == null));
@@ -317,8 +338,7 @@
           
           rv += accessor.js();
           
-          /*only possible for the first access*/
-          undefined_unary = false;
+          undefined_unary = false; /*only possible for the first accessor*/
           
       }
       existence_check = [];
@@ -603,8 +623,7 @@
       
     };
     this.FunctionExpression.prototype.js = function  () {
-        /*s a member function/meth*/
-      if (class_defs.length > 0 && (this.name != null)) {
+        if (class_defs.length > 0 && (this.name != null)) { /*is a member function/method*/
         if (this.specifier.value === 'method' && this.name.value === 'initialize') {
           class_def.code += this.js_constructor();
           

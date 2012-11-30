@@ -88,8 +88,7 @@
         }
         sandbox.__filename = options.filename || 'eval';
         
-        /*    # define module/require only if they chose not to specify their own*/
-        sandbox.__dirname = path.dirname(sandbox.__filename);
+        sandbox.__dirname = path.dirname(sandbox.__filename); /*define module/require only if they chose not to specify their own*/
         
         if (!(sandbox !== global || sandbox.module || sandbox.require)) {
           Module = require('module');
@@ -110,8 +109,7 @@
           for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
             r = kobj$1[ki$1];
               if (r !== 'paths') {
-                /*      # use the same hack node currently uses for their own REPL*/
-                _require[r] = require[r];
+                _require[r] = require[r]; /*use the same hack node currently uses for their own REPL*/
                 
               }
           }
@@ -134,8 +132,7 @@
             
           }
       }
-      /*ensure return val*/
-      o.bare = true;
+      o.bare = true; /*ensure return value*/
       
       js = compile(code, o);
       
