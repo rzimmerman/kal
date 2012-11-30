@@ -22,18 +22,15 @@
       
       this.goto_token(0);
       
-      
     }  
     TokenStream.prototype.next = function () {
         return this.goto_token(this.index + 1);
       
     };
-    
     TokenStream.prototype.prev = function () {
         return this.goto_token(this.index - 1);
       
     };
-    
     TokenStream.prototype.peek = function (delta_index) {
       var token;
       this.goto_token(this.index + delta_index);
@@ -45,7 +42,6 @@
       return token;
       
     };
-    
     TokenStream.prototype.goto_token = function (index) {
         this.index = index;
       

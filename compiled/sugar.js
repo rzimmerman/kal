@@ -54,7 +54,6 @@
     
     reduce_dedent = 0;
     
-    
     kobj$1 = tokens;
     for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
       token = kobj$1[ki$1];
@@ -98,7 +97,6 @@
     }
     return out_tokens;
     
-    
   };
   /*  # allow function calls without parentheses*/
   function noparen_function_calls (tokens) {
@@ -114,7 +112,6 @@
     closures = [];
     
     ignore_next_indent = false;
-    
     
     i = 0;
     
@@ -155,7 +152,6 @@
           ignore_next_indent = false;
           
         }
-        
         if ((token.type === 'NEWLINE' || ($kindexof.call(['if', 'unless', 'when', 'except'], token.value) >= 0) ) && closures.length > 0 && triggers[triggers.length - 1] === 'NEWLINE') {
           while (closures.length > 0 && triggers[triggers.length - 1] === 'NEWLINE') {
               triggers.pop();
@@ -194,7 +190,6 @@
     out_tokens = [];
     
     last_token = null;
-    
     
     i = 0;
     
@@ -244,7 +239,6 @@
     }
     return out_tokens;
     
-    
   };
   /*  #allow double-quoted strings with embedded code, like: "x is #{x}"*/
   function code_in_strings (tokens, tokenizer) {
@@ -252,7 +246,6 @@
     if ((tokenizer == null)) {
     return tokens;
     }
-    
     
     out_tokens = [];
     

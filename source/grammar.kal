@@ -74,7 +74,8 @@ class ForStatement inherits from ASTBase
     me.loop_block = me.req Block
     
 class DeclarationStatement inherits from ASTBase
-  
+  method tmp() #until the spec is changed to allow empty definitions
+    return
 
 class AssignmentStatement inherits from ASTBase
   method parse()

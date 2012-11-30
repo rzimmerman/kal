@@ -3,13 +3,11 @@
   function ParseFailed (message) {
         this.message = message;
       
-      
     }  
   function SyntaxError (message) {
         this.message = message;
       
       this.locked = true;
-      
       
     }  
   exports.SyntaxError = SyntaxError;
@@ -88,7 +86,6 @@
         this.error("" + message);
         
       };
-      
       /*equire token val*/
       ASTBase.prototype.opt_val = function () {
         var rv;
@@ -101,7 +98,6 @@
           
         } else {
           return null;
-          
           
         }
       };
@@ -124,7 +120,6 @@
         this.error("Expected '" + (args.join(' or ')) + "'");
         
       };
-      
       /*equire at least o*/
       ASTBase.prototype.req_multi = function () {
         var rv, list, ki$1, kobj$1, cls;
@@ -133,7 +128,6 @@
         if (rv.length > 0) {
     return rv;
         }
-        
         
         list = [];
         
@@ -146,7 +140,6 @@
         this.error("Expected one of " + (list.join(', ')));
         
       };
-      
       /*ptionally have multip*/
       ASTBase.prototype.opt_multi = function () {
         var cls, rv;
@@ -167,15 +160,12 @@
         return rv;
         
       };
-      
       ASTBase.prototype.parse = function () {
             this.error('Parser Not Implemented: ' + this.constructor.name);
-        
         
       };
       ASTBase.prototype.js = function () {
             this.error('Javascript Generator Not Implemented: ' + this.constructor.name);
-        
         
       };
       ASTBase.prototype.error = function (msg) {
@@ -189,7 +179,6 @@
           throw new  ParseFailed(full_msg);
           
         }
-        
       };
       ASTBase.prototype.lock = function () {
             this.locked = true;
@@ -197,6 +186,5 @@
         this.line = this.ts.line;
         
       };
-      
     exports.ASTBase = ASTBase;
   })()

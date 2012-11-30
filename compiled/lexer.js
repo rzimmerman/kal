@@ -20,7 +20,6 @@
       
       this.tokenize();
       
-      
     }  
     Lexer.prototype.tokenize = function () {
       var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, code, context_len, value;
@@ -31,7 +30,6 @@
       last_token_type = null;
       
       index = 0;
-      
       
       while (index < this.code.length) {
           chunk = this.code.slice(index);
@@ -112,7 +110,6 @@
             
         }
         (indentation !== this.indent) ? this.error('indentation is misaligned') : void 0;
-        
         
       }
     };

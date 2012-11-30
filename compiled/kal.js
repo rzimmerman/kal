@@ -12,14 +12,12 @@
       options = { bare: false };
       
     }
-    
     try {
         token_rv = lexer.tokenize(code);
         
         raw_tokens = token_rv[0];
         
         comments = token_rv[1];
-        
         
         tokens = sugar.translate_sugar(raw_tokens, options, lexer.tokenize);
         

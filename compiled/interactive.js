@@ -228,7 +228,6 @@
                 return;
           
         };
-        
         stdin.on('data', function  (chunk) {
           var nlre, lines, ki$1, kobj$1, line;
           pipedInput += chunk;
@@ -256,7 +255,6 @@
           return;
           
         });
-        
         stdin.on('end', function  () {
           var ki$1, kobj$1, line;
           kobj$1 = pipedInput.trim().split("\n");
@@ -274,7 +272,6 @@
           process.exit(0);
           
         });
-        
       } else {
         /*  # Create the REPL by listening to **stdin**.*/
         if (readline.createInterface.length < 3) {

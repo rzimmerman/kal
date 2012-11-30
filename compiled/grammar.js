@@ -40,7 +40,6 @@
           this.lock();
           
       }
-      
     };
   function Statement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -49,7 +48,6 @@
         this.statement = this.req(BlankStatement, TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement);
       
     };
-    
   function ThrowStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(ThrowStatement,ASTBase);
@@ -61,7 +59,6 @@
       this.expr = this.req(Expression);
       
       this.conditional = this.expr.transform_when_statement();
-      
       
     };
   function ReturnStatement () {
@@ -97,7 +94,6 @@
       
       this.else_block = this.opt(ElseStatement);
       
-      
     };
   function ElseStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -123,7 +119,6 @@
       this.block = this.req(Block);
       
     };
-    
   function ForStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(ForStatement,ASTBase);
@@ -140,12 +135,15 @@
       
       this.loop_block = this.req(Block);
       
-      
     };
   function DeclarationStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(DeclarationStatement,ASTBase);
-    
+    /*ntil the spec is changed to allow empty definitio*/
+    DeclarationStatement.prototype.tmp = function () {
+        return;
+      
+    };
   function AssignmentStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(AssignmentStatement,ASTBase);
@@ -169,7 +167,6 @@
       this.rvalue = this.req(Expression);
       
       this.conditional = this.rvalue.transform_when_statement();
-      
       
     };
   function ExpressionStatement () {
@@ -212,7 +209,6 @@
         
       }
     };
-    
   function Expression () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(Expression,ASTBase);
@@ -248,7 +244,6 @@
         
       }
       this.conditional = this.opt(WhenExpression);
-      
       
     };
   function UnaryExpression () {
@@ -322,7 +317,6 @@
         this.invert = false;
         
       }
-      
     };
   function WhenExpression () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -341,7 +335,6 @@
       }
       
     };
-    
   function NumberConstant () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(NumberConstant,ASTBase);
@@ -428,7 +421,6 @@
       this.req_val(')');
       
     };
-    
   function ParenExpression () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(ParenExpression,ASTBase);
@@ -440,7 +432,6 @@
       this.expr = this.req(Expression);
       
       this.req_val(')');
-      
       
     };
   function ListExpression () {
@@ -470,7 +461,6 @@
       this.req_val(']');
       
     };
-    
   function MapItem () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(MapItem,ASTBase);
@@ -489,7 +479,6 @@
         this.ts.prev();
         
       }
-      
     };
   function MapExpression () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -503,9 +492,7 @@
       
       this.req_val('}');
       
-      
     };
-    
   function Ellipsis () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(Ellipsis,ASTBase);
@@ -517,8 +504,6 @@
       this.req_val('.');
       
     };
-    
-    
   function FunctionDefArgument () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(FunctionDefArgument,ASTBase);
@@ -531,7 +516,6 @@
         this.ts.prev();
         
       }
-      
     };
   function FunctionExpression () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -588,7 +572,6 @@
         
       }
     };
-    
   function SuperStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(SuperStatement,ASTBase);

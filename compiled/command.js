@@ -65,7 +65,6 @@
     
     process.execPath = require.main.filename;
     
-    
     compile_options = {  };
     
     compile_options.show_tokens = options.tokens;
@@ -73,8 +72,6 @@
     compile_options.bare = false;
     
     compile_options.show_js = options.javascript;
-    
-    
     
     kobj$1 = options._;
     for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
@@ -97,7 +94,6 @@
     printLine("Kal version " + (Kal.VERSION));
     
     process.exit(0);
-    
     
   };
   function usage () {

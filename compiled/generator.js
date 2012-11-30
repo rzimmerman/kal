@@ -15,27 +15,22 @@
         i += '  ';
       
     };
-    
     function dedent () {
         i = i.slice(0, 0 - 2);
       
     };
-    
     scopes = [];
     
     scope = {  };
-    
     
     class_defs = [];
     
     class_def = {  };
     
-    
     function push_class () {
         class_defs.push(class_def);
       
       class_def = { name: '', code: '', args: [], has_constructor: false };
-      
       
     };
     function pop_class () {
@@ -44,9 +39,7 @@
       return class_def;
       
     };
-    
     use_snippets = {  };
-    
     
     function push_scope () {
       var new_scope, ki$1, kobj$1, k, v;
@@ -71,7 +64,6 @@
           }
       }
       scope = new_scope;
-      
       
     };
     function pop_scope (code, force_closed, wrap) {
@@ -114,7 +106,6 @@
       return rv;
       
     };
-    
     function check_existence_wrapper (code, undefined_unary, invert) {
       var rv;
       if (undefined_unary) {
@@ -127,9 +118,7 @@
       return rv;
       
     };
-    
     self = this;
-    
     
     this.File.prototype.js = function  (options) {
       var code, ki$1, kobj$1, statement, snip, key, rv, comment;
@@ -177,7 +166,6 @@
       }
       return pop_scope(rv, true, !(options.bare));
       
-      
     };
     this.Statement.prototype.js = function  () {
       var rv, ki$1, kobj$1, comment;
@@ -197,7 +185,6 @@
       
       return rv;
       
-      
     };
     this.ThrowStatement.prototype.js = function  () {
       var rv;
@@ -208,7 +195,6 @@
       }
       
       return rv;
-      
       
     };
     this.ReturnStatement.prototype.js = function  () {
@@ -227,7 +213,6 @@
       
       return rv;
       
-      
     };
     this.ExpressionStatement.prototype.js = function  () {
       var rv;
@@ -240,7 +225,6 @@
         return rv + ";";
         
       }
-      
     };
     this.Expression.prototype.js = function  (oop_reverse) {
       var rv, left_code, opjs, ki$1, kobj$1, subscope;
@@ -295,8 +279,6 @@
       
       return rv;
       
-      
-      
     };
     this.UnaryExpression.prototype.js = function  () {
       var rv, base_val, kw_translate, undefined_unary, existence_qualifiers, last_accessor, ki$1, kobj$1, accessor, existence_check, eq, closeout;
@@ -326,7 +308,6 @@
       
       existence_qualifiers = [];
       
-      
       last_accessor = this.accessors[this.accessors.length - 1];
       
       kobj$1 = this.accessors;
@@ -340,7 +321,6 @@
           undefined_unary = false;
           
       }
-      
       existence_check = [];
       
       kobj$1 = existence_qualifiers;
@@ -363,7 +343,6 @@
           rv = ("((" + existence_check + ") ? " + rv + " : " + closeout + ")");
           
         }
-        
       }
       if (((this.preop != null) ? this.preop.value : void 0) === 'new') {
         rv = ("" + (KEYWORD_TRANSLATE[this.preop.value]) + " " + rv);
@@ -376,7 +355,6 @@
         
       }
       return rv;
-      
       
     };
     this.WhenExpression.prototype.js = function  (true_block_js, must_return_value) {
@@ -404,17 +382,14 @@
       return rv;
       
     };
-    
     this.ExisentialCheck.prototype.js = function  () {
         return "";
-      
       
     };
     this.ExisentialCheck.prototype.js_existence = function  (accessor, undefined_unary, invert) {
         return check_existence_wrapper(accessor, undefined_unary, invert);
       
     };
-    
     this.PropertyAccess.prototype.js = function  () {
       var rv;
       if (this.expr.type === 'IDENTIFIER') {
@@ -438,7 +413,6 @@
         
       }
     };
-    
     this.AssignmentStatement.prototype.js = function  () {
       var op, rv;
       op = this.assignOp.value;
@@ -455,13 +429,11 @@
       
       return rv;
       
-      
     };
     this.NumberConstant.prototype.js = function  () {
         return this.token.text;
       
     };
-    
     this.StringConstant.prototype.js = function  () {
       var rv;
       rv = this.token.value;
@@ -469,17 +441,14 @@
       return rv;
       
     };
-    
     this.RegexConstant.prototype.js = function  () {
         return this.token.text;
       
     };
-    
     this.BinOp.prototype.js = function  () {
         return KEYWORD_TRANSLATE[this.op.value] || this.op.value;
       
     };
-    
     this.IfStatement.prototype.js = function  () {
       var conditional_js, rv;
       conditional_js = this.conditional.js();
@@ -488,16 +457,13 @@
         conditional_js = ("!(" + conditional_js + ")");
         
       }
-      
       rv = ("if (" + conditional_js + ") {\n" + (this.true_block.js()) + "\n" + i + "}");
-      
       
       if ((this.else_block != null)) {
         rv += this.else_block.js();
         
       }
       return rv;
-      
       
     };
     this.ElseStatement.prototype.js = function  () {
@@ -507,12 +473,10 @@
       } else {
         return (" else {\n" + (this.false_block.js()) + "\n" + i + "}");
         
-        
       }
     };
     this.BlankStatement.prototype.js = function  () {
         return '';
-      
       
     };
     for_depth = 1;
@@ -552,7 +516,6 @@
       
       return rv;
       
-      
     };
     this.WhileStatement.prototype.js = function  () {
       var rv;
@@ -567,7 +530,6 @@
       rv += ("\n" + i + "}");
       
       return rv;
-      
       
     };
     this.Block.prototype.js = function  () {
@@ -589,10 +551,8 @@
       return rv;
       
     };
-    
     this.ParenExpression.prototype.js = function  () {
         return ("(" + (this.expr.js()) + ")");
-      
       
     };
     this.IndexExpression.prototype.js = function  () {
@@ -608,7 +568,6 @@
         
       }
     };
-    
     this.ListExpression.prototype.js = function  () {
       var rv, ki$1, kobj$1, item;
       rv = [];
@@ -623,11 +582,9 @@
       
       return ("[" + rv + "]");
       
-      
     };
     this.MapItem.prototype.js = function  () {
         return ("" + (this.key.js()) + ": " + (this.val.js()));
-      
       
     };
     this.MapExpression.prototype.js = function  () {
@@ -643,7 +600,6 @@
       rv = rv.join(', ');
       
       return ("{ " + rv + " }");
-      
       
     };
     this.FunctionExpression.prototype.js = function  () {
@@ -662,7 +618,6 @@
         return this.js_bare_function();
         
       }
-      
     };
     this.FunctionExpression.prototype.js_bare_function = function  () {
       var rv, args, ki$1, kobj$1, argument;
@@ -681,7 +636,6 @@
           
       }
       return rv + this.js_body(args);
-      
       
     };
     this.FunctionExpression.prototype.js_class_member = function  () {
@@ -703,7 +657,6 @@
       }
       return rv + this.js_body(args);
       
-      
     };
     this.FunctionExpression.prototype.js_constructor = function  () {
       var rv, ki$1, kobj$1, argument;
@@ -722,7 +675,6 @@
       rv += this.js_body(class_def.args);
       
       return rv;
-      
       
     };
     this.FunctionExpression.prototype.js_body = function  (arg_names) {
@@ -744,7 +696,6 @@
       rv += ("\n" + i + "}");
       
       return rv;
-      
       
     };
     this.FunctionCall.prototype.js = function  (as_list) {
@@ -770,11 +721,9 @@
         return '';
         
       }
-      
     };
     this.FunctionCallArgument.prototype.js = function  () {
         return this.val.js();
-      
       
     };
     this.ClassDefinition.prototype.js = function  () {
@@ -816,7 +765,6 @@
       return rv;
       
     };
-    
     this.TryCatch.prototype.js = function  () {
       var rv;
       rv = "try {\n";
@@ -844,7 +792,6 @@
       }
       return rv;
       
-      
     };
     this.SuperStatement.prototype.js = function  () {
       var rv;
@@ -864,7 +811,6 @@
       rv += ");";
       
       return rv;
-      
       
     };
     snippets = { 'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }' };
