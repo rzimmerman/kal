@@ -19,6 +19,7 @@
     "kal":     "./scripts/kal"
   },
   "scripts": {
+	"make": "kal -o compiled/ source/*",
     "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
   },
   "homepage":     "https://github.com/rzimmerman/kal",
