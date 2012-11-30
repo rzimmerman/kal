@@ -29,6 +29,7 @@ if require.extensions
     module._compile(content, filename)
 
 exports.eval = (code, options) ->
+  options = {} if options doesnt exist
   code = code.toString().trim()
   return when code is ""
   vm   = require 'vm'

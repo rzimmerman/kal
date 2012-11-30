@@ -46,6 +46,10 @@
     }
     exports.eval = function  (code, options) {
       var vm, path, Script, sandbox, ki$1, kobj$1, k, Module, _module, _require, r, o, js;
+      if ((options == null)) {
+    options = {  };
+      }
+      
       code = code.toString().trim();
       
       if (code === "") {
