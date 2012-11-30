@@ -1,0 +1,12 @@
+Kal = require '../compiled/kal'
+
+describe 'Other', ->
+  it 'should be able to handle empty lines with arbitrary indentation', ->
+    b = Kal.eval 'a = 4\n  \nb = 2\nif a is 2\n  b = 3\n\n  b = 4\n\r\v\t   \r\nb', {sandbox:yes}
+      
+    b.should.equal 2
+    
+  it 'should be able to handle trailing spaces on a line', ->
+    a = Kal.eval 'a = 4  \nb = 2\t\r\na', {sandbox:yes}
+    a.should.equal 4
+    
