@@ -1,5 +1,10 @@
 #Change Log
 
+### [0.3.0](https://github.com/rzimmerman/kal/compare/r0.2.9...r0.3.0)
+* Indentation on blank lines is now ignored
+* The `Kal.eval` options argument is now optional
+* Better Javascript output for comments
+
 ### [0.2.9](https://github.com/rzimmerman/kal/compare/r0.2.8...r0.2.9)
 * Significant performance improvements for compile time
 * Fixed the command line options to the `kal` executable
