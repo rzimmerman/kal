@@ -230,15 +230,26 @@ class ListExpression inherits from ASTBase
   method parse()
     me.req_val '['
     me.lock()
-    me.items = []
-    item = me.opt Expression
-    while item
-      me.items.push(item)
-      if me.opt_val(',')
-        item = me.opt Expression
-      else
-        item = null
+    me.comprehension = me.opt ListComprehension
+    if me.comprehension doesnt exist
+      me.items = []
+      item = me.opt Expression
+      while item
+        me.items.push(item)
+        if me.opt_val(',')
+          item = me.opt Expression
+        else
+          item = null
     me.req_val ']'
+  
+class ListComprehension inherits from ASTBase
+  method parse()
+    me.iter_expr = me.req Expression
+    me.req_val 'for'
+    me.lock()
+    me.iterant = me.req 'IDENTIFIER'
+    me.req_val 'in'
+    me.iterable = me.req Expression
   
 class MapItem inherits from ASTBase
   method parse()
@@ -307,7 +318,7 @@ class SuperStatement inherits from ASTBase
     me.lock()
     me.accessor = me.opt FunctionCall
 
-Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement]
+Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement]
 
 exports.Grammar = {}
 for v in Nodes

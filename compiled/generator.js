@@ -1,7 +1,7 @@
 (function () {
   var KEYWORD_TRANSLATE, load;
   var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-  KEYWORD_TRANSLATE = { 'yes': 'true', 'on': 'true', 'no': 'false', 'off': 'false', 'is': '===', 'isnt': '!==', '==': '===', '!=': '!==', 'and': '&&', 'but': '&&', 'or': '||', 'xor': '^', '^': 'pow', 'not': '!', 'new': 'new ', 'me': 'this', 'this': 'this', 'null': 'null', 'nothing': 'null', 'none': 'null', 'break': 'break', 'throw': 'throw', 'raise': 'throw', 'instanceof': 'instanceof', 'of': 'in' };
+  KEYWORD_TRANSLATE = { 'yes': 'true', 'on': 'true', 'no': 'false', 'off': 'false', 'is': '===', 'isnt': '!==', '==': '===', '!=': '!==', 'and': '&&', 'but': '&&', 'or': '||', 'xor': '^', '^': 'pow', 'not': '!', 'new': 'new ', 'me': 'this', 'this': 'this', 'null': 'null', 'nothing': 'null', 'none': 'null', 'break': 'break', 'throw': 'throw', 'raise': 'throw', 'instanceof': 'instanceof', 'of': 'in', 'EndOfList': 'undefined' };
   load = function load (grammar) {
     apply_generator_to_grammar.apply(grammar);
     
@@ -590,17 +590,33 @@
     };
     this.ListExpression.prototype.js = function  () {
       var rv, ki$1, kobj$1, item;
-      rv = [];
-      
-      kobj$1 = this.items;
-      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
-        item = kobj$1[ki$1];
-          rv.push(item.js());
-          
+      if ((this.comprehension == null)) {
+        rv = [];
+        
+        kobj$1 = this.items;
+        for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+          item = kobj$1[ki$1];
+            rv.push(item.js());
+            
+        }
+        rv = rv.join(', ');
+        
+        return ("[" + rv + "]");
+        
+      } else {
+        return this.comprehension.js();
+        
       }
-      rv = rv.join(', ');
+    };
+    this.ListComprehension.prototype.js = function  () {
+      var rv;
+      use_snippets['comprehension'] = snippets['comprehension'];
       
-      return ("[" + rv + "]");
+      scope[this.iterant.value] = 'closures ok';
+      
+      rv = ("$kcompr(" + (this.iterable.js()) + ",function($ki){" + (this.iterant.value) + " = $ki;return " + (this.iter_expr.js()) + ";})");
+      
+      return rv;
       
     };
     this.MapItem.prototype.js = function  () {
@@ -832,7 +848,7 @@
       return rv;
       
     };
-    snippets = { 'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }' };
+    snippets = { 'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'comprehension': 'var $kcompr = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};' };
     
     
   };

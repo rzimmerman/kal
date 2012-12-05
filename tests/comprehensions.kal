@@ -1,0 +1,19 @@
+describe 'List Comprehensions', ->
+  it 'should support for expressions inside list definitions', ->
+    a = [1,2,3,4]
+    b = [x+1 for x in a]
+    a.should.eql([1,2,3,4])
+    b.should.eql([2,3,4,5])
+  it 'should support for expressions with generators', ->
+    class TestGen
+      method initialize()
+        me.i = 1
+      method next()
+        me.i += 1
+        if me.i < 10
+          return me.i
+        else
+          return EndOfList
+    t = new TestGen
+    x = [y for y in t]
+    x.should.eql([2,3,4,5,6,7,8,9])

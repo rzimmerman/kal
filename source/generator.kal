@@ -1,4 +1,4 @@
-KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','^':'pow','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof','of':'in'}
+KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','^':'pow','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof','of':'in','EndOfList':'undefined'}
 
 load = function load (grammar)
   apply_generator_to_grammar.apply grammar
@@ -324,12 +324,21 @@ function apply_generator_to_grammar()
       return ''
   
   me.ListExpression.prototype.js = ->
-    rv = []
-    for item in me.items
-      rv.push item.js()
-    rv = rv.join(', ')
-    return "[#{rv}]"
-    
+    if me.comprehension doesnt exist
+      rv = []
+      for item in me.items
+        rv.push item.js()
+      rv = rv.join(', ')
+      return "[#{rv}]"
+    else
+      return me.comprehension.js()
+  
+  me.ListComprehension.prototype.js = ->
+    use_snippets['comprehension'] = snippets['comprehension']
+    scope[me.iterant.value] = 'closures ok'
+    rv = "$kcompr(#{me.iterable.js()},function($ki){#{me.iterant.value} = $ki;return #{me.iter_expr.js()};})"
+    return rv
+  
   me.MapItem.prototype.js = ->
     return "#{this.key.js()}: #{this.val.js()}"
     
@@ -448,5 +457,5 @@ function apply_generator_to_grammar()
     rv += ");"
     return rv
     
-  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'}
+  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'comprehension':'var $kcompr = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'}
   

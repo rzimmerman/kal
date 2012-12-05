@@ -442,22 +442,43 @@
       
       this.lock();
       
-      this.items = [];
+      this.comprehension = this.opt(ListComprehension);
       
-      item = this.opt(Expression);
-      
-      while (item) {
-          this.items.push(item);
-          
-          if (this.opt_val(',')) {
-            item = this.opt(Expression);
+      if ((this.comprehension == null)) {
+        this.items = [];
+        
+        item = this.opt(Expression);
+        
+        while (item) {
+            this.items.push(item);
             
-          } else {
-            item = null;
-            
-          }
+            if (this.opt_val(',')) {
+              item = this.opt(Expression);
+              
+            } else {
+              item = null;
+              
+            }
+        }
       }
       this.req_val(']');
+      
+    };
+  function ListComprehension () {
+    return ASTBase.prototype.constructor.apply(this,arguments);
+  }__extends(ListComprehension,ASTBase);
+    ListComprehension.prototype.parse = function () {
+        this.iter_expr = this.req(Expression);
+      
+      this.req_val('for');
+      
+      this.lock();
+      
+      this.iterant = this.req('IDENTIFIER');
+      
+      this.req_val('in');
+      
+      this.iterable = this.req(Expression);
       
     };
   function MapItem () {
@@ -582,7 +603,7 @@
       this.accessor = this.opt(FunctionCall);
       
     };
-  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement];
+  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement];
   exports.Grammar = {  };
   kobj$1 = Nodes;
   for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {

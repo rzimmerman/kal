@@ -3,7 +3,7 @@
   var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
   grammar = require('./grammar');
   KEYWORDS = grammar.KEYWORDS;
-  NOPAREN_WORDS = ['is', 'otherwise', 'except', 'else', 'doesnt', 'exist', 'exists', 'isnt', 'inherits', 'from', 'and', 'or', 'xor', 'in', 'when', 'instanceof', 'of', 'nor', 'if', 'unless', 'except'];
+  NOPAREN_WORDS = ['is', 'otherwise', 'except', 'else', 'doesnt', 'exist', 'exists', 'isnt', 'inherits', 'from', 'and', 'or', 'xor', 'in', 'when', 'instanceof', 'of', 'nor', 'if', 'unless', 'except', 'for'];
   function translate_sugar (tokens, options, tokenizer) {
     var out_tokens, debug, ki$1, kobj$1, t;
     out_tokens = coffee_style_functions(noparen_function_calls(multiline_statements(clean(code_in_strings(tokens, tokenizer)))));
