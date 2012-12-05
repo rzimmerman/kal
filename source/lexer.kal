@@ -30,22 +30,22 @@ class Lexer
         code = this.code.toString().trim()
         context_len = 16 when code.length >= 16 otherwise code.length
         me.error("invalid token '#{code.slice(index,index+context_len)}...' on line #{this.line}") unless text?
-      value = parse_token[me.type](text)
+      val = parse_token[me.type](text)
       if last_token_type is 'NEWLINE' #check for indent/dedent
         me.handleIndentation type, text
       if type is 'COMMENT'
-        comment_token = {text:text, line:me.line, value:value, type:type}
+        comment_token = {text:text, line:me.line, value:val, type:type}
         if me.tokens[me.tokens.length-1]?.type is 'NEWLINE'
           comment_token.post_fix = no
         else
           comment_token.post_fix = yes
-        if value.match(/\n/)
+        if val.match(/\n/)
           comment_token.multiline = yes
         else
           comment_token.multiline = no
         me.comments.push comment_token
       else
-        me.tokens.push {text:text, line:me.line, value:value, type:type}
+        me.tokens.push {text:text, line:me.line, value:val, type:type}
       index += text.length
       me.line += text.match(/\n/g)?.length or 0
       last_token_type = type

@@ -22,7 +22,7 @@
       
     }  
     Lexer.prototype.tokenize = function () {
-      var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, code, context_len, value, comment_token;
+      var last_token_type, index, chunk, ki$1, kobj$1, tt, regex, type, text, code, context_len, val, comment_token;
       this.tokens = [];
       
       this.comments = [];
@@ -58,14 +58,14 @@
             (!((text != null))) ? this.error(("invalid token '" + (code.slice(index, index + context_len)) + "...' on line " + (this.line))) : void 0;
             
           }
-          value = parse_token[this.type](text);
+          val = parse_token[this.type](text);
           
           if (last_token_type === 'NEWLINE') { /*check for indent/dedent*/
             this.handleIndentation(type, text);
             
           }
           if (type === 'COMMENT') {
-            comment_token = { text: text, line: this.line, value: value, type: type };
+            comment_token = { text: text, line: this.line, value: val, type: type };
             
             if (((this.tokens[this.tokens.length - 1] != null) ? this.tokens[this.tokens.length - 1].type : void 0) === 'NEWLINE') {
               comment_token.post_fix = false;
@@ -74,7 +74,7 @@
               comment_token.post_fix = true;
               
             }
-            if (value.match(/\n/)) {
+            if (val.match(/\n/)) {
               comment_token.multiline = true;
               
             } else {
@@ -84,7 +84,7 @@
             this.comments.push(comment_token);
             
           } else {
-            this.tokens.push({ text: text, line: this.line, value: value, type: type });
+            this.tokens.push({ text: text, line: this.line, value: val, type: type });
             
           }
           index += text.length;
