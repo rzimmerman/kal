@@ -1,4 +1,6 @@
 #Change Log
+### [0.3.1](https://github.com/rzimmerman/kal/compare/r0.3.0...r0.3.1)
+* Support for list comprehensions using the `[expr(x) for x in y]` syntax
 
 ### [0.3.0](https://github.com/rzimmerman/kal/compare/r0.2.9...r0.3.0)
 * Indentation on blank lines is now ignored
