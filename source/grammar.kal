@@ -1,7 +1,7 @@
 ast = require './ast'
 ASTBase = ast.ASTBase
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof']
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof','property','value','with']
 
 class File inherits from ASTBase
   method parse()
@@ -230,7 +230,7 @@ class ListExpression inherits from ASTBase
   method parse()
     me.req_val '['
     me.lock()
-    me.comprehension = me.opt ListComprehension
+    me.comprehension = me.opt ObjectComprehension, ListComprehension
     if me.comprehension doesnt exist
       me.items = []
       item = me.opt Expression
@@ -250,6 +250,23 @@ class ListComprehension inherits from ASTBase
     me.iterant = me.req 'IDENTIFIER'
     me.req_val 'in'
     me.iterable = me.req Expression
+  
+class ObjectComprehension inherits from ASTBase
+  method parse()
+    me.iter_expr = me.req Expression
+    me.req_val 'for'
+    me.req_val 'property'
+    me.lock()
+    if me.opt_val 'value'
+      me.value_iterant = me.req 'IDENTIFIER'
+    else
+      me.property_iterant = me.req 'IDENTIFIER'
+      if me.opt_val 'with'
+        me.req_val 'value'
+        me.value_iterant = me.req 'IDENTIFIER'
+    me.req_val 'in'
+    me.iterable = me.req Expression
+    
   
 class MapItem inherits from ASTBase
   method parse()
@@ -318,7 +335,7 @@ class SuperStatement inherits from ASTBase
     me.lock()
     me.accessor = me.opt FunctionCall
 
-Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement]
+Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,ObjectComprehension,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement]
 
 exports.Grammar = {}
 for v in Nodes

@@ -17,3 +17,12 @@ describe 'List Comprehensions', ->
     t = new TestGen
     x = [y for y in t]
     x.should.eql([2,3,4,5,6,7,8,9])
+  it "should support for expressions over an object's properties", ->
+    y = {a:1,b:2,c:3}
+    z1 = [k for property k in y]
+    z1.should.eql(['a','b','c'])
+    z2 = [v for property value v in y]
+    z2.should.eql([1,2,3])
+    z3 = ["#{k}: #{v}" for property k with value v in y]
+    z3.should.eql(['a: 1','b: 2','c: 3'])
+    

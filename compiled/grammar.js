@@ -4,7 +4,7 @@
   var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
   ast = require('./ast');
   ASTBase = ast.ASTBase;
-  KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof'];
+  KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof', 'property', 'value', 'with'];
   function File () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(File,ASTBase);
@@ -442,7 +442,7 @@
       
       this.lock();
       
-      this.comprehension = this.opt(ListComprehension);
+      this.comprehension = this.opt(ObjectComprehension, ListComprehension);
       
       if ((this.comprehension == null)) {
         this.items = [];
@@ -476,6 +476,36 @@
       
       this.iterant = this.req('IDENTIFIER');
       
+      this.req_val('in');
+      
+      this.iterable = this.req(Expression);
+      
+    };
+  function ObjectComprehension () {
+    return ASTBase.prototype.constructor.apply(this,arguments);
+  }__extends(ObjectComprehension,ASTBase);
+    ObjectComprehension.prototype.parse = function () {
+        this.iter_expr = this.req(Expression);
+      
+      this.req_val('for');
+      
+      this.req_val('property');
+      
+      this.lock();
+      
+      if (this.opt_val('value')) {
+        this.value_iterant = this.req('IDENTIFIER');
+        
+      } else {
+        this.property_iterant = this.req('IDENTIFIER');
+        
+        if (this.opt_val('with')) {
+          this.req_val('value');
+          
+          this.value_iterant = this.req('IDENTIFIER');
+          
+        }
+      }
       this.req_val('in');
       
       this.iterable = this.req(Expression);
@@ -603,7 +633,7 @@
       this.accessor = this.opt(FunctionCall);
       
     };
-  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement];
+  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement];
   exports.Grammar = {  };
   kobj$1 = Nodes;
   for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {

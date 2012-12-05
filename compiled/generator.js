@@ -610,11 +610,34 @@
     };
     this.ListComprehension.prototype.js = function  () {
       var rv;
-      use_snippets['comprehension'] = snippets['comprehension'];
+      use_snippets['array list comprehension'] = snippets['array list comprehension'];
       
       scope[this.iterant.value] = 'closures ok';
       
-      rv = ("$kcompr(" + (this.iterable.js()) + ",function($ki){" + (this.iterant.value) + " = $ki;return " + (this.iter_expr.js()) + ";})");
+      rv = ("$kcomprl(" + (this.iterable.js()) + ",function($ki){" + (this.iterant.value) + " = $ki;return " + (this.iter_expr.js()) + ";})");
+      
+      return rv;
+      
+    };
+    this.ObjectComprehension.prototype.js = function  () {
+      var rv;
+      use_snippets['object list comprehension'] = snippets['object list comprehension'];
+      
+      rv = "";
+      
+      if ((this.property_iterant != null)) {
+        scope[this.property_iterant.value] = 'closures ok';
+        
+        rv += ("" + (this.property_iterant.value) + " = $kp;");
+        
+      }
+      if ((this.value_iterant != null)) {
+        scope[this.value_iterant.value] = 'closures ok';
+        
+        rv += ("" + (this.value_iterant.value) + " = $kv;");
+        
+      }
+      rv = ("$kcompro(" + (this.iterable.js()) + ",function($kp,$kv){" + rv + ";return " + (this.iter_expr.js()) + ";})");
       
       return rv;
       
@@ -848,7 +871,7 @@
       return rv;
       
     };
-    snippets = { 'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'comprehension': 'var $kcompr = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};' };
+    snippets = { 'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension': 'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension': 'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}' };
     
     
   };
