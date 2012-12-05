@@ -27,9 +27,7 @@
         
         return root_node.js(options);
           } catch (e) {
-        console.error(e.message);
-        
-        return '';
+        throw e.message;
         }
     };
     exports.compile = compile;
