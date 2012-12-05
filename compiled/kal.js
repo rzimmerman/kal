@@ -21,7 +21,7 @@
         
         tokens = sugar.translate_sugar(raw_tokens, options, lexer.tokenize);
         
-        root_node = parser.parse(tokens, comments);
+        root_node = parser.parse(tokens, comments, options);
         
         generator.load(parser.Grammar);
         
@@ -34,7 +34,7 @@
     if (require.extensions) {
       require.extensions['.kal'] = function  (module, filename) {
         var content;
-        content = compile(require('fs').readFileSync(filename, 'utf8'));
+        content = compile(require('fs').readFileSync(filename, 'utf8'), { filename: filename });
         
         module._compile(content, filename);
         

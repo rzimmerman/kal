@@ -15,7 +15,7 @@ function compile(code, options)
     comments   = token_rv[1]
     
     tokens = sugar.translate_sugar raw_tokens, options, lexer.tokenize
-    root_node = parser.parse tokens, comments
+    root_node = parser.parse tokens, comments, options
     generator.load parser.Grammar
     return root_node.js(options)
   catch e
@@ -24,7 +24,7 @@ exports.compile = compile
 
 if require.extensions
   require.extensions['.kal'] = (module, filename) ->
-    content = compile(require('fs').readFileSync(filename, 'utf8'))
+    content = compile(require('fs').readFileSync(filename, 'utf8'),{filename:filename})
     module._compile(content, filename)
 
 exports.eval = (code, options) ->

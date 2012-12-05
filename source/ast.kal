@@ -90,11 +90,13 @@ class ASTBase
     me.error 'Javascript Generator Not Implemented: ' + me.constructor.name
     
   method error(msg)
-    full_msg = msg + ' on line ' + me.line
     if me.locked
+      full_msg = msg + ' on line ' + me.line
+      if me.ts.options?['filename'] exists
+        full_msg += ' in file ' + me.ts.options['filename']
       throw new SyntaxError full_msg
     else
-      throw new ParseFailed full_msg
+      throw new ParseFailed msg
     
   method lock()
     me.locked = yes

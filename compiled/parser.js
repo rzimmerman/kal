@@ -5,9 +5,9 @@
   GrammarRoot = grammar.GrammarRoot;
   Grammar = grammar.Grammar;
   exports.Grammar = Grammar;
-  function parse (tokens, comments) {
+  function parse (tokens, comments, options) {
     var ts, AST;
-    ts = new  TokenStream(tokens, comments);
+    ts = new  TokenStream(tokens, comments, options);
     
     AST = new  GrammarRoot(ts);
     
@@ -15,10 +15,12 @@
     
   };
   exports.parse = parse;
-  function TokenStream (tokens, comments) {
+  function TokenStream (tokens, comments, options) {
         this.tokens = tokens;
       
       this.comments = comments;
+      
+      this.options = options;
       
       this.goto_token(0);
       

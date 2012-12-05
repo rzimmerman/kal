@@ -163,13 +163,17 @@
       };
       ASTBase.prototype.error = function (msg) {
         var full_msg;
-        full_msg = msg + ' on line ' + this.line;
-        
         if (this.locked) {
+          full_msg = msg + ' on line ' + this.line;
+          
+          if ((this.ts.options != null && this.ts.options['filename'] != null)) {
+            full_msg += ' in file ' + this.ts.options['filename'];
+            
+          }
           throw new  SyntaxError(full_msg);
           
         } else {
-          throw new  ParseFailed(full_msg);
+          throw new  ParseFailed(msg);
           
         }
       };

@@ -3,17 +3,18 @@ GrammarRoot = grammar.GrammarRoot
 Grammar = grammar.Grammar
 
 exports.Grammar = Grammar
-function parse(tokens, comments)
-  ts = new TokenStream(tokens, comments)
+function parse(tokens, comments, options)
+  ts = new TokenStream(tokens, comments, options)
   AST = new GrammarRoot(ts)
   return AST
 
 exports.parse = parse
 
 class TokenStream
-  method initialize(tokens, comments)
+  method initialize(tokens, comments, options)
     me.tokens = tokens
     me.comments = comments
+    me.options = options
     me.goto_token 0
     
   method next()
