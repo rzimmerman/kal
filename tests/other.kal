@@ -9,4 +9,10 @@ describe 'Other', ->
   it 'should be able to handle trailing spaces on a line', ->
     a = Kal.eval 'a = 4  \nb = 2\t\r\na', {sandbox:yes}
     a.should.equal 4
-    
+  
+  it "should be able to handle autoparenthesis around list expressions", -> #gh-35
+    a = [1,2,3,4]
+    b = [x+1 for x in a]
+    a.should.eql [1,2,3,4]
+    b.should.eql [2,3,4,5]
+  

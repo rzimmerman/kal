@@ -36,8 +36,13 @@
     kobj$1 = tokens;
     for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
       token = kobj$1[ki$1];
-        (token.type !== 'WHITESPACE') ? out_tokens.push(token) : void 0;
-        
+        if (token.type !== 'WHITESPACE') {
+          out_tokens.push(token);
+          
+        } else       if (out_tokens.length > 0) {
+          out_tokens[out_tokens.length - 1].trailed_by_white = true;
+          
+        }
     }
     return out_tokens;
     
@@ -120,7 +125,7 @@
         
         token_isnt_reserved = !((($kindexof.call(NOPAREN_WORDS, token.value) >= 0) ));
         
-        this_token_not_operator = ((($kindexof.call(['IDENTIFIER', 'NUMBER', 'STRING', 'REGEX'], token.type) >= 0)  || token.value === '{') && token_isnt_reserved);
+        this_token_not_operator = ((($kindexof.call(['IDENTIFIER', 'NUMBER', 'STRING', 'REGEX'], token.type) >= 0)  || token.value === '{' || (token.value === '[' && ((last_token != null) ? last_token.trailed_by_white : void 0))) && token_isnt_reserved);
         
         if (last_token_callable && this_token_not_operator) {
           triggers.push('NEWLINE');

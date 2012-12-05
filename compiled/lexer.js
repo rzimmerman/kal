@@ -83,7 +83,7 @@
             }
             this.comments.push(comment_token);
             
-          } else         if (type !== 'WHITESPACE') {
+          } else {
             this.tokens.push({ text: text, line: this.line, value: value, type: type });
             
           }

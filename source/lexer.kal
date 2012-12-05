@@ -44,7 +44,7 @@ class Lexer
         else
           comment_token.multiline = no
         me.comments.push comment_token
-      else if type isnt 'WHITESPACE'
+      else
         me.tokens.push {text:text, line:me.line, value:value, type:type}
       index += text.length
       me.line += text.match(/\n/g)?.length or 0

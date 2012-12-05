@@ -20,7 +20,10 @@ function clean (tokens)
   # close out with a newline in case the user did not, remove whitespace
   out_tokens = []
   for token in tokens
-    out_tokens.push(token) when token.type isnt 'WHITESPACE'
+    if token.type isnt 'WHITESPACE'
+      out_tokens.push(token)
+    else if out_tokens.length > 0
+      out_tokens[out_tokens.length - 1].trailed_by_white = yes
   return out_tokens
 
 function multiline_statements (tokens)
@@ -68,7 +71,7 @@ function noparen_function_calls (tokens)
     last_token_isnt_reserved = not (last_token?.value in KEYWORDS) or tokens[i-2]?.value is '.'
     last_token_callable = (last_token?.type is 'IDENTIFIER' and last_token_isnt_reserved) or last_token?.value is ']'
     token_isnt_reserved = not (token.value in NOPAREN_WORDS)
-    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'] or token.value is '{') and token_isnt_reserved)
+    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'] or token.value is '{' or (token.value is '[' and last_token?.trailed_by_white)) and token_isnt_reserved)
     if last_token_callable and this_token_not_operator
       triggers.push 'NEWLINE'
       out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
