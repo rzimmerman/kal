@@ -169,25 +169,50 @@ function code_in_strings (tokens, tokenizer)
       out_tokens.push token
   return out_tokens
 
-function multiline_lists (tokens, tokenizer)
+function multiline_lists (tokens)
   #allow lists to span multiple lines
   out_tokens = []
   list_depth = 0
   last_token_was_white = no
+  indent_depths = []
+  indent_depth = 0
+  leftover_indent = 0
   for token in tokens
-    saw_comma = no if list_depth is 0 or not last_token_was_white #have I seen a comma in this newline stretch?
-    list_depth += 1 when token.value is '['
-    list_depth -= 1 when token.value is ']'
-    token_is_white = (token.type in ['NEWLINE','INDENT', 'DEDENT'])
-    if token.value is ',' and not saw_comma
-      token_is_white = yes
-      saw_comma = yes
+    skip_this_token = no
+    token_is_white = (token.type in ['NEWLINE','INDENT', 'DEDENT'] or token.value is ',')
+    if token.value is '['
+      list_depth += 1 
+      indent_depths.push indent_depth
+      indent_depth = 0
+    else if token.value is ']'
+      list_depth -= 1
+      leftover_indent = indent_depth
+      indent_depth = indent_depths.pop()
+    else if token.type is 'INDENT'
+      indent_depth += 1
+      if leftover_indent isnt 0
+        leftover_indent += 1
+        skip_this_token = yes
+        out_tokens.push({text:'', line:token.line, value:'\n', type:'NEWLINE'}) if leftover_indent is 0
+    else if token.type is 'DEDENT'
+      indent_depth -= 1
+      if leftover_indent isnt 0
+        leftover_indent -= 1
+        out_tokens.push({text:'', line:token.line, value:'\n', type:'NEWLINE'}) if leftover_indent is 0
+        skip_this_token = yes
+    else if token.type is 'NEWLINE'
+      if leftover_indent isnt 0
+        skip_this_token = yes
+    else
+      leftover_indent = 0
+    
     if list_depth > 0
       if token_is_white and not last_token_was_white #the first token in a newline stretch gets turned into a comma
         out_tokens.push {text:',', line:token.line, value:',', type:'LITERAL'}
       else
-        out_tokens.push token unless token_is_white
+        out_tokens.push token unless token_is_white or skip_this_token
     else
-      out_tokens.push token
+      out_tokens.push token unless skip_this_token
     last_token_was_white = token_is_white and (list_depth > 0)
-    
+  return out_tokens
+  

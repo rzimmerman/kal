@@ -301,35 +301,70 @@
     return out_tokens;
     
   };
-  function multiline_lists (tokens, tokenizer) { /*allow lists to span multiple lines*/
-    var out_tokens, list_depth, last_token_was_white, ki$1, kobj$1, token, saw_comma, token_is_white;
+  function multiline_lists (tokens) { /*allow lists to span multiple lines*/
+    var out_tokens, list_depth, last_token_was_white, indent_depths, indent_depth, leftover_indent, ki$1, kobj$1, token, skip_this_token, token_is_white;
     out_tokens = [];
     
     list_depth = 0;
     
     last_token_was_white = false;
     
+    indent_depths = [];
+    
+    indent_depth = 0;
+    
+    leftover_indent = 0;
+    
     kobj$1 = tokens;
     for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
       token = kobj$1[ki$1];
-        if (list_depth === 0 || !(last_token_was_white)) { /*have I seen a comma in this newline stretch?*/
-    saw_comma = false;
-        }
+        skip_this_token = false;
+        
+        token_is_white = (($kindexof.call(['NEWLINE', 'INDENT', 'DEDENT'], token.type) >= 0)  || token.value === ',');
         
         if (token.value === '[') {
-    list_depth += 1;
-        }
-        
-        if (token.value === ']') {
-    list_depth -= 1;
-        }
-        
-        token_is_white = (($kindexof.call(['NEWLINE', 'INDENT', 'DEDENT'], token.type) >= 0) );
-        
-        if (token.value === ',' && !(saw_comma)) {
-          token_is_white = true;
+          list_depth += 1;
           
-          saw_comma = true;
+          indent_depths.push(indent_depth);
+          
+          indent_depth = 0;
+          
+        } else       if (token.value === ']') {
+          list_depth -= 1;
+          
+          leftover_indent = indent_depth;
+          
+          indent_depth = indent_depths.pop();
+          
+        } else       if (token.type === 'INDENT') {
+          indent_depth += 1;
+          
+          if (leftover_indent !== 0) {
+            leftover_indent += 1;
+            
+            skip_this_token = true;
+            
+            (leftover_indent === 0) ? out_tokens.push({ text: '', line: token.line, value: '\n', type: 'NEWLINE' }) : void 0;
+            
+          }
+        } else       if (token.type === 'DEDENT') {
+          indent_depth -= 1;
+          
+          if (leftover_indent !== 0) {
+            leftover_indent -= 1;
+            
+            (leftover_indent === 0) ? out_tokens.push({ text: '', line: token.line, value: '\n', type: 'NEWLINE' }) : void 0;
+            
+            skip_this_token = true;
+            
+          }
+        } else       if (token.type === 'NEWLINE') {
+          if (leftover_indent !== 0) {
+            skip_this_token = true;
+            
+          }
+        } else {
+          leftover_indent = 0;
           
         }
         if (list_depth > 0) {
@@ -337,16 +372,18 @@
             out_tokens.push({ text: ',', line: token.line, value: ',', type: 'LITERAL' });
             
           } else {
-            (!(token_is_white)) ? out_tokens.push(token) : void 0;
+            (!(token_is_white || skip_this_token)) ? out_tokens.push(token) : void 0;
             
           }
         } else {
-          out_tokens.push(token);
+          (!(skip_this_token)) ? out_tokens.push(token) : void 0;
           
         }
         last_token_was_white = token_is_white && (list_depth > 0);
         
-        
     }
+    return out_tokens;
+    
+    
   };
 })()
