@@ -16,3 +16,10 @@ describe 'Other', ->
     a.should.eql [1,2,3,4]
     b.should.eql [2,3,4,5]
   
+  it "should support coffee-style list definitions (no commas/flexible whitespace)", -> #gh-9
+    a = [1, 2
+         3
+         4,
+         5]
+    a.should.eql [1,2,3,4,5]
+    

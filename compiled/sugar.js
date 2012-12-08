@@ -6,7 +6,7 @@
   NOPAREN_WORDS = ['is', 'otherwise', 'except', 'else', 'doesnt', 'exist', 'exists', 'isnt', 'inherits', 'from', 'and', 'or', 'xor', 'in', 'when', 'instanceof', 'of', 'nor', 'if', 'unless', 'except', 'for', 'with'];
   function translate_sugar (tokens, options, tokenizer) {
     var out_tokens, debug, ki$1, kobj$1, t;
-    out_tokens = coffee_style_functions(noparen_function_calls(multiline_statements(clean(code_in_strings(tokens, tokenizer)))));
+    out_tokens = coffee_style_functions(noparen_function_calls(multiline_statements(multiline_lists(clean(code_in_strings(tokens, tokenizer))))));
     
     if (((options != null) ? options.show_tokens : void 0)) {
       debug = [];
@@ -300,6 +300,53 @@
     }
     return out_tokens;
     
+  };
+  function multiline_lists (tokens, tokenizer) { /*allow lists to span multiple lines*/
+    var out_tokens, list_depth, last_token_was_white, ki$1, kobj$1, token, saw_comma, token_is_white;
+    out_tokens = [];
     
+    list_depth = 0;
+    
+    last_token_was_white = false;
+    
+    kobj$1 = tokens;
+    for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+      token = kobj$1[ki$1];
+        if (list_depth === 0 || !(last_token_was_white)) { /*have I seen a comma in this newline stretch?*/
+    saw_comma = false;
+        }
+        
+        if (token.value === '[') {
+    list_depth += 1;
+        }
+        
+        if (token.value === ']') {
+    list_depth -= 1;
+        }
+        
+        token_is_white = (($kindexof.call(['NEWLINE', 'INDENT', 'DEDENT'], token.type) >= 0) );
+        
+        if (token.value === ',' && !(saw_comma)) {
+          token_is_white = true;
+          
+          saw_comma = true;
+          
+        }
+        if (list_depth > 0) {
+          if (token_is_white && !(last_token_was_white)) { /*the first token in a newline stretch gets turned into a comma*/
+            out_tokens.push({ text: ',', line: token.line, value: ',', type: 'LITERAL' });
+            
+          } else {
+            (!(token_is_white)) ? out_tokens.push(token) : void 0;
+            
+          }
+        } else {
+          out_tokens.push(token);
+          
+        }
+        last_token_was_white = token_is_white && (list_depth > 0);
+        
+        
+    }
   };
 })()

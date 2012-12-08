@@ -4,7 +4,7 @@ KEYWORDS = grammar.KEYWORDS
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits','from','and','or','xor','in','when','instanceof','of','nor','if','unless','except','for','with']
 
 function translate_sugar (tokens, options, tokenizer)
-  out_tokens = coffee_style_functions noparen_function_calls multiline_statements clean code_in_strings tokens, tokenizer
+  out_tokens = coffee_style_functions noparen_function_calls multiline_statements multiline_lists clean code_in_strings tokens, tokenizer
   if options?.show_tokens
     debug = []
     for t in out_tokens
@@ -168,3 +168,26 @@ function code_in_strings (tokens, tokenizer)
     else
       out_tokens.push token
   return out_tokens
+
+function multiline_lists (tokens, tokenizer)
+  #allow lists to span multiple lines
+  out_tokens = []
+  list_depth = 0
+  last_token_was_white = no
+  for token in tokens
+    saw_comma = no if list_depth is 0 or not last_token_was_white #have I seen a comma in this newline stretch?
+    list_depth += 1 when token.value is '['
+    list_depth -= 1 when token.value is ']'
+    token_is_white = (token.type in ['NEWLINE','INDENT', 'DEDENT'])
+    if token.value is ',' and not saw_comma
+      token_is_white = yes
+      saw_comma = yes
+    if list_depth > 0
+      if token_is_white and not last_token_was_white #the first token in a newline stretch gets turned into a comma
+        out_tokens.push {text:',', line:token.line, value:',', type:'LITERAL'}
+      else
+        out_tokens.push token unless token_is_white
+    else
+      out_tokens.push token
+    last_token_was_white = token_is_white and (list_depth > 0)
+    
