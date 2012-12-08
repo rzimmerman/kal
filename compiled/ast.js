@@ -112,7 +112,7 @@
             args.push(v);
             
         }
-        this.error("Expected '" + (args.join(' or ')) + "'");
+        this.error("Expected '" + (args.join('\' or \'')) + "'");
         
       };
       ASTBase.prototype.req_multi = function () { /*require at least one*/

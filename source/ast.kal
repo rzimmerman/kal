@@ -63,7 +63,7 @@ class ASTBase
     args = []
     for v in arguments
       args.push v
-    me.error "Expected '#{args.join(' or ')}'"
+    me.error "Expected '#{args.join('\' or \'')}'"
   
   method req_multi() #require at least one
     rv = me.opt_multi.apply this, arguments
