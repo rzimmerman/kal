@@ -1,0 +1,59 @@
+describe 'From Statement', ->
+  it 'should accept single arguments', ->
+    task callbacker (arg1)
+      return arg1 + 1
+    wait for x from callbacker 5
+    x.should.equal 6
+  
+  it 'should accept multiple arguments', ->
+    task callbacker2 (arg1, arg2, arg3)
+      return arg1 + 1, arg2 - 1, arg3 + 2
+    wait for x, y, z from callbacker2 5, 6, 7
+    x.should.equal 6
+    y.should.equal 5
+    z.should.equal 9
+    
+  it 'should work inside of if statements and loops', ->
+    task callbacker3(arg1)
+      return arg1 * 2
+    x = 2
+    if x is 2
+      wait for y from callbacker3 7
+      n = 2
+    else
+      wait for z from callbacker3 8
+    y.should.equal 14
+    n.should.equal 2
+    (z doesnt exist).should.be.true
+    
+    c = []
+    for a in [1,2,3,4]
+      wait for b from callbacker3 a
+      c.push b
+    c.should.eql [2,4,6,8]
+    c = []
+
+    for a in [1,2,3,4] run in series
+      wait for b from callbacker3 a
+      c.push b
+    c.should.eql [2,4,6,8]
+    c = []
+    
+    for a in [1,2,3,4] run in parallel
+      wait for b from callbacker3 a
+      c.push b
+      
+    for d in c
+      (d in a).should.be.true
+    
+  it 'should throw when called back with an error', ->
+    task callbacker2(arg1)
+      fail with "error!!!"
+    error_happened = no
+    try
+      wait for x from callbacker 5
+    catch e
+      e.should.equal "error!!!"
+      error_happened = yes
+    error_happened.should.be.true
+  
