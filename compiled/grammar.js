@@ -84,17 +84,30 @@
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(ReturnStatement,ASTBase);
     ReturnStatement.prototype.parse = function () {
-        this.req_val('return');
+      var expr;
+      this.req_val('return');
       
       this.lock();
       
       this.conditional = this.opt(WhenExpression);
       
+      this.exprs = [];
+      
       if (!((this.conditional != null))) {
-        this.expr = this.opt(Expression);
+        expr = this.opt(Expression);
         
-        this.conditional = this.expr.transform_when_statement();
-        
+        if ((expr != null)) {
+          this.exprs.push(expr);
+          
+          while (this.opt_val(',')) {
+              expr = this.req(Expression);
+              
+              this.exprs.push(expr);
+              
+          }
+          this.conditional = expr.transform_when_statement();
+          
+        }
       }
     };
   function IfStatement () {

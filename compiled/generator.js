@@ -220,13 +220,24 @@
       
     };
     this.ReturnStatement.prototype.js = function  () {
-      var rv;
+      var rv, exprs_js, ki$1, kobj$1, expr;
       rv = "return";
       
-      if ((this.expr != null)) {
-    rv += (" " + (this.expr.js()));
+      if (this.exprs.length > 1) {
+        exprs_js = [];
+        
+        kobj$1 = this.exprs;
+        for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+          expr = kobj$1[ki$1];
+            exprs_js.push(expr.js());
+            
+        }
+        rv += (" [" + (exprs_js.join(', ')) + "]");
+        
+      } else     if (this.exprs.length === 1) {
+        rv += (" " + (this.exprs[0].js()));
+        
       }
-      
       rv += ";";
       
       if ((this.conditional != null)) {

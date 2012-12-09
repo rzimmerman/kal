@@ -118,7 +118,13 @@ function apply_generator_to_grammar()
     
   me.ReturnStatement.prototype.js = ->  
     rv = "return"
-    rv += " #{this.expr.js()}" when me.expr exists
+    if me.exprs.length > 1
+      exprs_js = []
+      for expr in me.exprs
+        exprs_js.push expr.js()
+      rv += " [#{exprs_js.join(', ')}]" 
+    else if me.exprs.length is 1
+      rv += " #{this.exprs[0].js()}" 
     rv += ";"
     rv = me.conditional.js(rv, no) when me.conditional exists
     return rv
