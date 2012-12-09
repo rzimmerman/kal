@@ -40,7 +40,7 @@ class ReturnStatement inherits from ASTBase
     me.conditional = me.opt WhenExpression
     except when me.conditional exists
       me.expr = me.opt Expression
-      me.conditional = me.expr.transform_when_statement()
+      me.conditional = me.expr.transform_when_statement() if me.expr exists
 
 class IfStatement inherits from ASTBase
   method parse()

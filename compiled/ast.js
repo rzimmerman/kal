@@ -3,11 +3,15 @@
   function ParseFailed (message) {
         this.message = message;
       
+      this.not_compiler_issue = true;
+      
     }  
   function SyntaxError (message) {
         this.message = message;
       
       this.locked = true;
+      
+      this.not_compiler_issue = true;
       
     }  
   exports.SyntaxError = SyntaxError;
@@ -47,7 +51,7 @@
                           } catch (e) {
                 this.ts.goto_token(start_index);
                 
-                if (e.locked) {
+                if (e.locked || !(e.not_compiler_issue)) {
                   throw e;
                   
                 }}

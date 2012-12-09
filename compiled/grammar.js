@@ -74,7 +74,9 @@
       if (!((this.conditional != null))) {
         this.expr = this.opt(Expression);
         
-        this.conditional = this.expr.transform_when_statement();
+        if ((this.expr != null)) {
+    this.conditional = this.expr.transform_when_statement();
+        }
         
       }
     };
