@@ -1,4 +1,4 @@
-KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','^':'pow','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof','of':'in','EndOfList':'undefined'}
+KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','^':'pow','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof','of':'in','EndOfList':'undefined','fail':'throw'}
 
 load = function load (grammar)
   apply_generator_to_grammar.apply grammar

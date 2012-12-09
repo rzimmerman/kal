@@ -4,7 +4,7 @@
   var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
   ast = require('./ast');
   ASTBase = ast.ASTBase;
-  KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof', 'property', 'value', 'with'];
+  KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof', 'property', 'value', 'with', 'from', 'task', 'fail'];
   function File () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(File,ASTBase);
@@ -41,11 +41,30 @@
           
       }
     };
+  function BlockWithoutIndent () {
+    return Block.prototype.constructor.apply(this,arguments);
+  }__extends(BlockWithoutIndent,Block);
+    BlockWithoutIndent.prototype.parse = function () {
+        this.req('NEWLINE');
+      
+      this.lock();
+      
+      this.statements = [];
+      
+      while (!(this.opt('DEDENT'))) {
+          this.statements.push(this.req(Statement));
+          
+          this.lock();
+          
+      }
+      this.ts.prev(); /*unsee the dedent*/
+      
+    };
   function Statement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(Statement,ASTBase);
     Statement.prototype.parse = function () {
-        this.statement = this.req(BlankStatement, TryCatch, ClassDefinition, ReturnStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement);
+        this.statement = this.req(BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement);
       
     };
   function ThrowStatement () {
@@ -166,6 +185,75 @@
       this.rvalue = this.req(Expression);
       
       this.conditional = this.rvalue.transform_when_statement();
+      
+    };
+  function WaitForStatement () {
+    return ASTBase.prototype.constructor.apply(this,arguments);
+  }__extends(WaitForStatement,ASTBase);
+    WaitForStatement.prototype.parse = function () {
+        this.req_val('wait');
+      
+      this.lock();
+      
+      this.req_val('for');
+      
+      this.lvalue = this.req(MultipleReturnValues, UnaryExpression);
+      
+      this.lvalue.can_be_lvalue = true;
+      
+      this.req_val('from');
+      
+      (!(this.lvalue.is_lvalue())) ? this.error("invalid assignment - the left side must be assignable") : void 0;
+      
+      this.rvalue = this.req(Expression);
+      
+      this.conditional = this.rvalue.transform_when_statement;
+      
+      this.block = this.req(BlockWithoutIndent);
+      
+    };
+  function MultipleReturnValues () {
+    return ASTBase.prototype.constructor.apply(this,arguments);
+  }__extends(MultipleReturnValues,ASTBase);
+    MultipleReturnValues.prototype.is_lvalue = function () {
+      var ki$1, kobj$1, arg;
+      kobj$1 = this.arguments;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        arg = kobj$1[ki$1];
+          if (!(arg.is_lvalue())) {
+    return false;
+          }
+          
+      }
+      return true;
+      
+    };
+    MultipleReturnValues.prototype.parse = function () {
+      var left_paren, t, arg;
+      left_paren = this.opt_val('(');
+      
+      this.arguments = [];
+      
+      t = { value: ',' };
+      
+      while (t.value === ',') {
+          arg = this.req(UnaryExpression);
+          
+          arg.can_be_lvalue = true;
+          
+          this.arguments.push(arg);
+          
+          if (left_paren) {
+            t = this.req_val(')', 'from', ',');
+            
+          } else {
+            t = this.req_val('from', ',');
+            
+          }
+      }
+      this.ts.prev();
+      
+      (left_paren) ? this.require(')') : void 0;
       
     };
   function ExpressionStatement () {
@@ -571,7 +659,7 @@
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(FunctionExpression,ASTBase);
     FunctionExpression.prototype.parse = function () {
-        this.specifier = this.req_val('function', 'method');
+        this.specifier = this.req_val('function', 'method', 'task');
       
       this.lock();
       
@@ -633,7 +721,7 @@
       this.accessor = this.opt(FunctionCall);
       
     };
-  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement];
+  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, MultipleReturnValues];
   exports.Grammar = {  };
   kobj$1 = Nodes;
   for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
