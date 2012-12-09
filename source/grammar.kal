@@ -56,7 +56,7 @@ class ReturnStatement inherits from ASTBase
         while me.opt_val ','
           expr = me.req Expression
           me.exprs.push expr
-        me.conditional = expr.transform_when_statement()
+        me.conditional = expr.transform_when_statement() if expr exists
 
 class IfStatement inherits from ASTBase
   method parse()

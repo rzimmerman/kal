@@ -105,7 +105,9 @@
               this.exprs.push(expr);
               
           }
-          this.conditional = expr.transform_when_statement();
+          if ((expr != null)) {
+    this.conditional = expr.transform_when_statement();
+          }
           
         }
       }

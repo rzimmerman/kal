@@ -1,11 +1,13 @@
 class ParseFailed
   method initialize(message)
     me.message = message
+    me.not_compiler_issue = yes
     
 class SyntaxError
   method initialize(message)
     me.message = message
     me.locked = yes
+    me.not_compiler_issue = yes
     
 exports.SyntaxError = SyntaxError
 
@@ -32,7 +34,7 @@ class ASTBase
           return rv
         catch e
           me.ts.goto_token start_index
-          if e.locked
+          if e.locked or not e.not_compiler_issue
             throw e
     return null
   
