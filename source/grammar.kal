@@ -38,7 +38,7 @@ class Statement inherits from ASTBase
   
 class ThrowStatement inherits from ASTBase
   method parse()
-    me.req_val 'throw', 'raise'
+    me.req_val 'throw', 'raise', 'fail'
     me.lock()
     me.expr = me.req Expression
     me.conditional = me.expr.transform_when_statement()
