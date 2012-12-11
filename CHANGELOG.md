@@ -1,4 +1,17 @@
 #Change Log
+
+### [0.3.2](https://github.com/rzimmerman/kal/compare/r0.3.1...r0.3.2)
+* Better error reporting from the compiler
+* List comprehension over objects is supported using the syntaxes:
+
+    [expr(p) for property p of y]
+    [expr(v) for property value v of y]
+    [expr(p,v) for property p with value v of y]
+
+* Fixed a bug where you couldn't call a function with a list argument and implicit parens like `myfunc [1,2,3]`
+* Multi-line lists with optional commas (like CoffeeScript) are now supported. Multiline objects are not supported yet.
+* Some fixes to the command line tool to get it to work with node.js 0.6.x. No promises, though.
+
 ### [0.3.1](https://github.com/rzimmerman/kal/compare/r0.3.0...r0.3.1)
 * Support for list comprehensions using the `[expr(x) for x in y]` syntax
 
