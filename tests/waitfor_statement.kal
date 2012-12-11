@@ -1,19 +1,21 @@
 describe 'From Statement', ->
-  it 'should accept single arguments', ->
+  it 'should accept single arguments', (done) ->
     task callbacker (arg1)
       return arg1 + 1
     wait for x from callbacker 5
     x.should.equal 6
+    done()
   
-  it 'should accept multiple arguments', ->
+  it 'should accept multiple arguments', (done) ->
     task callbacker2 (arg1, arg2, arg3)
       return arg1 + 1, arg2 - 1, arg3 + 2
     wait for x, y, z from callbacker2 5, 6, 7
     x.should.equal 6
     y.should.equal 5
     z.should.equal 9
+    done()
     
-  it 'should work inside of if statements', ->
+  it 'should work inside of if statements', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
     x = 2
@@ -25,8 +27,9 @@ describe 'From Statement', ->
     y.should.equal 14
     n.should.equal 2
     (z doesnt exist).should.be.true
+    done()
   
-  it 'should work inside of for loops and while loops', ->
+  it 'should work inside of for loops and while loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
     c = []
@@ -48,8 +51,9 @@ describe 'From Statement', ->
       
     for d in c
       (d in a).should.be.true
+    done()
     
-  it 'should throw when called back with an error', ->
+  it 'should throw when called back with an error', (done) ->
     task callbacker2(arg1)
       fail with "error!!!"
     error_happened = no
@@ -59,4 +63,5 @@ describe 'From Statement', ->
       e.should.equal "error!!!"
       error_happened = yes
     error_happened.should.be.true
+    done()
   
