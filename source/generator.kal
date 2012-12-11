@@ -476,9 +476,9 @@ function apply_generator_to_grammar()
       rv.push argument.js()
     rv = rv.join ', '
     if as_list
-      return ("[#{rv}]")
+      return "[#{rv}]"
     else if me.with_callback
-      return ("(#{rv}, ")
+      return ("(#{rv}, ") when rv isnt "" otherwise ("(")
     else
       return ("(#{rv})")
     

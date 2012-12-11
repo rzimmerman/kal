@@ -65,3 +65,9 @@ describe 'From Statement', ->
     error_happened.should.be.true
     done()
   
+  it 'should work if the called task takes no arguments', (done) ->
+    task callbacker4()
+      return 5
+    wait for x from callbacker4()
+    x.should.equal 5
+    done()

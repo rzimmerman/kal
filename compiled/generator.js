@@ -890,10 +890,10 @@
       rv = rv.join(', ');
       
       if (as_list) {
-        return (("[" + rv + "]"));
+        return ("[" + rv + "]");
         
       } else     if (this.with_callback) {
-        return (("(" + rv + ", "));
+        return (rv !== "") ? (("(" + rv + ", ")) : ("(");
         
       } else {
         return (("(" + rv + ")"));
