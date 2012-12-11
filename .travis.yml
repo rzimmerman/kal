@@ -1,7 +1,7 @@
 language: node_js
 before_script:
   - npm install kal
-  - node_modules/kal/scripts/kal -o compiled/ source/*
+  - ./node_modules/kal/scripts/kal -o compiled/ source/*
 node_js:
   - 0.8
   - 0.6
