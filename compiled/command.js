@@ -1,5 +1,5 @@
 (function () {
-  var fs, path, optimist, Kal, run;
+  var fs, path, optimist, Kal, existsSync, run;
   
   fs = require('fs'); /*External dependencies.*/
   path = require('path');
@@ -38,6 +38,7 @@
     return optimist.argv;
     
   };
+  existsSync = fs.existsSync || path.existsSync;
   run = function run () {
     var options, compile_options, ki$1, kobj$1, file_name, js_output;
     options = parseOptions();
@@ -50,7 +51,7 @@
     return usage();
     }
     
-    if ((options.output != null) && !(fs.existsSync(options.output))) {
+    if ((options.output != null) && !(existsSync(options.output))) {
       printWarn('output path does not exist!');
       
       return usage();
