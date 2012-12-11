@@ -27,6 +27,8 @@ describe 'From Statement', ->
     (z doesnt exist).should.be.true
   
   it 'should work inside of for loops and while loops', ->
+    task callbacker3(arg1)
+      return arg1 * 2
     c = []
     for a in [1,2,3,4]
       wait for b from callbacker3 a
