@@ -141,7 +141,7 @@ function apply_generator_to_grammar()
       exprs_js = []
       for expr in me.exprs
         exprs_js.push expr.js()
-      rv += "[#{exprs_js.join(', ')}]" 
+      rv += "[#{exprs_js.join(', ')}]" except when use_callback exists otherwise "#{exprs_js.join(', ')}"
     else if me.exprs.length is 1
       rv += "#{this.exprs[0].js()}" 
     rv += ")" when use_callback exists
@@ -522,8 +522,9 @@ function apply_generator_to_grammar()
     callback_args = ['$kerr']
     for argument in me.lvalue.arguments
       callback_args.push "$karg#{arg_i}"
-      rv_block += "#{argument.base.value} = $karg#{arg_i};\n"
+      rv_block += "#{i}#{argument.base.value} = $karg#{arg_i};\n"
       scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
+      arg_i += 1
     rv_block += me.block.js()
     callback_args.push '$knext'
     rv += "function (#{callback_args.join(',')}) {\n"

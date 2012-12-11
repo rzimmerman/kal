@@ -270,7 +270,7 @@
             exprs_js.push(expr.js());
             
         }
-        rv += ("[" + (exprs_js.join(', ')) + "]");
+        rv += (!((use_callback != null))) ? ("[" + (exprs_js.join(', ')) + "]") : ("" + (exprs_js.join(', ')));
         
       } else     if (this.exprs.length === 1) {
         rv += ("" + (this.exprs[0].js()));
@@ -975,11 +975,13 @@
         argument = kobj$1[ki$1];
           callback_args.push("$karg" + arg_i);
           
-          rv_block += ("" + (argument.base.value) + " = $karg" + arg_i + ";\n");
+          rv_block += ("" + i + "" + (argument.base.value) + " = $karg" + arg_i + ";\n");
           
           if (!((scope[argument.base.value] != null))) {
     scope[argument.base.value] = 'closures ok';
           }
+          
+          arg_i += 1;
           
       }
       rv_block += this.block.js();
