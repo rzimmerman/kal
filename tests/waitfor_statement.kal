@@ -13,7 +13,7 @@ describe 'From Statement', ->
     y.should.equal 5
     z.should.equal 9
     
-  it 'should work inside of if statements and loops', ->
+  it 'should work inside of if statements', ->
     task callbacker3(arg1)
       return arg1 * 2
     x = 2
@@ -25,7 +25,8 @@ describe 'From Statement', ->
     y.should.equal 14
     n.should.equal 2
     (z doesnt exist).should.be.true
-    
+  
+  it 'should work inside of for loops and while loops'
     c = []
     for a in [1,2,3,4]
       wait for b from callbacker3 a
