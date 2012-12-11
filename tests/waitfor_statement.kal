@@ -51,7 +51,7 @@ describe 'From Statement', ->
       fail with "error!!!"
     error_happened = no
     try
-      wait for x from callbacker 5
+      wait for x from callbacker2 5
     catch e
       e.should.equal "error!!!"
       error_happened = yes

@@ -71,9 +71,12 @@
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(ThrowStatement,ASTBase);
     ThrowStatement.prototype.parse = function () {
-        this.req_val('throw', 'raise', 'fail');
+      var specifier;
+      specifier = this.req_val('throw', 'raise', 'fail');
       
       this.lock();
+      
+      (specifier.value === 'fail') ? this.req_val('with') : void 0;
       
       this.expr = this.req(Expression);
       
