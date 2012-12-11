@@ -26,7 +26,7 @@ describe 'From Statement', ->
     n.should.equal 2
     (z doesnt exist).should.be.true
   
-  it 'should work inside of for loops and while loops'
+  it 'should work inside of for loops and while loops', ->
     c = []
     for a in [1,2,3,4]
       wait for b from callbacker3 a
