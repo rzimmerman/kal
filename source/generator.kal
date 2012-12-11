@@ -428,7 +428,6 @@ function apply_generator_to_grammar()
     if me.name exists
       rv += me.name.value
     args = []
-    args.push '$kerr' if me.use_callback
     for argument in me.arguments
       args.push argument.name.value
     args.push '$knext' if me.use_callback
@@ -460,7 +459,7 @@ function apply_generator_to_grammar()
       if trigger_callback is no
         use_callback = "$kcb#{callback_count}"
         callback_count += 1
-      rv += "#{i}try {if ($kerr) {throw $kerr;}\n"
+      rv += "#{i}try {\n"
     for arg_name in arg_names
       scope[arg_name] = 'argument'
     block_code = me.block.js(yes)
@@ -479,7 +478,7 @@ function apply_generator_to_grammar()
     if as_list
       return ("[#{rv}]")
     else if me.with_callback
-      return ("(null, #{rv}, ")
+      return ("(#{rv}, ")
     else
       return ("(#{rv})")
     

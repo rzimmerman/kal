@@ -58,10 +58,6 @@
     function push_scope () {
       var new_scope, ki$1, kobj$1, k, v;
       scopes.push(scope);
-  /*callback_scopes.push callbacks
-   * callbacks = []
-   * use_callbacks.push use_callback
-   * use_callback = null*/
       
       trigger_callbacks.push(trigger_callback);
       
@@ -794,8 +790,6 @@
       }
       args = [];
       
-      (this.use_callback) ? args.push('$kerr') : void 0;
-      
       kobj$1 = this.arguments;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         argument = kobj$1[ki$1];
@@ -859,7 +853,7 @@
           callback_count += 1;
           
         }
-        rv += ("" + i + "try {if ($kerr) {throw $kerr;}\n");
+        rv += ("" + i + "try {\n");
         
       }
       kobj$1 = arg_names;
@@ -899,7 +893,7 @@
         return (("[" + rv + "]"));
         
       } else     if (this.with_callback) {
-        return (("(null, " + rv + ", "));
+        return (("(" + rv + ", "));
         
       } else {
         return (("(" + rv + ")"));
