@@ -8,7 +8,7 @@
   };
   exports.load = load;
   function apply_generator_to_grammar () {
-    var i, scopes, scope, callback_scopes, callbacks, use_callback, use_callbacks, class_defs, class_def, use_snippets, self, for_depth, snippets;
+    var i, scopes, scope, use_callback, use_callbacks, callback_count, trigger_callbacks, trigger_callback, in_branch_or_loop, in_branch_or_loops, class_defs, class_def, use_snippets, self, for_depth, snippets;
     i = '';
     
     function indent () {
@@ -23,13 +23,19 @@
     
     scope = {  };
     
-    callback_scopes = [];
-    
-    callbacks = [];
-    
     use_callback = null;
     
     use_callbacks = [];
+    
+    callback_count = 1;
+    
+    trigger_callbacks = [];
+    
+    trigger_callback = false;
+    
+    in_branch_or_loop = false;
+    
+    in_branch_or_loops = [];
     
     class_defs = [];
     
@@ -52,14 +58,18 @@
     function push_scope () {
       var new_scope, ki$1, kobj$1, k, v;
       scopes.push(scope);
+  /*callback_scopes.push callbacks
+   * callbacks = []
+   * use_callbacks.push use_callback
+   * use_callback = null*/
       
-      callback_scopes.push(callbacks);
+      trigger_callbacks.push(trigger_callback);
       
-      callbacks = [];
+      trigger_callback = false;
       
-      use_callbacks.push(use_callback);
+      in_branch_or_loops.push(in_branch_or_loop);
       
-      use_callback = null;
+      in_branch_or_loop = false;
       
       new_scope = {  };
       
@@ -81,15 +91,17 @@
       scope = new_scope;
       
     };
-    function pop_scope (code, force_closed, wrap) {
+    function pop_scope (code, wrap) {
       var rv, var_names, ki$1, kobj$1, var_name;
       rv = i;
       
       var_names = [];
+  /*callbacks = callback_scopes.pop()
+   * use_callback = use_callbacks.pop()*/
       
-      callbacks = callback_scopes.pop();
+      trigger_callback = trigger_callbacks.pop();
       
-      use_callback = use_callbacks.pop();
+      in_branch_or_loop = in_branch_or_loops.pop();
       
       kobj$1 = scope;
   for (var_name in kobj$1) {
@@ -147,13 +159,19 @@
       
       scope = {  };
       
-      callback_scopes = [];
+      trigger_callbacks = [];
       
-      callbacks = [];
+      trigger_callback = false;
       
       use_callbacks = [];
       
       use_callback = null;
+      
+      callback_count = 1;
+      
+      in_branch_or_loop = false;
+      
+      in_branch_or_loops = [];
       
       class_defs = [];
       
@@ -190,9 +208,7 @@
           comment.written = null;
           
       }
-      rv += callbacks.join('\n');
-      
-      return pop_scope(rv, true, !(options.bare));
+      return pop_scope(rv, !(options.bare));
       
     };
     this.Statement.prototype.js = function  () {
@@ -254,9 +270,9 @@
       rv = "return";
       
       if ((use_callback != null)) {
-    rv += " $knext(null,";
+        rv += (in_branch_or_loop) ? (" " + use_callback + "(null,") : " $knext(null,";
+        
       }
-      
       if (this.exprs.length > 0 && (use_callback == null)) {
     rv += " ";
       }
@@ -526,7 +542,9 @@
       var conditional_js, rv;
       use_callbacks.push(use_callback);
       
-      use_callback = null;
+      in_branch_or_loops.push(in_branch_or_loop);
+      
+      in_branch_or_loop = true;
       
       conditional_js = this.conditional.js();
       
@@ -541,6 +559,16 @@
         
       }
       use_callback = use_callbacks.pop();
+      
+      if ((use_callback != null)) {
+    trigger_callback = true;
+      }
+      
+      in_branch_or_loop = in_branch_or_loops.pop();
+      
+      if ((use_callback != null)) {
+    rv += ("\n" + i + "" + use_callback + "(null);");
+      }
       
       return rv;
       
@@ -611,16 +639,36 @@
       return rv;
       
     };
-    this.Block.prototype.js = function  () {
-      var rv, ki$1, kobj$1, statement;
+    this.Block.prototype.js = function  (closeout_callbacks) {
+      var rv, block_cb_count, ki$1, kobj$1, statement;
       indent();
       
       rv = [];
+      
+      block_cb_count = 0;
       
       kobj$1 = this.statements;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         statement = kobj$1[ki$1];
           rv.push(statement.js());
+          
+          if (trigger_callback) {
+            trigger_callback = false;
+            
+            rv.push("" + i + "function " + use_callback + " ($kerr) {");
+            
+            indent();
+            
+            block_cb_count += 1;
+            
+          }
+      }
+      while (block_cb_count > 0) {
+          dedent();
+          
+          rv.push("" + i + "}");
+          
+          block_cb_count -= 1;
           
       }
       rv = rv.join('\n');
@@ -805,8 +853,12 @@
       push_scope();
       
       if (this.use_callback) {
-        use_callback = this;
-        
+        if (trigger_callback === false) {
+          use_callback = ("$kcb" + callback_count);
+          
+          callback_count += 1;
+          
+        }
         rv += ("" + i + "try {if ($kerr) {throw $kerr;}\n");
         
       }
@@ -816,9 +868,9 @@
           scope[arg_name] = 'argument';
           
       }
-      block_code = this.block.js();
+      block_code = this.block.js(true);
       
-      rv += pop_scope(block_code, false, false);
+      rv += pop_scope(block_code, false);
       
       if (this.use_callback) {
         rv += ("\n" + i + "} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}");
@@ -879,7 +931,7 @@
       
       block_code = this.block.js();
       
-      block_code = pop_scope(block_code, false, false);
+      block_code = pop_scope(block_code, false);
       
       rv = class_def.code;
       
@@ -960,9 +1012,7 @@
       
       this.rvalue.accessors[this.rvalue.accessors.length - 1].with_callback = true;
       
-      rv = this.rvalue.js();
-      
-      push_scope();
+      rv = "return " + this.rvalue.js();
       
       rv_block = "";
       
@@ -981,7 +1031,7 @@
     scope[argument.base.value] = 'closures ok';
           }
           
-          arg_i += 1;
+          arg_i += 1; /*push_scope()*/
           
       }
       rv_block += this.block.js();
@@ -994,12 +1044,19 @@
       
       rv += ("" + i + "try {if ($kerr) {throw $kerr;}\n");
       
-      rv += pop_scope(rv_block, true, false);
+      rv += rv_block;
       
-      rv += ("" + i + "} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}\n");
-      
-      rv += ("" + i + "return $knext ? $knext(null) : void 0;\n");
-      
+      if (in_branch_or_loop) {
+        rv += ("" + i + "} catch (e) {return " + use_callback + "(e);}\n");
+        
+        rv += ("" + i + "return " + use_callback + "();\n");
+        
+      } else {
+        rv += ("" + i + "} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}\n");
+        
+        rv += ("" + i + "return $knext ? $knext(null) : void 0;\n");
+        
+      }
       dedent();
       
       rv += ("" + i + "});");

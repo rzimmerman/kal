@@ -15,11 +15,14 @@ function apply_generator_to_grammar()
   scopes = []
   scope = {}
   
-  callback_scopes = []
-  callbacks = []
-  
   use_callback = null
   use_callbacks = []
+  callback_count = 1
+  trigger_callbacks = []
+  trigger_callback = no
+  
+  in_branch_or_loop = no
+  in_branch_or_loops = []
   
   class_defs = []
   class_def = {}
@@ -36,10 +39,10 @@ function apply_generator_to_grammar()
   
   function push_scope()
     scopes.push scope
-    callback_scopes.push callbacks
-    callbacks = []
-    use_callbacks.push use_callback
-    use_callback = null
+    trigger_callbacks.push trigger_callback
+    trigger_callback = no
+    in_branch_or_loops.push in_branch_or_loop
+    in_branch_or_loop = no
     new_scope = {}
     for k of scope
       v = scope[k]
@@ -51,11 +54,13 @@ function apply_generator_to_grammar()
         new_scope[k] = 'closure'
     scope = new_scope
     
-  function pop_scope(code, force_closed, wrap)
+  function pop_scope(code, wrap)
     rv = i
     var_names = []
-    callbacks = callback_scopes.pop()
-    use_callback = use_callbacks.pop()
+    #callbacks = callback_scopes.pop()
+    #use_callback = use_callbacks.pop()
+    trigger_callback = trigger_callbacks.pop()
+    in_branch_or_loop = in_branch_or_loops.pop()
     for var_name of scope
       if not (scope[var_name] in ['closure', 'argument', 'function', 'class definition'])
         var_names.push(var_name)
@@ -86,10 +91,13 @@ function apply_generator_to_grammar()
     i = ''
     scopes = []
     scope = {}
-    callback_scopes = []
-    callbacks = []
+    trigger_callbacks = []
+    trigger_callback = no
     use_callbacks = []
     use_callback = null
+    callback_count = 1
+    in_branch_or_loop = no
+    in_branch_or_loops = []
     class_defs = []
     class_def = {name: '',code: '',args: [],has_constructor: no}
     use_snippets = {}
@@ -105,8 +113,7 @@ function apply_generator_to_grammar()
     rv = [snip, code].join '\n'
     for comment in me.ts.comments # reset the AST modifications in case something else wants to use it
       comment.written = null
-    rv += callbacks.join '\n'
-    return pop_scope(rv, yes, not options.bare)
+    return pop_scope(rv, not options.bare)
     
   me.Statement.prototype.js = ->
     rv = ''
@@ -135,7 +142,8 @@ function apply_generator_to_grammar()
     
   me.ReturnStatement.prototype.js = ->
     rv = "return"
-    rv += " $knext(null," when use_callback exists
+    if use_callback exists
+      rv += " #{use_callback}(null," when in_branch_or_loop otherwise " $knext(null,"
     rv += " " when me.exprs.length > 0 but use_callback doesnt exist
     if me.exprs.length > 1
       exprs_js = []
@@ -283,7 +291,8 @@ function apply_generator_to_grammar()
   
   me.IfStatement.prototype.js = ->
     use_callbacks.push use_callback
-    use_callback = null
+    in_branch_or_loops.push in_branch_or_loop
+    in_branch_or_loop = yes
     conditional_js = me.conditional.js()
     if me.condition.value is 'unless' or me.condition.value is 'except'
       conditional_js = "!(#{conditional_js})"
@@ -291,8 +300,12 @@ function apply_generator_to_grammar()
     rv = "if (#{conditional_js}) {\n#{this.true_block.js()}\n#{i}}"
     
     if me.else_block exists
-      rv += me.else_block.js()      
+      rv += me.else_block.js()
+      
     use_callback = use_callbacks.pop()
+    trigger_callback = yes if use_callback exists
+    in_branch_or_loop = in_branch_or_loops.pop()
+    rv += "\n#{i}#{use_callback}(null);" if use_callback exists
     return rv
     
   me.ElseStatement.prototype.js = ->
@@ -332,11 +345,21 @@ function apply_generator_to_grammar()
     rv += "\n#{i}}"
     return rv
     
-  me.Block.prototype.js = ->
+  me.Block.prototype.js = (closeout_callbacks) ->
     indent()
     rv = []
+    block_cb_count = 0
     for statement in me.statements
       rv.push statement.js()
+      if trigger_callback
+        trigger_callback = no
+        rv.push "#{i}function #{use_callback} ($kerr) {"
+        indent()
+        block_cb_count += 1
+    while block_cb_count > 0
+      dedent()
+      rv.push "#{i}}"
+      block_cb_count -= 1
     rv = rv.join '\n'
     dedent()
     return rv
@@ -434,12 +457,14 @@ function apply_generator_to_grammar()
     rv = " (#{arg_names.join(', ')}) {\n"
     push_scope()
     if me.use_callback
-      use_callback = me
+      if trigger_callback is no
+        use_callback = "$kcb#{callback_count}"
+        callback_count += 1
       rv += "#{i}try {if ($kerr) {throw $kerr;}\n"
     for arg_name in arg_names
       scope[arg_name] = 'argument'
-    block_code = me.block.js()
-    rv += pop_scope(block_code, no, no)
+    block_code = me.block.js(yes)
+    rv += pop_scope(block_code, no)
     if me.use_callback
       rv += "\n#{i}} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}"
       rv += "\n#{i}return $knext ? $knext(null) : void 0;"
@@ -473,7 +498,7 @@ function apply_generator_to_grammar()
     class_def.name = me.name.value
     class_def.parent = me.parent?.value
     block_code = me.block.js()
-    block_code = pop_scope block_code, no, no
+    block_code = pop_scope block_code, no
     rv = class_def.code
     unless class_def.has_constructor
       rv += "function #{class_def.name} () {"
@@ -515,8 +540,7 @@ function apply_generator_to_grammar()
   me.WaitForStatement.prototype.js = ->
     me.rvalue.callback_args = me.lvalue
     me.rvalue.accessors[me.rvalue.accessors.length - 1].with_callback = yes
-    rv = me.rvalue.js()
-    push_scope()
+    rv = "return " + me.rvalue.js()
     rv_block = ""
     arg_i = 1
     callback_args = ['$kerr']
@@ -525,14 +549,19 @@ function apply_generator_to_grammar()
       rv_block += "#{i}#{argument.base.value} = $karg#{arg_i};\n"
       scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
       arg_i += 1
+    #push_scope()
     rv_block += me.block.js()
     callback_args.push '$knext'
     rv += "function (#{callback_args.join(',')}) {\n"
     indent()
     rv += "#{i}try {if ($kerr) {throw $kerr;}\n"
-    rv += pop_scope rv_block, yes, no
-    rv += "#{i}} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}\n"
-    rv += "#{i}return $knext ? $knext(null) : void 0;\n"
+    rv += rv_block
+    if in_branch_or_loop
+      rv += "#{i}} catch (e) {return #{use_callback}(e);}\n"
+      rv += "#{i}return #{use_callback}();\n"
+    else
+      rv += "#{i}} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}\n"
+      rv += "#{i}return $knext ? $knext(null) : void 0;\n"
     dedent()
     rv += "#{i}});"
     rv = me.conditional.js(rv, no) if me.conditional exists
