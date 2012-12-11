@@ -534,7 +534,7 @@
         return KEYWORD_TRANSLATE[this.op.value] || this.op.value;
       
     };
-    this.IfStatement.prototype.js = function  () {
+    this.IfStatement.prototype.js = function  (dont_callback) {
       var conditional_js, rv;
       use_callbacks.push(use_callback);
       
@@ -554,24 +554,24 @@
         rv += this.else_block.js();
         
       }
-      use_callback = use_callbacks.pop();
-      
       if ((use_callback != null)) {
     trigger_callback = true;
       }
       
-      in_branch_or_loop = in_branch_or_loops.pop();
-      
-      if ((use_callback != null)) {
-    rv += ("\n" + i + "" + use_callback + "(null);");
+      if ((use_callback != null) && !(dont_callback)) {
+    rv += ("\n" + i + "return " + use_callback + "(null);");
       }
+      
+      use_callbacks.pop();
+      
+      in_branch_or_loop = in_branch_or_loops.pop();
       
       return rv;
       
     };
     this.ElseStatement.prototype.js = function  () {
         if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
-        return (" else " + (this.false_block.js()));
+        return (" else " + (this.false_block.statement.js(true)));
         
       } else {
         return (" else {\n" + (this.false_block.js()) + "\n" + i + "}");
@@ -651,7 +651,7 @@
           if (trigger_callback) {
             trigger_callback = false;
             
-            rv.push("" + i + "function " + use_callback + " ($kerr) {");
+            rv.push("" + i + "function " + use_callback + " ($kerr) {\n" + i + "if ($kerr) {throw $kerr;}\n");
             
             indent();
             
@@ -1002,6 +1002,12 @@
     };
     this.WaitForStatement.prototype.js = function  () {
       var rv, rv_block, arg_i, callback_args, ki$1, kobj$1, argument;
+      if ((use_callback == null)) {
+        use_callback = ("$kcb" + callback_count);
+        
+        callback_count += 1;
+        
+      }
       this.rvalue.callback_args = this.lvalue;
       
       this.rvalue.accessors[this.rvalue.accessors.length - 1].with_callback = true;

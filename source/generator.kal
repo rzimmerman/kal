@@ -289,7 +289,7 @@ function apply_generator_to_grammar()
   me.BinOp.prototype.js = ->
     return KEYWORD_TRANSLATE[me.op.value] or me.op.value
   
-  me.IfStatement.prototype.js = ->
+  me.IfStatement.prototype.js = (dont_callback) ->
     use_callbacks.push use_callback
     in_branch_or_loops.push in_branch_or_loop
     in_branch_or_loop = yes
@@ -302,15 +302,15 @@ function apply_generator_to_grammar()
     if me.else_block exists
       rv += me.else_block.js()
       
-    use_callback = use_callbacks.pop()
     trigger_callback = yes if use_callback exists
+    rv += "\n#{i}return #{use_callback}(null);" if use_callback exists and not dont_callback
+    use_callbacks.pop()
     in_branch_or_loop = in_branch_or_loops.pop()
-    rv += "\n#{i}#{use_callback}(null);" if use_callback exists
     return rv
     
   me.ElseStatement.prototype.js = ->
     if me.false_block instanceof self.Statement and (me.false_block.statement instanceof self.IfStatement)
-      return " else #{this.false_block.js()}"
+      return " else #{this.false_block.statement.js(yes)}"
     else
       return " else {\n#{this.false_block.js()}\n#{i}}"
       
@@ -353,7 +353,7 @@ function apply_generator_to_grammar()
       rv.push statement.js()
       if trigger_callback
         trigger_callback = no
-        rv.push "#{i}function #{use_callback} ($kerr) {"
+        rv.push "#{i}function #{use_callback} ($kerr) {\n#{i}if ($kerr) {throw $kerr;}\n"
         indent()
         block_cb_count += 1
     while block_cb_count > 0
@@ -537,6 +537,9 @@ function apply_generator_to_grammar()
     return rv
     
   me.WaitForStatement.prototype.js = ->
+    if use_callback doesnt exist
+      use_callback = "$kcb#{callback_count}"
+      callback_count += 1
     me.rvalue.callback_args = me.lvalue
     me.rvalue.accessors[me.rvalue.accessors.length - 1].with_callback = yes
     rv = "return " + me.rvalue.js()
