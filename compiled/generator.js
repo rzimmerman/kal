@@ -8,7 +8,7 @@
   };
   exports.load = load;
   function apply_generator_to_grammar () {
-    var i, scopes, scope, class_defs, class_def, use_snippets, self, for_depth, snippets;
+    var i, scopes, scope, callback_scopes, callbacks, use_callback, use_callbacks, class_defs, class_def, use_snippets, self, for_depth, snippets;
     i = '';
     
     function indent () {
@@ -22,6 +22,14 @@
     scopes = [];
     
     scope = {  };
+    
+    callback_scopes = [];
+    
+    callbacks = [];
+    
+    use_callback = null;
+    
+    use_callbacks = [];
     
     class_defs = [];
     
@@ -44,6 +52,14 @@
     function push_scope () {
       var new_scope, ki$1, kobj$1, k, v;
       scopes.push(scope);
+      
+      callback_scopes.push(callbacks);
+      
+      callbacks = [];
+      
+      use_callbacks.push(use_callback);
+      
+      use_callback = null;
       
       new_scope = {  };
       
@@ -70,6 +86,10 @@
       rv = i;
       
       var_names = [];
+      
+      callbacks = callback_scopes.pop();
+      
+      use_callback = use_callbacks.pop();
       
       kobj$1 = scope;
   for (var_name in kobj$1) {
@@ -127,6 +147,14 @@
       
       scope = {  };
       
+      callback_scopes = [];
+      
+      callbacks = [];
+      
+      use_callbacks = [];
+      
+      use_callback = null;
+      
       class_defs = [];
       
       class_def = { name: '', code: '', args: [], has_constructor: false };
@@ -162,6 +190,8 @@
           comment.written = null;
           
       }
+      rv += callbacks.join('\n');
+      
       return pop_scope(rv, true, !(options.bare));
       
     };
@@ -223,6 +253,14 @@
       var rv, exprs_js, ki$1, kobj$1, expr;
       rv = "return";
       
+      if ((use_callback != null)) {
+    rv += " $knext(null,";
+      }
+      
+      if (this.exprs.length > 0 && (use_callback == null)) {
+    rv += " ";
+      }
+      
       if (this.exprs.length > 1) {
         exprs_js = [];
         
@@ -232,12 +270,16 @@
             exprs_js.push(expr.js());
             
         }
-        rv += (" [" + (exprs_js.join(', ')) + "]");
+        rv += ("[" + (exprs_js.join(', ')) + "]");
         
       } else     if (this.exprs.length === 1) {
-        rv += (" " + (this.exprs[0].js()));
+        rv += ("" + (this.exprs[0].js()));
         
       }
+      if ((use_callback != null)) {
+    rv += ")";
+      }
+      
       rv += ";";
       
       if ((this.conditional != null)) {
@@ -482,6 +524,10 @@
     };
     this.IfStatement.prototype.js = function  () {
       var conditional_js, rv;
+      use_callbacks.push(use_callback);
+      
+      use_callback = null;
+      
       conditional_js = this.conditional.js();
       
       if (this.condition.value === 'unless' || this.condition.value === 'except') {
@@ -494,6 +540,8 @@
         rv += this.else_block.js();
         
       }
+      use_callback = use_callbacks.pop();
+      
       return rv;
       
     };
@@ -698,12 +746,16 @@
       }
       args = [];
       
+      (this.use_callback) ? args.push('$kerr') : void 0;
+      
       kobj$1 = this.arguments;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         argument = kobj$1[ki$1];
           args.push(argument.name.value);
           
       }
+      (this.use_callback) ? args.push('$knext') : void 0;
+      
       return rv + this.js_body(args);
       
     };
@@ -752,6 +804,12 @@
       
       push_scope();
       
+      if (this.use_callback) {
+        use_callback = this;
+        
+        rv += ("" + i + "try {if ($kerr) {throw $kerr;}\n");
+        
+      }
       kobj$1 = arg_names;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         arg_name = kobj$1[ki$1];
@@ -762,6 +820,12 @@
       
       rv += pop_scope(block_code, false, false);
       
+      if (this.use_callback) {
+        rv += ("\n" + i + "} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}");
+        
+        rv += ("\n" + i + "return $knext ? $knext(null) : void 0;");
+        
+      }
       rv += ("\n" + i + "}");
       
       return rv;
@@ -779,8 +843,16 @@
       }
       rv = rv.join(', ');
       
-      return (as_list === true) ? (("[" + rv + "]")) : (("(" + rv + ")"));
-      
+      if (as_list) {
+        return (("[" + rv + "]"));
+        
+      } else     if (this.with_callback) {
+        return (("(null, " + rv + ", "));
+        
+      } else {
+        return (("(" + rv + ")"));
+        
+      }
     };
     this.FunctionCall.prototype.js_existence = function  (accessor, undefined_unary, invert) {
         if (this.exisential) {
@@ -878,6 +950,61 @@
         
       }
       rv += ");";
+      
+      return rv;
+      
+    };
+    this.WaitForStatement.prototype.js = function  () {
+      var rv, rv_block, arg_i, callback_args, ki$1, kobj$1, argument;
+      this.rvalue.callback_args = this.lvalue;
+      
+      this.rvalue.accessors[this.rvalue.accessors.length - 1].with_callback = true;
+      
+      rv = this.rvalue.js();
+      
+      push_scope();
+      
+      rv_block = "";
+      
+      arg_i = 1;
+      
+      callback_args = ['$kerr'];
+      
+      kobj$1 = this.lvalue.arguments;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        argument = kobj$1[ki$1];
+          callback_args.push("$karg" + arg_i);
+          
+          rv_block += ("" + (argument.base.value) + " = $karg" + arg_i + ";\n");
+          
+          if (!((scope[argument.base.value] != null))) {
+    scope[argument.base.value] = 'closures ok';
+          }
+          
+      }
+      rv_block += this.block.js();
+      
+      callback_args.push('$knext');
+      
+      rv += ("function (" + (callback_args.join(',')) + ") {\n");
+      
+      indent();
+      
+      rv += ("" + i + "try {if ($kerr) {throw $kerr;}\n");
+      
+      rv += pop_scope(rv_block, true, false);
+      
+      rv += ("" + i + "} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}\n");
+      
+      rv += ("" + i + "return $knext ? $knext(null) : void 0;\n");
+      
+      dedent();
+      
+      rv += ("" + i + "});");
+      
+      if ((this.conditional != null)) {
+    rv = this.conditional.js(rv, false);
+      }
       
       return rv;
       

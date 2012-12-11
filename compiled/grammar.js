@@ -206,13 +206,14 @@
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(WaitForStatement,ASTBase);
     WaitForStatement.prototype.parse = function () {
-        this.req_val('wait');
+      var last_accessor;
+      this.req_val('wait');
       
       this.lock();
       
       this.req_val('for');
       
-      this.lvalue = this.req(MultipleReturnValues, UnaryExpression);
+      this.lvalue = this.req(MultipleReturnValues);
       
       this.lvalue.can_be_lvalue = true;
       
@@ -220,9 +221,13 @@
       
       (!(this.lvalue.is_lvalue())) ? this.error("invalid assignment - the left side must be assignable") : void 0;
       
-      this.rvalue = this.req(Expression);
+      this.rvalue = this.req(UnaryExpression);
       
       this.conditional = this.rvalue.transform_when_statement;
+      
+      last_accessor = this.rvalue.accessors[this.rvalue.accessors.length - 1];
+      
+      (!(last_accessor instanceof FunctionCall)) ? this.error("expected a function call after 'from'") : void 0;
       
       this.block = this.req(BlockWithoutIndent);
       
@@ -675,6 +680,8 @@
   }__extends(FunctionExpression,ASTBase);
     FunctionExpression.prototype.parse = function () {
         this.specifier = this.req_val('function', 'method', 'task');
+      
+      this.use_callback = (this.specifier.value === 'task') ? true : false;
       
       this.lock();
       

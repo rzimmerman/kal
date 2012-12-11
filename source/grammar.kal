@@ -111,12 +111,14 @@ class WaitForStatement inherits from ASTBase
     me.req_val 'wait'
     me.lock()
     me.req_val 'for'
-    me.lvalue   = me.req MultipleReturnValues, UnaryExpression
+    me.lvalue   = me.req MultipleReturnValues
     me.lvalue.can_be_lvalue = yes
     me.req_val 'from'
     me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
-    me.rvalue = me.req Expression
+    me.rvalue = me.req UnaryExpression
     me.conditional = me.rvalue.transform_when_statement
+    last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
+    me.error("expected a function call after 'from'") unless last_accessor instanceof FunctionCall
     me.block = me.req BlockWithoutIndent
 
 class MultipleReturnValues inherits from ASTBase
@@ -351,6 +353,7 @@ class FunctionDefArgument inherits from ASTBase
 class FunctionExpression inherits from ASTBase
   method parse()
     me.specifier = me.req_val 'function', 'method', 'task'
+    me.use_callback = yes when me.specifier.value is 'task' otherwise no
     me.lock()
     me.name = me.opt 'IDENTIFIER'
     me.req_val '('
