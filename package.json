@@ -3,7 +3,7 @@
   "description":  "Simple and useful",
   "keywords":     ["javascript", "language", "kal", "coffeescript", "compiler"],
   "author":       "Rob Zimmerman",
-  "version":      "0.3.1",
+  "version":      "0.3.2",
   "licenses":     [{
     "type":       "MIT",
     "url":        "https://raw.github.com/rzimmerman/kal/master/LICENSE"
@@ -21,7 +21,7 @@
   "scripts": {
 	"make": "kal -o compiled/ source/*.kal",
 	"prepublish": "kal -o compiled/ source/*.kal && scripts/kal -o compiled/ source/*.kal && npm test",
-    "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
+  "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
   },
   "homepage":     "https://github.com/rzimmerman/kal",
   "bugs":         "https://github.com/rzimmerman/kal/issues",

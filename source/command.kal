@@ -23,11 +23,13 @@ function parseOptions()
   optimist = optimist.options('output',{alias:'o',description:'the output directory for the compiled source'})
   return optimist.argv
 
+existsSync = fs.existsSync or path.existsSync
+
 run = function run()
   options = parseOptions()
   return version() if options.version
   return usage() if optimist.argv.help 
-  if options.output exists and not fs.existsSync(options.output)
+  if options.output exists and not existsSync(options.output)
     printWarn('output path does not exist!')
     return usage()
   return require('./interactive') if options._.length is 0
