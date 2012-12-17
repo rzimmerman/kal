@@ -15,12 +15,14 @@
       
     }  
   exports.SyntaxError = SyntaxError;
-  function ASTBase (ts) {
+  function ASTBase (ts, parent) {
         this.locked = false;
       
       this.ts = ts;
       
       this.line = ts.line;
+      
+      this.ast_parent = parent;
       
       this.parse(); /*optionally match one of the classes or tokens in the list*/
       
@@ -45,7 +47,7 @@
             }
           } else {
             try {
-                rv = new  cls(this.ts);
+                rv = new  cls(this.ts, this);
                 
                 return rv;
                           } catch (e) {

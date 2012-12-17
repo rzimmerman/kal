@@ -12,10 +12,11 @@ class SyntaxError
 exports.SyntaxError = SyntaxError
 
 class ASTBase
-  method initialize(ts)
+  method initialize(ts, parent)
     me.locked = no
     me.ts = ts
     me.line = ts.line
+    me.ast_parent = parent
     me.parse()
     
   #optionally match one of the classes or tokens in the list
@@ -30,7 +31,7 @@ class ASTBase
           return rv
       else
         try
-          rv = new cls me.ts
+          rv = new cls me.ts, me
           return rv
         catch e
           me.ts.goto_token start_index
