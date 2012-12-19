@@ -139,7 +139,8 @@ function apply_generator_to_grammar()
     exprs_js.unshift 'null' when next_cb exists
     arg_list = exprs_js.join(', ')
     if next_cb exists
-      rv = "var $krv = [#{arg_list}]; try {$knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;"
+      scope['$krv'] = 'no closures'
+      rv = "$krv = [#{arg_list}]; try {if ($knext) $knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;"
       rv = me.conditional.js(rv, no) when me.conditional exists
       return rv
     else

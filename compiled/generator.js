@@ -257,7 +257,9 @@
       arg_list = exprs_js.join(', ');
       
       if ((next_cb != null)) {
-        rv = ("var $krv = [" + arg_list + "]; try {$knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;");
+        scope['$krv'] = 'no closures';
+        
+        rv = ("$krv = [" + arg_list + "]; try {if ($knext) $knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;");
         
         if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);
