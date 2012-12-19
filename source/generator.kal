@@ -136,9 +136,10 @@ function apply_generator_to_grammar()
   me.ReturnStatement.prototype.js = ->
     next_cb = me.js_next_callback()
     exprs_js = [expr.js() for expr in me.exprs]
+    exprs_js.unshift 'null' when next_cb exists
     arg_list = exprs_js.join(', ')
     if next_cb exists
-      rv = "var $krv = [null,#{arg_list}]; try {$knext.apply(this, $krv);} catch ($kerr) {}; return;"
+      rv = "var $krv = [#{arg_list}]; try {$knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;"
       rv = me.conditional.js(rv, no) when me.conditional exists
       return rv
     else

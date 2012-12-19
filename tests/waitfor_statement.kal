@@ -45,7 +45,35 @@ describe 'From Statement', ->
     n.should.equal 4
     (y doesnt exist).should.be.true
     done()
-  
+    
+  it 'should work inside of nested if statements', (done) ->
+    task callbacker3(arg1)
+      return arg1 * 2
+    x = 5
+    if x is 5 #true
+      wait for y from callbacker3 7
+      if y is 3
+        y = 10
+        n = 0
+      else #true, it's 14
+        n = 0
+        wait for y from callbacker3 y
+        n = 0
+        y += 1 #28+1=29
+      n = 2
+    else if x is 2
+      n = 4
+      wait for z from callbacker3 8
+    else
+      n = 5
+      if yes
+        wait for p from callbacker3 1
+    y.should.equal 29
+    n.should.equal 2
+    (p doesnt exist).should.be.true
+    (z doesnt exist).should.be.true
+    done()
+    
   it 'should work inside of for loops and while loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2

@@ -252,10 +252,12 @@
       
       exprs_js = $kcomprl(this.exprs,function($ki){expr = $ki;return expr.js();});
       
+      ((next_cb != null)) ? exprs_js.unshift('null') : void 0;
+      
       arg_list = exprs_js.join(', ');
       
       if ((next_cb != null)) {
-        rv = ("var $krv = [null," + arg_list + "]; try {$knext.apply(this, $krv);} catch ($kerr) {}; return;");
+        rv = ("var $krv = [" + arg_list + "]; try {$knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;");
         
         if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);
