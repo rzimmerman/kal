@@ -548,7 +548,7 @@
       
     };
     this.IfStatement.prototype.js_enable_callbacks = function  () {
-        if ((this.next_callback == null)) {
+        if ((this.next_callback == null) && !(this.is_else_if)) {
         this.next_callback = create_callback();
         
       }

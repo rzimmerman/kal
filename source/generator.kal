@@ -301,7 +301,7 @@ function apply_generator_to_grammar()
     return rv
   
   me.IfStatement.prototype.js_enable_callbacks = ->
-    if me.next_callback doesnt exist
+    if me.next_callback doesnt exist but not me.is_else_if
       me.next_callback = create_callback()
     me.ast_parent.js_enable_callbacks()
       

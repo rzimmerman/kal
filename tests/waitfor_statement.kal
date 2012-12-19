@@ -28,6 +28,23 @@ describe 'From Statement', ->
     n.should.equal 2
     (z doesnt exist).should.be.true
     done()
+    
+  it 'should work inside of else if statements', (done) ->
+    task callbacker3(arg1)
+      return arg1 * 2
+    x = 2
+    if x is 5
+      wait for y from callbacker3 7
+      n = 2
+    else if x is 2
+      n = 4
+      wait for z from callbacker3 8
+    else
+      n = 5
+    z.should.equal 16
+    n.should.equal 4
+    (y doesnt exist).should.be.true
+    done()
   
   it 'should work inside of for loops and while loops', (done) ->
     task callbacker3(arg1)
