@@ -288,18 +288,26 @@ function apply_generator_to_grammar()
     if me.condition.value is 'unless' or me.condition.value is 'except'
       conditional_js = "!(#{conditional_js})"
     
-    rv = "if (#{conditional_js}) {\n#{this.true_block.js()}\n#{i}}"
-    
-    if me.else_block exists
-      rv += me.else_block.js()
+    rv = "if (#{conditional_js}) {\n#{me.true_block.js()}\n#{i}}"
+    rv += me.else_block.js() when me.else_block exists
     
     next_cb = me.js_next_callback()
-    if next_cb exists
+    if next_cb exists and not me.is_else_if
       rv += "\n#{i}return #{next_cb}();"
+      rv += "\n#{i}function #{next_cb}() {"
+      me.ast_parent.ast_parent.callback_count += 1
+      indent()
+      rv += "#{i}try {"
     return rv
-    
+  
+  me.IfStatement.prototype.js_enable_callbacks = ->
+    if me.next_callback doesnt exist
+      me.next_callback = create_callback()
+    me.ast_parent.js_enable_callbacks()
+      
   me.ElseStatement.prototype.js = ->
     if me.false_block instanceof self.Statement and (me.false_block.statement instanceof self.IfStatement)
+      me.false_block.statement.is_else_if = yes
       return " else #{this.false_block.statement.js()}"
     else
       return " else {\n#{this.false_block.js()}\n#{i}}"
@@ -336,12 +344,23 @@ function apply_generator_to_grammar()
     return rv
     
   me.Block.prototype.js = ->
+    me.callback_count = 0
     indent()
     rv = []
     for statement in me.statements
       rv.push statement.js()
     rv = rv.join '\n'
     dedent()
+    next_cb = me.js_next_callback() or '$knext'
+    while me.callback_count > 0
+      dedent()
+      rv += "#{i}} catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}\n"
+      if next_cb is '$knext'
+        rv += 'return $knext ? $knext() : void 0;'
+      else
+        rv += "return #{next_cb}();"
+      rv += "#{i}}\n"
+      me.callback_count -= 1
     return rv
   
   me.ParenExpression.prototype.js = ->
@@ -537,13 +556,18 @@ function apply_generator_to_grammar()
     rv_block += me.block.js()
     rv = me.conditional.js(rv, no) if me.conditional exists #TODO support this for wait fors
     rv += "#{i}function #{me.callback_name} () {\n"
+    me.ast_parent.callback_count += 1
     indent()
     rv += "#{i}try {if (arguments[0]) {throw arguments[0];}\n"
     rv += rv_block
     next_cb = me.js_next_callback() or '$knext'
-    rv += "\n#{i}return #{next_cb}(); } catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}"
+    if next_cb is '$knext'
+      caller = '$knext ? $knext() : void 0'
+    else
+      caller = "#{next_cb}()"
+    rv += "#{i}return #{caller}; } catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}\n"
     dedent()
-    rv += "\n#{i}}"
+    rv += "#{i}}\n"
     return rv
     
   snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'}

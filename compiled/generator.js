@@ -527,20 +527,38 @@
       rv = ("if (" + conditional_js + ") {\n" + (this.true_block.js()) + "\n" + i + "}");
       
       if ((this.else_block != null)) {
-        rv += this.else_block.js();
-        
+    rv += this.else_block.js();
       }
+      
       next_cb = this.js_next_callback();
       
-      if ((next_cb != null)) {
+      if ((next_cb != null) && !(this.is_else_if)) {
         rv += ("\n" + i + "return " + next_cb + "();");
+        
+        rv += ("\n" + i + "function " + next_cb + "() {");
+        
+        this.ast_parent.ast_parent.callback_count += 1;
+        
+        indent();
+        
+        rv += ("" + i + "try {");
         
       }
       return rv;
       
     };
+    this.IfStatement.prototype.js_enable_callbacks = function  () {
+        if ((this.next_callback == null)) {
+        this.next_callback = create_callback();
+        
+      }
+      this.ast_parent.js_enable_callbacks();
+      
+    };
     this.ElseStatement.prototype.js = function  () {
         if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
+        this.false_block.statement.is_else_if = true;
+        
         return (" else " + (this.false_block.statement.js()));
         
       } else {
@@ -606,7 +624,9 @@
       
     };
     this.Block.prototype.js = function  () {
-      var rv, ki$1, kobj$1, statement;
+      var rv, ki$1, kobj$1, statement, next_cb;
+      this.callback_count = 0;
+      
       indent();
       
       rv = [];
@@ -621,6 +641,25 @@
       
       dedent();
       
+      next_cb = this.js_next_callback() || '$knext';
+      
+      while (this.callback_count > 0) {
+          dedent();
+          
+          rv += ("" + i + "} catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}\n");
+          
+          if (next_cb === '$knext') {
+            rv += 'return $knext ? $knext() : void 0;';
+            
+          } else {
+            rv += ("return " + next_cb + "();");
+            
+          }
+          rv += ("" + i + "}\n");
+          
+          this.callback_count -= 1;
+          
+      }
       return rv;
       
     };
@@ -960,7 +999,7 @@
       
     };
     this.WaitForStatement.prototype.js = function  () {
-      var rv, rv_block, arg_i, ki$1, kobj$1, argument, next_cb;
+      var rv, rv_block, arg_i, ki$1, kobj$1, argument, next_cb, caller;
       this.js_enable_callbacks();
       
       this.callback_name = create_callback();
@@ -995,6 +1034,8 @@
       
       rv += ("" + i + "function " + (this.callback_name) + " () {\n");
       
+      this.ast_parent.callback_count += 1;
+      
       indent();
       
       rv += ("" + i + "try {if (arguments[0]) {throw arguments[0];}\n");
@@ -1003,11 +1044,18 @@
       
       next_cb = this.js_next_callback() || '$knext';
       
-      rv += ("\n" + i + "return " + next_cb + "(); } catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}");
+      if (next_cb === '$knext') {
+        caller = '$knext ? $knext() : void 0';
+        
+      } else {
+        caller = ("" + next_cb + "()");
+        
+      }
+      rv += ("" + i + "return " + caller + "; } catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}\n");
       
       dedent();
       
-      rv += ("\n" + i + "}");
+      rv += ("" + i + "}\n");
       
       return rv;
       
