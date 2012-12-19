@@ -354,7 +354,6 @@ class FunctionDefArgument inherits from ASTBase
 class FunctionExpression inherits from ASTBase
   method parse()
     me.specifier = me.req_val 'function', 'method', 'task'
-    me.use_callback = yes when me.specifier.value is 'task' otherwise no
     me.lock()
     me.name = me.opt 'IDENTIFIER'
     me.req_val '('
@@ -387,7 +386,7 @@ class SuperStatement inherits from ASTBase
     me.lock()
     me.accessor = me.opt FunctionCall
 
-Nodes = [File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,ObjectComprehension,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement,BlockWithoutIndent,WaitForStatement,MultipleReturnValues]
+Nodes = [ASTBase,File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,ObjectComprehension,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement,BlockWithoutIndent,WaitForStatement,MultipleReturnValues]
 
 exports.Grammar = {}
 for v in Nodes

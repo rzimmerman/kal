@@ -15,14 +15,11 @@ function apply_generator_to_grammar()
   scopes = []
   scope = {}
   
-  use_callback = null
-  use_callbacks = []
-  callback_count = 1
-  trigger_callbacks = []
-  trigger_callback = no
+  callback_counter = 0
   
-  in_branch_or_loop = no
-  in_branch_or_loops = []
+  function create_callback()
+    callback_counter += 1
+    return "$kcb#{callback_counter}"
   
   class_defs = []
   class_def = {}
@@ -39,10 +36,6 @@ function apply_generator_to_grammar()
   
   function push_scope()
     scopes.push scope
-    trigger_callbacks.push trigger_callback
-    trigger_callback = no
-    in_branch_or_loops.push in_branch_or_loop
-    in_branch_or_loop = no
     new_scope = {}
     for k of scope
       v = scope[k]
@@ -57,10 +50,6 @@ function apply_generator_to_grammar()
   function pop_scope(code, wrap)
     rv = i
     var_names = []
-    #callbacks = callback_scopes.pop()
-    #use_callback = use_callbacks.pop()
-    trigger_callback = trigger_callbacks.pop()
-    in_branch_or_loop = in_branch_or_loops.pop()
     for var_name of scope
       if not (scope[var_name] in ['closure', 'argument', 'function', 'class definition'])
         var_names.push(var_name)
@@ -87,17 +76,21 @@ function apply_generator_to_grammar()
   
   self = this
   
+  me.ASTBase.prototype.js_next_callback = ->
+    if me.next_callback exists
+      return me.next_callback
+    else if me.ast_parent exists
+      return me.ast_parent.js_next_callback()
+    else
+      return null
+  me.ASTBase.prototype.js_enable_callbacks = ->
+    me.ast_parent.js_enable_callbacks() when me.ast_parent exists
+    
   me.File.prototype.js = (options) ->
     i = ''
     scopes = []
     scope = {}
-    trigger_callbacks = []
-    trigger_callback = no
-    use_callbacks = []
-    use_callback = null
-    callback_count = 1
-    in_branch_or_loop = no
-    in_branch_or_loops = []
+    callback_counter = 0
     class_defs = []
     class_def = {name: '',code: '',args: [],has_constructor: no}
     use_snippets = {}
@@ -141,22 +134,23 @@ function apply_generator_to_grammar()
     return rv
     
   me.ReturnStatement.prototype.js = ->
-    rv = "return"
-    if use_callback exists
-      rv += " #{use_callback}(null," when in_branch_or_loop otherwise " $knext(null,"
-    rv += " " when me.exprs.length > 0 but use_callback doesnt exist
-    if me.exprs.length > 1
-      exprs_js = []
-      for expr in me.exprs
-        exprs_js.push expr.js()
-      rv += "[#{exprs_js.join(', ')}]" except when use_callback exists otherwise "#{exprs_js.join(', ')}"
-    else if me.exprs.length is 1
-      rv += "#{this.exprs[0].js()}" 
-    rv += ")" when use_callback exists
-    rv += ";"
-    rv = me.conditional.js(rv, no) when me.conditional exists
-    return rv
-    
+    next_cb = me.js_next_callback()
+    exprs_js = [expr.js() for expr in me.exprs]
+    arg_list = exprs_js.join(', ')
+    if next_cb exists
+      rv = "var $krv = [null,#{arg_list}]; try {$knext.apply(this, $krv);} catch ($kerr) {}; return;"
+      rv = me.conditional.js(rv, no) when me.conditional exists
+      return rv
+    else
+      rv = "return"
+      if me.exprs.length is 1
+        rv += " " + arg_list
+      else if me.exprs.length > 1
+        rv += "[#{arg_list}]"
+      rv += ";"
+      rv = me.conditional.js(rv, no) when me.conditional exists
+      return rv
+      
   me.ExpressionStatement.prototype.js = ->
     rv = me.expr.js()
     if rv is ""
@@ -289,10 +283,7 @@ function apply_generator_to_grammar()
   me.BinOp.prototype.js = ->
     return KEYWORD_TRANSLATE[me.op.value] or me.op.value
   
-  me.IfStatement.prototype.js = (dont_callback) ->
-    use_callbacks.push use_callback
-    in_branch_or_loops.push in_branch_or_loop
-    in_branch_or_loop = yes
+  me.IfStatement.prototype.js = ->
     conditional_js = me.conditional.js()
     if me.condition.value is 'unless' or me.condition.value is 'except'
       conditional_js = "!(#{conditional_js})"
@@ -301,19 +292,18 @@ function apply_generator_to_grammar()
     
     if me.else_block exists
       rv += me.else_block.js()
-      
-    trigger_callback = yes if use_callback exists
-    rv += "\n#{i}return #{use_callback}(null);" if use_callback exists and not dont_callback
-    use_callbacks.pop()
-    in_branch_or_loop = in_branch_or_loops.pop()
+    
+    next_cb = me.js_next_callback()
+    if next_cb exists
+      rv += "\n#{i}return #{next_cb}();"
     return rv
     
   me.ElseStatement.prototype.js = ->
     if me.false_block instanceof self.Statement and (me.false_block.statement instanceof self.IfStatement)
-      return " else #{this.false_block.statement.js(yes)}"
+      return " else #{this.false_block.statement.js()}"
     else
       return " else {\n#{this.false_block.js()}\n#{i}}"
-      
+  
   me.BlankStatement.prototype.js = ->
     return ''
     
@@ -345,21 +335,11 @@ function apply_generator_to_grammar()
     rv += "\n#{i}}"
     return rv
     
-  me.Block.prototype.js = (closeout_callbacks) ->
+  me.Block.prototype.js = ->
     indent()
     rv = []
-    block_cb_count = 0
     for statement in me.statements
       rv.push statement.js()
-      if trigger_callback
-        trigger_callback = no
-        rv.push "#{i}function #{use_callback} ($kerr) {\n#{i}if ($kerr) {throw $kerr;}\n"
-        indent()
-        block_cb_count += 1
-    while block_cb_count > 0
-      dedent()
-      rv.push "#{i}}"
-      block_cb_count -= 1
     rv = rv.join '\n'
     dedent()
     return rv
@@ -414,6 +394,8 @@ function apply_generator_to_grammar()
     return "{ #{rv} }"
     
   me.FunctionExpression.prototype.js = ->
+    me.args = []
+    me.js_enable_callbacks() if me.specifier.value is 'task'
     if class_defs.length > 0 and me.name exists #is a member function/method
       if me.specifier.value is 'method' and me.name.value is 'initialize'
         class_def.code += me.js_constructor()
@@ -423,64 +405,67 @@ function apply_generator_to_grammar()
     else
       return me.js_bare_function()
     
+  me.FunctionExpression.prototype.js_next_callback = ->
+    return me.next_callback or null #close out scope
+  me.FunctionExpression.prototype.js_enable_callbacks = ->
+    me.callback_arg = '$knext'
+    me.next_callback = '$knext'
+    
   me.FunctionExpression.prototype.js_bare_function   = ->
     rv = "function "
     if me.name exists
       rv += me.name.value
-    args = []
     for argument in me.arguments
-      args.push argument.name.value
-    args.push '$knext' if me.use_callback
-    return rv + me.js_body(args)
+      me.args.push argument.name.value
+    return rv + me.js_body()
     
   me.FunctionExpression.prototype.js_class_member   = ->
     if me.specifier.value is 'method'
       rv = "#{class_def.name}.prototype.#{this.name.value} = function"
     else
       rv = "#{class_def.name}.#{this.name.value} = function"
-    args = []
     for argument in me.arguments
-      args.push argument.name.value
-    return rv + me.js_body(args)
+      me.args.push argument.name.value
+    return rv + me.js_body()
     
   me.FunctionExpression.prototype.js_constructor = ->
     class_def.has_constructor = yes
     rv = "function #{class_def.name}"
     class_def.args = []
     for argument in me.arguments
-      class_def.args.push argument.name.value 
+      class_def.args.push argument.name.value
+    me.args = class_def.args
     rv += me.js_body class_def.args
+    class_def.args.push me.callback_arg when me.callback_arg exists
     return rv
     
-  me.FunctionExpression.prototype.js_body = (arg_names) ->
-    rv = " (#{arg_names.join(', ')}) {\n"
+  me.FunctionExpression.prototype.js_body = ->
+    rv = ""
     push_scope()
-    if me.use_callback
-      if trigger_callback is no
-        use_callback = "$kcb#{callback_count}"
-        callback_count += 1
-      rv += "#{i}try {\n"
-    for arg_name in arg_names
+    for arg_name in me.args
       scope[arg_name] = 'argument'
     block_code = me.block.js(yes)
+    if me.callback_arg exists
+      me.args.push me.callback_arg
+      block_code = "#{i}try {\n" + block_code
     rv += pop_scope(block_code, no)
-    if me.use_callback
-      rv += "\n#{i}} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}"
-      rv += "\n#{i}return $knext ? $knext(null) : void 0;"
+    if me.callback_arg exists
+      rv += "\n#{i}} catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}"
+      rv += "\n#{i}return $knext ? $knext() : void 0;"
     rv += "\n#{i}}"
+    rv = " (#{me.args.join(', ')}) {\n" + rv
     return rv
     
   me.FunctionCall.prototype.js = (as_list) ->
     rv = []
     for argument in me.arguments
       rv.push argument.js()
+    rv.push me.callback_name if me.callback_name exists
     rv = rv.join ', '
     if as_list
       return "[#{rv}]"
-    else if me.with_callback
-      return ("(#{rv}, ") when rv isnt "" otherwise ("(")
     else
-      return ("(#{rv})")
+      return "(#{rv})"
     
   me.FunctionCall.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
@@ -537,36 +522,28 @@ function apply_generator_to_grammar()
     return rv
     
   me.WaitForStatement.prototype.js = ->
-    if use_callback doesnt exist
-      use_callback = "$kcb#{callback_count}"
-      callback_count += 1
+    me.js_enable_callbacks()
+    me.callback_name = create_callback()
     me.rvalue.callback_args = me.lvalue
-    me.rvalue.accessors[me.rvalue.accessors.length - 1].with_callback = yes
-    rv = "return " + me.rvalue.js()
+    me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.callback_name
+    rv = "return #{me.rvalue.js()};\n"
     rv_block = ""
     arg_i = 1
-    callback_args = ['$kerr']
     for argument in me.lvalue.arguments
-      callback_args.push "$karg#{arg_i}"
-      rv_block += "#{i}#{argument.base.value} = $karg#{arg_i};\n"
+      rv_block += "#{i}  #{argument.base.value} = arguments[#{arg_i}];\n"
       scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
       arg_i += 1
-    #push_scope()
+    
     rv_block += me.block.js()
-    callback_args.push '$knext'
-    rv += "function (#{callback_args.join(',')}) {\n"
+    rv = me.conditional.js(rv, no) if me.conditional exists #TODO support this for wait fors
+    rv += "#{i}function #{me.callback_name} () {\n"
     indent()
-    rv += "#{i}try {if ($kerr) {throw $kerr;}\n"
+    rv += "#{i}try {if (arguments[0]) {throw arguments[0];}\n"
     rv += rv_block
-    if in_branch_or_loop
-      rv += "#{i}} catch (e) {return #{use_callback}(e);}\n"
-      rv += "#{i}return #{use_callback}();\n"
-    else
-      rv += "#{i}} catch (e) {if ($knext) {return $knext(e);} else {throw e;}}\n"
-      rv += "#{i}return $knext ? $knext(null) : void 0;\n"
+    next_cb = me.js_next_callback() or '$knext'
+    rv += "\n#{i}return #{next_cb}(); } catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}"
     dedent()
-    rv += "#{i}});"
-    rv = me.conditional.js(rv, no) if me.conditional exists
+    rv += "\n#{i}}"
     return rv
     
   snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'}

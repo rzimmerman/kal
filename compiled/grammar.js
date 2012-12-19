@@ -684,8 +684,6 @@
     FunctionExpression.prototype.parse = function () {
         this.specifier = this.req_val('function', 'method', 'task');
       
-      this.use_callback = (this.specifier.value === 'task') ? true : false;
-      
       this.lock();
       
       this.name = this.opt('IDENTIFIER');
@@ -746,7 +744,7 @@
       this.accessor = this.opt(FunctionCall);
       
     };
-  Nodes = [File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, MultipleReturnValues];
+  Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement, WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement, BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall, ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, MultipleReturnValues];
   exports.Grammar = {  };
   kobj$1 = Nodes;
   for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
