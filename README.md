@@ -5,9 +5,11 @@ Using Kal
 ---------
 This section is still 'coming soon'. A detailed syntax guide is in work, but if you want to try it out, the syntax is a lot like CoffeeScript with some notable exceptions. Check out the source/*.kal files to see some examples.
 
-Installation
-------------
-Install using npm:
+Installation Using npm
+----------------------------------------------
+The npm packages contain the latest stable release of Kal.
+
+To install using npm:
 
     npm install -g kal
 
@@ -16,6 +18,24 @@ You may need to run this as administrator depending on how you installed node/np
     sudo npm install -g kal
 
 You can also install kal locally as a project dependency by including 'kal' in your package.json.
+
+Using This Repository
+-----------------------
+You can clone this repository for the latest and greatest unstable copy.
+
+[![Build Status](https://secure.travis-ci.org/rzimmerman/kal.png?branch=master)](https://travis-ci.org/rzimmerman/kal)
+
+To install using git, first install the stable release using npm. Then, clone the repository and create a package:
+
+    git clone git@github.com:rzimmerman/kal.git
+    npm pack kal
+
+Assuming the tests pass, this will make an archive file that you can install (the filename depends on the version):
+
+    sudo npm install -g kal-0.x.x.tgz
+
+Alternatively you can just run the `scripts/kal` file if you don't want to install it globally.
+
 
 Interactive Shell
 -----------------
