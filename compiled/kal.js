@@ -27,7 +27,7 @@
         
         return root_node.js(options);
           } catch (e) {
-        throw e.message;
+        throw e.message || e;
         }
     };
     exports.compile = compile;

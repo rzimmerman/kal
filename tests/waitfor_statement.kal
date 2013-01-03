@@ -73,31 +73,20 @@ describe 'From Statement', ->
     (p doesnt exist).should.be.true
     (z doesnt exist).should.be.true
     done()
-    
-  it 'should work inside of for loops and while loops', (done) ->
+  
+  it 'should work inside of for parallel in loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
-    c = []
-    for a in [1,2,3,4]
-      wait for b from callbacker3 a
-      c.push b
-    c.should.eql [2,4,6,8]
-    c = []
-
-    for a in [1,2,3,4] run in series
-      wait for b from callbacker3 a
-      c.push b
-    c.should.eql [2,4,6,8]
-    c = []
-    
-    for a in [1,2,3,4] run in parallel
-      wait for b from callbacker3 a
-      c.push b
+    output = []
+    for parallel i in [1,2,3,4]
+      wait for j from callbacker3 i
+      output.push j
+    expected = [2,4,6,8]
       
-    for d in c
-      (d in a).should.be.true
+    for o in output
+      (o in expected).should.be.true
     done()
-    
+  ###
   it 'should throw when called back with an error', (done) ->
     task callbacker2(arg1)
       fail with "error!!!"
@@ -109,7 +98,7 @@ describe 'From Statement', ->
       error_happened = yes
     error_happened.should.be.true
     done()
-  
+  ###
   it 'should work if the called task takes no arguments', (done) ->
     task callbacker4()
       return 5

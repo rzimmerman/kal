@@ -577,7 +577,9 @@
     for_depth = 1;
     
     this.ForStatement.prototype.js = function  () {
-      var iterator, terminator, rv;
+      var rv, iterator, terminator, loop_block_js, next_cb, cb_counter, block_func;
+      rv = "";
+      
       iterator = ("ki$" + for_depth);
       
       terminator = ("kobj$" + for_depth);
@@ -586,30 +588,93 @@
       
       scope[terminator] = 'no closures';
       
-      if (this.type.value === 'in') {
-        rv = ("" + terminator + " = " + (this.iterable.js()) + ";\n" + i + "for (" + iterator + " = 0; " + iterator + " < " + terminator + ".length; " + iterator + "++) {\n");
-        
-      } else {
-        rv = ("" + terminator + " = " + (this.iterable.js()) + ";\nfor (" + (this.iterant.js()) + " in " + terminator + ") {\n");
-        
-      }
       indent();
       
       for_depth += 1;
       
-      if (this.type.value === 'in') {
-        rv += ("" + i + "" + (this.iterant.js()) + " = " + terminator + "[" + iterator + "];\n");
-        
-      }
-      rv += this.loop_block.js();
-      
-      for_depth -= 1;
+      loop_block_js = this.loop_block.js();
       
       dedent();
       
-      rv += ("\n" + i + "}");
+      next_cb = this.js_next_callback();
       
+      if ((next_cb != null)) {
+        console.log(this.execution_style);
+        
+        if (((this.execution_style != null) ? this.execution_style.value : void 0) === 'parallel') {
+          cb_counter = ("kc$" + for_depth);
+          
+          block_func = ("kparfor$" + for_depth);
+          
+          scope[cb_counter] = 'no closures';
+          
+          rv += ("" + terminator + " = " + (this.iterable.js()) + ";\n");
+          
+          if (this.type.value === 'in') {
+            rv += ("" + i + "" + cb_counter + " = " + terminator + ".length;\n");
+            
+            rv += ("" + i + "for (var " + iterator + " = 0; " + iterator + " < " + terminator + ".length; $kiter++) {" + block_func + "(" + iterator + ");}\n");
+            
+            rv += ("" + i + "function " + block_func + "($karg) {\n");
+            
+            rv += ("" + i + "" + (this.iterant.js()) + " = " + terminator + "[k$arg];\n");
+            
+          } else {
+            rv += ("" + i + "" + cb_counter + " = 1;\n");
+            
+            rv += ("" + i + "for (var " + iterator + " in " + terminator + ") {" + cb_counter + "++; " + block_func + "(" + iterator + ");}\n");
+            
+            rv += ("" + i + "return " + next_cb + "();");
+            
+            rv += ("" + i + "function " + block_func + "(k$arg) {\n");
+            
+            rv += ("" + i + "" + (this.iterant.js()) + " = k$arg;\n");
+            
+          }
+          rv += loop_block_js + "\n";
+          
+          rv += ("" + i + "}\n" + i + "}" + i + "function " + next_cb + "()");
+          
+          this.ast_parent.ast_parent.callback_count += 1;
+          
+          indent();
+          
+          rv += ("" + i + "try {");
+          
+          rv += ("" + i + "if ($kerr) throw $kerr;}\n");
+          
+          rv += ("" + i + "if (--" + cb_counter + " != 0) return;\n");
+          
+        } else {
+          throw "Not Implemented";
+          
+        }
+      } else {
+        if (this.type.value === 'in') { /*normal for loop*/
+          rv += ("" + terminator + " = " + (this.iterable.js()) + ";\n" + i + "for (" + iterator + " = 0; " + iterator + " < " + terminator + ".length; " + iterator + "++) {\n");
+          
+        } else {
+          rv += ("" + terminator + " = " + (this.iterable.js()) + ";\n" + i + "for (" + (this.iterant.js()) + " in " + terminator + ") {\n");
+          
+        }
+        if (this.type.value === 'in') {
+          rv += ("" + i + "" + (this.iterant.js()) + " = " + terminator + "[" + iterator + "];\n");
+          
+        }
+        rv += loop_block_js;
+        
+        rv += ("\n" + i + "}");
+        
+      }
       return rv;
+      
+    };
+    this.ForStatement.prototype.js_enable_callbacks = function  () {
+        if ((this.next_callback == null)) {
+        this.next_callback = create_callback();
+        
+      }
+      this.ast_parent.js_enable_callbacks();
       
     };
     this.WhileStatement.prototype.js = function  () {
@@ -625,6 +690,14 @@
       rv += ("\n" + i + "}");
       
       return rv;
+      
+    };
+    this.WhileStatement.prototype.js_enable_callbacks = function  () {
+        if ((this.next_callback == null)) {
+        this.next_callback = create_callback();
+        
+      }
+      this.ast_parent.js_enable_callbacks();
       
     };
     this.Block.prototype.js = function  () {

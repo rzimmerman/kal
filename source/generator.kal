@@ -319,23 +319,58 @@ function apply_generator_to_grammar()
     
   for_depth = 1
   me.ForStatement.prototype.js = ->
+    rv = ""
     iterator   = "ki$#{for_depth}"
     terminator = "kobj$#{for_depth}"
     scope[iterator] = 'no closures'
     scope[terminator] = 'no closures'
-    if me.type.value is 'in'
-      rv = "#{terminator} = #{this.iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
-    else
-      rv = "#{terminator} = #{this.iterable.js()};\nfor (#{this.iterant.js()} in #{terminator}) {\n"
     indent()
     for_depth += 1
-    if me.type.value is 'in'
-      rv += "#{i}#{this.iterant.js()} = #{terminator}[#{iterator}];\n"
-    rv += me.loop_block.js()
-    for_depth -= 1
+    loop_block_js = me.loop_block.js()
     dedent()
-    rv += "\n#{i}}"
+    next_cb = me.js_next_callback()
+    if next_cb exists
+      console.log me.execution_style
+      if me.execution_style?.value is 'parallel'
+        cb_counter = "kc$#{for_depth}"
+        block_func = "kparfor$#{for_depth}"
+        scope[cb_counter] = 'no closures'
+        rv += "#{terminator} = #{me.iterable.js()};\n"
+        if me.type.value is 'in'
+          rv += "#{i}#{cb_counter} = #{terminator}.length;\n"
+          rv += "#{i}for (var #{iterator} = 0; #{iterator} < #{terminator}.length; $kiter++) {#{block_func}(#{iterator});}\n"
+          rv += "#{i}function #{block_func}($karg) {\n"
+          rv += "#{i}#{me.iterant.js()} = #{terminator}[k$arg];\n"
+        else
+          rv += "#{i}#{cb_counter} = 1;\n"
+          rv += "#{i}for (var #{iterator} in #{terminator}) {#{cb_counter}++; #{block_func}(#{iterator});}\n"
+          rv += "#{i}return #{next_cb}();"
+          rv += "#{i}function #{block_func}(k$arg) {\n"
+          rv += "#{i}#{me.iterant.js()} = k$arg;\n"
+        rv += loop_block_js + "\n"
+        rv += "#{i}}\n#{i}}#{i}function #{next_cb}()"
+        me.ast_parent.ast_parent.callback_count += 1
+        indent()
+        rv += "#{i}try {"
+        rv += "#{i}if ($kerr) throw $kerr;}\n"
+        rv += "#{i}if (--#{cb_counter} != 0) return;\n"
+      else
+        throw "Not Implemented"
+    else #normal for loop
+      if me.type.value is 'in'
+        rv += "#{terminator} = #{me.iterable.js()};\n#{i}for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+      else
+        rv += "#{terminator} = #{me.iterable.js()};\n#{i}for (#{me.iterant.js()} in #{terminator}) {\n"
+      if me.type.value is 'in'
+        rv += "#{i}#{me.iterant.js()} = #{terminator}[#{iterator}];\n"
+      rv += loop_block_js
+      rv += "\n#{i}}"
     return rv
+    
+  me.ForStatement.prototype.js_enable_callbacks = ->
+    if me.next_callback doesnt exist
+      me.next_callback = create_callback()
+    me.ast_parent.js_enable_callbacks()
     
   me.WhileStatement.prototype.js = ->
     rv = "while (#{this.expr.js()}) {\n"
@@ -344,6 +379,10 @@ function apply_generator_to_grammar()
     dedent()
     rv += "\n#{i}}"
     return rv
+  me.WhileStatement.prototype.js_enable_callbacks = ->
+    if me.next_callback doesnt exist
+      me.next_callback = create_callback()
+    me.ast_parent.js_enable_callbacks()
     
   me.Block.prototype.js = ->
     me.callback_count = 0
@@ -573,4 +612,3 @@ function apply_generator_to_grammar()
     return rv
     
   snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'}
-  

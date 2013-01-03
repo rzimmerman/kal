@@ -19,7 +19,7 @@ function compile(code, options)
     generator.load parser.Grammar
     return root_node.js(options)
   catch e
-    throw e.message
+    throw e.message or e
 exports.compile = compile
 
 if require.extensions

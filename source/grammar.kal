@@ -1,7 +1,7 @@
 ast = require './ast'
 ASTBase = ast.ASTBase
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail']
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series']
 
 class File inherits from ASTBase
   method parse()
@@ -85,6 +85,7 @@ class ForStatement inherits from ASTBase
   method parse()
     me.req_val 'for'
     me.lock()
+    me.execution_style = me.opt_val 'parallel', 'series'
     me.iterant = me.req UnaryExpression
     me.type = me.req_val 'in', 'of'
     me.iterable = me.req Expression

@@ -4,7 +4,7 @@
   var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
   ast = require('./ast');
   ASTBase = ast.ASTBase;
-  KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof', 'property', 'value', 'with', 'from', 'task', 'fail'];
+  KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof', 'property', 'value', 'with', 'from', 'task', 'fail', 'parallel', 'series'];
   function File () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(File,ASTBase);
@@ -163,6 +163,8 @@
         this.req_val('for');
       
       this.lock();
+      
+      this.execution_style = this.opt_val('parallel', 'series');
       
       this.iterant = this.req(UnaryExpression);
       
