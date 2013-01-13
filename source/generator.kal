@@ -316,9 +316,11 @@ function apply_generator_to_grammar()
       #rv += "#{i}try {"
       create_callback() #generate a new callback for future if statements/for loops
       me.parent_block.closeout_callback = original_callback
-    else
+    else if not me.is_else_if
       callback_js = ""
       cancel_callback()
+    else
+      callback_js = ""
     rv += true_block_js + me.true_block.js_closeout() + "\n#{i}}"
     if me.else_block exists
       rv += else_block_js + me.else_block.js_closeout()

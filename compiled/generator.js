@@ -580,10 +580,13 @@
         
         this.parent_block.closeout_callback = original_callback;
         
-      } else {
+      } else     if (!(this.is_else_if)) {
         callback_js = "";
         
         cancel_callback();
+        
+      } else {
+        callback_js = "";
         
       }
       rv += true_block_js + this.true_block.js_closeout() + ("\n" + i + "}");
