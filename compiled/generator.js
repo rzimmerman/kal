@@ -9,7 +9,7 @@
   };
   exports.load = load;
   function apply_generator_to_grammar () {
-    var i, scopes, scope, callback_counter, class_defs, class_def, use_snippets, self, for_depth, snippets;
+    var i, scopes, scope, callback_counter, current_callback, current_callbacks, class_defs, class_def, use_snippets, self, for_depth, snippets;
     i = '';
     
     function indent () {
@@ -26,10 +26,26 @@
     
     callback_counter = 0;
     
+    current_callback = "k$cb0";
+    
+    current_callbacks = [];
+    
     function create_callback () {
         callback_counter += 1;
       
-      return ("$kcb" + callback_counter);
+      current_callback = ("k$cb" + callback_counter);
+      
+      return current_callback;
+      
+    };
+    function cancel_callback () {
+        if (callback_counter > 0) {
+    callback_counter -= 1;
+      }
+      
+      current_callback = ("k$cb" + callback_counter);
+      
+      return current_callback;
       
     };
     class_defs = [];
@@ -55,6 +71,8 @@
       scopes.push(scope);
       
       new_scope = {  };
+      
+      current_callbacks.push(current_callback);
       
       kobj$1 = scope;
   for (k in kobj$1) {
@@ -82,7 +100,7 @@
       
       kobj$1 = scope;
   for (var_name in kobj$1) {
-          if (!((($kindexof.call(['closure', 'argument', 'function', 'class definition'], scope[var_name]) >= 0) ))) {
+          if (!((($kindexof.call(['closure', 'argument', 'function', 'class definition'], scope[var_name]) >= 0) )) && var_name !== 'k$next') {
             var_names.push(var_name);
             
           }
@@ -111,6 +129,8 @@
         scope = scopes.pop();
         
       }
+      current_callback = current_callbacks.pop();
+      
       return rv;
       
     };
@@ -128,22 +148,6 @@
     };
     self = this;
     
-    this.ASTBase.prototype.js_next_callback = function  () {
-        if ((this.next_callback != null)) {
-        return this.next_callback;
-        
-      } else     if ((this.ast_parent != null)) {
-        return this.ast_parent.js_next_callback();
-        
-      } else {
-        return null;
-        
-      }
-    };
-    this.ASTBase.prototype.js_enable_callbacks = function  () {
-        ((this.ast_parent != null)) ? this.ast_parent.js_enable_callbacks() : void 0;
-      
-    };
     this.File.prototype.js = function  (options) {
       var code, ki$1, kobj$1, statement, snip, key, rv, comment;
       i = '';
@@ -154,6 +158,10 @@
       
       callback_counter = 0;
       
+      current_callback = 'k$cb0';
+      
+      current_callbacks = [];
+      
       class_defs = [];
       
       class_def = { name: '', code: '', args: [], has_constructor: false };
@@ -161,6 +169,8 @@
       use_snippets = {  };
       
       code = [];
+      
+      this.callback = current_callback;
       
       kobj$1 = this.statements;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
@@ -221,6 +231,12 @@
             }
           }
       }
+      this.statement.in_conditional = this.in_conditional;
+      
+      this.statement.parent_block = this.parent_block;
+      
+      this.statement.callback = this.callback;
+      
       rv += i + this.statement.js();
       
       if (pf !== '') {
@@ -247,19 +263,17 @@
       
     };
     this.ReturnStatement.prototype.js = function  () {
-      var next_cb, exprs_js, expr, arg_list, rv;
-      next_cb = this.js_next_callback();
-      
+      var exprs_js, expr, arg_list, rv;
       exprs_js = $kcomprl(this.exprs,function($ki){expr = $ki;return expr.js();});
       
-      ((next_cb != null)) ? exprs_js.unshift('null') : void 0;
+      ((this.parent_block.callback != null)) ? exprs_js.unshift('null') : void 0;
       
       arg_list = exprs_js.join(', ');
       
-      if ((next_cb != null)) {
-        scope['$krv'] = 'no closures';
+      if ((scope['k$next'] != null)) {
+        scope['k$rv'] = 'no closures'; /*rv = "k$rv = [#{arg_list}]; try {if (k$next) k$next.apply(this, k$rv);} catch (k$err) {k$next=null;throw k$err;}; return;"*/
         
-        rv = ("$krv = [" + arg_list + "]; try {if ($knext) $knext.apply(this, $krv);} catch ($kerr) {$knext=null;throw $kerr;}; return;");
+        rv = ("k$rv = [" + arg_list + "]; return k$next.apply(this, k$rv);");
         
         if ((this.conditional != null)) {
     rv = this.conditional.js(rv, false);
@@ -521,52 +535,91 @@
       
     };
     this.IfStatement.prototype.js = function  () {
-      var conditional_js, rv, next_cb;
+      var original_callback, conditional_js, rv, true_block_js, else_block_js, callback_js;
+      original_callback = this.callback;
+      
+      if (!(this.is_else_if)) {
+    this.callback = create_callback();
+      }
+      
       conditional_js = this.conditional.js();
       
       if (this.condition.value === 'unless' || this.condition.value === 'except') {
         conditional_js = ("!(" + conditional_js + ")");
         
       }
-      rv = ("if (" + conditional_js + ") {\n" + (this.true_block.js()) + "\n" + i + "}");
+      rv = ("if (" + conditional_js + ") {\n");
+      
+      this.true_block.in_conditional = true;
+      
+      this.true_block.callback = this.callback;
       
       if ((this.else_block != null)) {
-    rv += this.else_block.js();
+    this.else_block.callback = this.callback;
       }
       
-      next_cb = this.js_next_callback();
+      true_block_js = this.true_block.js();
       
-      if ((next_cb != null) && !(this.is_else_if)) {
-        rv += ("\n" + i + "return " + next_cb + "();");
+      if ((this.else_block != null)) {
+        this.else_block.in_conditional = true;
         
-        rv += ("\n" + i + "function " + next_cb + "() {");
+        else_block_js = this.else_block.js();
         
-        this.ast_parent.ast_parent.callback_count += 1;
-        
-        indent();
-        
-        rv += ("" + i + "try {");
+      } else {
+        else_block_js = "";
         
       }
+      if ((this.callback !== current_callback) && (!(this.is_else_if))) { /*something triggered a callback in our blocks*/
+        callback_js = ("\n" + i + "return " + (this.callback) + "();");
+        
+        callback_js += ("\n" + i + "function " + (this.callback) + "() {");
+        
+        indent(); /*rv += "#{i}try {"*/
+        
+        create_callback(); /*generate a new callback for future if statements/for loops*/
+        
+        this.parent_block.closeout_callback = original_callback;
+        
+      } else {
+        callback_js = "";
+        
+        cancel_callback();
+        
+      }
+      rv += true_block_js + this.true_block.js_closeout() + ("\n" + i + "}");
+      
+      if ((this.else_block != null)) {
+        rv += else_block_js + this.else_block.js_closeout();
+        
+      }
+      rv += callback_js;
+      
       return rv;
       
     };
-    this.IfStatement.prototype.js_enable_callbacks = function  () {
-        if ((this.next_callback == null) && !(this.is_else_if)) {
-        this.next_callback = create_callback();
-        
-      }
-      this.ast_parent.js_enable_callbacks();
-      
-    };
     this.ElseStatement.prototype.js = function  () {
-        if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
+        this.false_block.in_conditional = true;
+      
+      if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
+        this.false_block.statement.callback = this.callback;
+        
         this.false_block.statement.is_else_if = true;
         
         return (" else " + (this.false_block.statement.js()));
         
       } else {
-        return (" else {\n" + (this.false_block.js()) + "\n" + i + "}");
+        this.false_block.callback = this.callback;
+        
+        return (" else {\n" + (this.false_block.js()));
+        
+      }
+    };
+    this.ElseStatement.prototype.js_closeout = function  () {
+        if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
+        return "";
+        
+      } else {
+        return ("" + (this.false_block.js_closeout()) + "\n" + i + "}");
         
       }
     };
@@ -577,7 +630,9 @@
     for_depth = 1;
     
     this.ForStatement.prototype.js = function  () {
-      var rv, iterator, terminator, loop_block_js, next_cb, cb_counter, block_func;
+      var rv, iterator, terminator, loop_block_js;
+      this.callback = current_callback;
+      
       rv = "";
       
       iterator = ("ki$" + for_depth);
@@ -592,58 +647,13 @@
       
       for_depth += 1;
       
-      loop_block_js = this.loop_block.js();
+      loop_block_js = this.loop_block.js() + this.loop_block.js_closeout();
       
       dedent();
       
-      next_cb = this.js_next_callback();
-      
-      if ((next_cb != null)) {
-        console.log(this.execution_style);
-        
+      if (this.callback !== current_callback) { /*something in this loop uses callbacks*/
         if (((this.execution_style != null) ? this.execution_style.value : void 0) === 'parallel') {
-          cb_counter = ("kc$" + for_depth);
-          
-          block_func = ("kparfor$" + for_depth);
-          
-          scope[cb_counter] = 'no closures';
-          
-          rv += ("" + terminator + " = " + (this.iterable.js()) + ";\n");
-          
-          if (this.type.value === 'in') {
-            rv += ("" + i + "" + cb_counter + " = " + terminator + ".length;\n");
-            
-            rv += ("" + i + "for (var " + iterator + " = 0; " + iterator + " < " + terminator + ".length; $kiter++) {" + block_func + "(" + iterator + ");}\n");
-            
-            rv += ("" + i + "function " + block_func + "($karg) {\n");
-            
-            rv += ("" + i + "" + (this.iterant.js()) + " = " + terminator + "[k$arg];\n");
-            
-          } else {
-            rv += ("" + i + "" + cb_counter + " = 1;\n");
-            
-            rv += ("" + i + "for (var " + iterator + " in " + terminator + ") {" + cb_counter + "++; " + block_func + "(" + iterator + ");}\n");
-            
-            rv += ("" + i + "return " + next_cb + "();");
-            
-            rv += ("" + i + "function " + block_func + "(k$arg) {\n");
-            
-            rv += ("" + i + "" + (this.iterant.js()) + " = k$arg;\n");
-            
-          }
-          rv += loop_block_js + "\n";
-          
-          rv += ("" + i + "}\n" + i + "}" + i + "function " + next_cb + "()");
-          
-          this.ast_parent.ast_parent.callback_count += 1;
-          
-          indent();
-          
-          rv += ("" + i + "try {");
-          
-          rv += ("" + i + "if ($kerr) throw $kerr;}\n");
-          
-          rv += ("" + i + "if (--" + cb_counter + " != 0) return;\n");
+          throw "Not Implemented";
           
         } else {
           throw "Not Implemented";
@@ -669,40 +679,34 @@
       return rv;
       
     };
-    this.ForStatement.prototype.js_enable_callbacks = function  () {
-        if ((this.next_callback == null)) {
-        this.next_callback = create_callback();
-        
-      }
-      this.ast_parent.js_enable_callbacks();
-      
-    };
     this.WhileStatement.prototype.js = function  () {
       var rv;
       rv = ("while (" + (this.expr.js()) + ") {\n");
       
       indent();
       
-      rv += this.block.js();
+      rv += this.block.js() + this.block.js_closeout();
       
       dedent();
       
       rv += ("\n" + i + "}");
       
+      if (this.callback !== current_callback) {
+        throw "Not Implemented";
+        
+      }
       return rv;
       
     };
-    this.WhileStatement.prototype.js_enable_callbacks = function  () {
-        if ((this.next_callback == null)) {
-        this.next_callback = create_callback();
-        
-      }
-      this.ast_parent.js_enable_callbacks();
-      
-    };
     this.Block.prototype.js = function  () {
-      var rv, ki$1, kobj$1, statement, next_cb;
-      this.callback_count = 0;
+      var original_callback, rv, ki$1, kobj$1, statement;
+      if (!((this.callback != null))) {
+    this.callback = current_callback;
+      }
+      
+      original_callback = current_callback;
+      
+      this.callbacks = [];
       
       indent();
       
@@ -711,30 +715,54 @@
       kobj$1 = this.statements;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         statement = kobj$1[ki$1];
+          statement.parent_block = this;
+          
+          statement.callback = this.callback;
+          
+          statement.in_conditional = this.in_conditional;
+          
           rv.push(statement.js());
           
+          if (current_callback !== original_callback) {
+            this.callbacks.unshift(this.callback);
+            
+            this.callback = current_callback;
+            
+            original_callback = current_callback;
+            
+          }
       }
       rv = rv.join('\n');
       
       dedent();
       
-      next_cb = this.js_next_callback() || '$knext';
+      if (this.callbacks.length > 0) {
+        if ((scope['k$next'] != null)) {
+          rv += "var k$done = (typeof k$next == 'function') ? k$next : function (){}; k$next=function (){}; return k$done();\n";
+          
+        }
+      }
+      return rv;
       
-      while (this.callback_count > 0) {
+    };
+    this.Block.prototype.js_closeout = function  () {
+      var rv, ki$1, kobj$1, callback;
+      rv = "";
+      
+      if ((this.closeout_callback != null) && this.callbacks.length !== 0 && this.in_conditional) {
+        rv += ("" + i + "return " + (this.closeout_callback) + "();");
+        
+      }
+      kobj$1 = this.callbacks;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        callback = kobj$1[ki$1];
           dedent();
+  /*if scope['k$next'] exists
+   * rv += "#{i}} catch (k$err) {return k$next(k$err);}\n"
+   * else
+   * rv += "#{i}} catch (k$err) {throw k$err;}\n"*/
           
-          rv += ("" + i + "} catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}\n");
-          
-          if (next_cb === '$knext') {
-            rv += 'return $knext ? $knext() : void 0;';
-            
-          } else {
-            rv += ("return " + next_cb + "();");
-            
-          }
           rv += ("" + i + "}\n");
-          
-          this.callback_count -= 1;
           
       }
       return rv;
@@ -833,7 +861,9 @@
     this.FunctionExpression.prototype.js = function  () {
         this.args = [];
       
-      (this.specifier.value === 'task') ? this.js_enable_callbacks() : void 0;
+      if (this.specifier.value === 'task') {
+    this.callback = 'k$next';
+      }
       
       if (class_defs.length > 0 && (this.name != null)) { /*is a member function/method*/
         if (this.specifier.value === 'method' && this.name.value === 'initialize') {
@@ -849,16 +879,6 @@
         return this.js_bare_function();
         
       }
-    };
-    this.FunctionExpression.prototype.js_next_callback = function  () {
-        return this.next_callback || null; /*close out scope*/
-      
-    };
-    this.FunctionExpression.prototype.js_enable_callbacks = function  () {
-        this.callback_arg = '$knext';
-      
-      this.next_callback = '$knext';
-      
     };
     this.FunctionExpression.prototype.js_bare_function = function  () {
       var rv, ki$1, kobj$1, argument;
@@ -924,26 +944,26 @@
       
       push_scope();
       
+      if ((this.callback != null)) {
+    scope['k$next'] = this.callback;
+      }
+      
       kobj$1 = this.args;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         arg_name = kobj$1[ki$1];
           scope[arg_name] = 'argument';
           
       }
-      block_code = this.block.js(true);
+      block_code = this.block.js(true) + this.block.js_closeout();
       
-      if ((this.callback_arg != null)) {
-        this.args.push(this.callback_arg);
-        
-        block_code = ("" + i + "try {\n") + block_code;
+      if ((this.callback != null)) {
+        this.args.push(this.callback); /*block_code = "#{i}try {\n" + block_code*/
         
       }
       rv += pop_scope(block_code, false);
       
-      if ((this.callback_arg != null)) {
-        rv += ("\n" + i + "} catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}");
-        
-        rv += ("\n" + i + "return $knext ? $knext() : void 0;");
+      if ((this.callback != null)) { /*rv += "\n#{i}} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}"*/
+        rv += ("\n" + i + "return k$next ? k$next() : void 0;");
         
       }
       rv += ("\n" + i + "}");
@@ -998,7 +1018,7 @@
       
       class_def.parent = ((this.parent != null) ? this.parent.value : void 0);
       
-      block_code = this.block.js();
+      block_code = this.block.js() + this.block.js_closeout();
       
       block_code = pop_scope(block_code, false);
       
@@ -1033,7 +1053,7 @@
       
       indent();
       
-      rv += this.try_block.js();
+      rv += this.try_block.js() + this.try_block.js_closeout();
       
       dedent();
       
@@ -1044,7 +1064,7 @@
         
         indent();
         
-        rv += this.catch_block.js();
+        rv += this.catch_block.js() + this.catch_block.js_closeout();
         
         rv += "}";
         
@@ -1076,14 +1096,12 @@
       
     };
     this.WaitForStatement.prototype.js = function  () {
-      var rv, rv_block, arg_i, ki$1, kobj$1, argument, next_cb, caller;
-      this.js_enable_callbacks();
-      
-      this.callback_name = create_callback();
+      var rv, rv_block, arg_i, ki$1, kobj$1, argument;
+      this.new_callback = create_callback();
       
       this.rvalue.callback_args = this.lvalue;
       
-      this.rvalue.accessors[this.rvalue.accessors.length - 1].callback_name = this.callback_name;
+      this.rvalue.accessors[this.rvalue.accessors.length - 1].callback_name = this.new_callback;
       
       rv = ("return " + (this.rvalue.js()) + ";\n");
       
@@ -1109,30 +1127,22 @@
     rv = this.conditional.js(rv, false);
       }
       
-      rv += ("" + i + "function " + (this.callback_name) + " () {\n");
+      rv += ("" + i + "function " + (this.new_callback) + " () {\n");
       
-      this.ast_parent.callback_count += 1;
-      
-      indent();
-      
-      rv += ("" + i + "try {if (arguments[0]) {throw arguments[0];}\n");
+      indent(); /*rv += "#{i}try {if (arguments[0]) {throw arguments[0];}\n"*/
       
       rv += rv_block;
       
-      next_cb = this.js_next_callback() || '$knext';
-      
-      if (next_cb === '$knext') {
-        caller = '$knext ? $knext() : void 0';
+      if (this.in_conditional) {
+        rv += ("return " + (this.parent_block.callback) + "();\n");
         
-      } else {
-        caller = ("" + next_cb + "()");
+      } else     if (scope['k$next']) {
+        rv += "return k$next ? k$next() : void 0;\n";
         
       }
-      rv += ("" + i + "return " + caller + "; } catch ($kerr) {if ($knext) {return $knext($kerr);} else {throw $kerr;}}\n");
+      rv += this.block.js_closeout(); /*rv += "} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}\n"*/
       
-      dedent();
-      
-      rv += ("" + i + "}\n");
+      dedent(); /*rv += "#{i}}\n"*/
       
       return rv;
       

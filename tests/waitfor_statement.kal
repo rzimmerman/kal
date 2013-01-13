@@ -1,4 +1,4 @@
-describe 'From Statement', ->
+describe 'Wait For Statement', ->
   it 'should accept single arguments', (done) ->
     task callbacker (arg1)
       return arg1 + 1
@@ -14,7 +14,7 @@ describe 'From Statement', ->
     y.should.equal 5
     z.should.equal 9
     done()
-    
+  
   it 'should work inside of if statements', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -28,7 +28,7 @@ describe 'From Statement', ->
     n.should.equal 2
     (z doesnt exist).should.be.true
     done()
-    
+  
   it 'should work inside of else if statements', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -45,8 +45,8 @@ describe 'From Statement', ->
     n.should.equal 4
     (y doesnt exist).should.be.true
     done()
-    
-  it 'should work inside of nested if statements', (done) ->
+  
+  it 'should work inside of nested if statements (1)', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
     x = 5
@@ -73,7 +73,35 @@ describe 'From Statement', ->
     (p doesnt exist).should.be.true
     (z doesnt exist).should.be.true
     done()
-  
+    
+  it 'should work inside of nested if statements (2)', (done) ->
+    task callbacker4(arg1)
+      return arg1 * 2
+    x = 1
+    if x is 5
+      wait for y from callbacker4 7
+      if y is 3
+        y = 10
+        n = 0
+      else #true, it's 14
+        n = 0
+        wait for y from callbacker4 y
+        n = 0
+        y += 1 #28+1=29
+      n = 2
+    else if x is 2
+      n = 4
+      wait for z from callbacker4 8
+    else #true
+      n = 5
+      if yes
+        wait for p from callbacker4 1
+    p.should.equal 2
+    n.should.equal 5
+    (t doesnt exist).should.be.true
+    (z doesnt exist).should.be.true
+    done()
+  ###
   it 'should work inside of for parallel in loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -86,7 +114,7 @@ describe 'From Statement', ->
     for o in output
       (o in expected).should.be.true
     done()
-  ###
+  
   it 'should throw when called back with an error', (done) ->
     task callbacker2(arg1)
       fail with "error!!!"
