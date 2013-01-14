@@ -1,7 +1,7 @@
 language: node_js
 before_script:
-  - sudo /usr/local/bin/npm install -g kal
-  - kal -o compiled/ source/*
+  - pushd ~ && npm install kal && popd
+  - ~/node_modules/kal/scripts/kal -o compiled/ source/*
 node_js:
   - 0.6
   - 0.8
