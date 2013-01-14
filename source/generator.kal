@@ -96,12 +96,8 @@ function apply_generator_to_grammar()
     class_defs = []
     class_def = {name: '',code: '',args: [],has_constructor: no}
     use_snippets = {}
-    code = []
     me.callback = current_callback
-    for statement in me.statements
-      if not (statement.statement instanceof self.BlankStatement)
-        code.push(statement.js())
-    code = code.join '\n'
+    code = self.Block.prototype.js.apply me
     snip = []
     for key of use_snippets
       snip.push use_snippets[key]
@@ -126,6 +122,7 @@ function apply_generator_to_grammar()
     me.statement.in_conditional = me.in_conditional
     me.statement.parent_block = me.parent_block
     me.statement.callback = me.callback
+    me.statement.original_callback = me.original_callback
     rv += i + me.statement.js()
     if pf isnt ''
       if rv.match /\n/
@@ -292,56 +289,60 @@ function apply_generator_to_grammar()
     return KEYWORD_TRANSLATE[me.op.value] or me.op.value
   
   me.IfStatement.prototype.js = ->
-    original_callback = me.callback
-    me.callback = create_callback() except when me.is_else_if
+    me.original_callback = me.callback unless me.original_callback exists
     conditional_js = me.conditional.js()
+    cb_counter = callback_counter
     if me.condition.value is 'unless' or me.condition.value is 'except'
       conditional_js = "!(#{conditional_js})"
     rv = "if (#{conditional_js}) {\n"
-    me.true_block.in_conditional = yes
-    me.true_block.callback = me.callback
-    me.else_block.callback = me.callback when me.else_block exists
+    me.block.in_conditional = yes
+    for else_clause in me.elses
+      else_clause.block.in_conditional = yes
+    inner_js = me.js_no_callbacks()
+    if (me.callback isnt current_callback) and (not me.is_else_if)
+      callback_counter = cb_counter
+      inner_js = me.js_callbacks()
+    return rv + inner_js
     
-    true_block_js = me.true_block.js()
+  me.IfStatement.prototype.js_no_callbacks = ->
+    me.block.callback = me.callback
+    block_js = me.block.js() + me.block.js_closeout() + '}'
+    else_js = ""
+    for else_clause in me.elses
+      else_clause.block.callback = me.callback
+      else_clause.block.original_callback = me.original_callback
+      else_js += "\n else "
+      if else_clause.conditional exists
+        else_js += "if (#{else_clause.conditional.js()})"
+      else_js += " {\n"
+      else_js += else_clause.block.js() + else_clause.block.js_closeout()
+      else_js += '}'
+    return block_js + else_js
+  
+  me.IfStatement.prototype.js_callbacks = ->
+    me.callback = create_callback()
+    me.block.callback = me.callback
+    me.block.original_callback = me.callback
+    block_js = me.block.js()
+    for else_clause in me.elses
+      else_clause.block.callback = me.callback
+      else_clause.block.original_callback = me.callback
+      else_clause.block_js = "\n else "
+      if else_clause.conditional exists
+        else_clause.block_js += "if (#{else_clause.conditional.js()})"
+      else_clause.block_js += " {\n"
+      else_clause.block_js += else_clause.block.js()
+    block_js += me.block.js_closeout() + '}'
+    else_js = ""
+    for else_clause in me.elses
+      else_js += else_clause.block_js + else_clause.block.js_closeout() + '}'
     
-    if me.else_block exists
-      me.else_block.in_conditional = yes
-      else_block_js = me.else_block.js()
-    else
-      else_block_js = ""
-    if (me.callback isnt current_callback) and (not me.is_else_if)  #something triggered a callback in our blocks
-      callback_js = "\n#{i}return #{me.callback}();"
-      callback_js += "\n#{i}function #{me.callback}() {"
-      indent()
-      #rv += "#{i}try {"
-      create_callback() #generate a new callback for future if statements/for loops
-      me.parent_block.closeout_callback = original_callback
-    else if not me.is_else_if
-      callback_js = ""
-      cancel_callback()
-    else
-      callback_js = ""
-    rv += true_block_js + me.true_block.js_closeout() + "\n#{i}}"
-    if me.else_block exists
-      rv += else_block_js + me.else_block.js_closeout()
-    rv += callback_js
-    return rv
-      
-  me.ElseStatement.prototype.js = ->
-    me.false_block.in_conditional = yes
-    if me.false_block instanceof self.Statement and (me.false_block.statement instanceof self.IfStatement)
-      me.false_block.statement.callback = me.callback
-      me.false_block.statement.is_else_if = yes
-      return " else #{me.false_block.statement.js()}"
-    else
-      me.false_block.callback = me.callback
-      return " else {\n#{me.false_block.js()}"
-
-  me.ElseStatement.prototype.js_closeout = ->
-    if me.false_block instanceof self.Statement and (me.false_block.statement instanceof self.IfStatement)
-      return ""
-    else
-      return "#{me.false_block.js_closeout()}\n#{i}}"
+    callback_js = "\nreturn #{me.callback}();"
+    callback_js += "\nfunction #{me.callback}() {"
+    me.parent_block.closeout_callback = me.original_callback
+    
+    create_callback() #generate a new callback for future if statements/for loops
+    return block_js + else_js + callback_js
   
   me.BlankStatement.prototype.js = ->
     return ''
@@ -386,19 +387,21 @@ function apply_generator_to_grammar()
     
   me.Block.prototype.js = ->
     me.callback = current_callback unless me.callback exists
-    original_callback = current_callback
+    me.original_callback = current_callback unless me.original_callback exists
+    previous_cb = current_callback
     me.callbacks = []
     indent()
     rv = []
     for statement in me.statements
       statement.parent_block = me
       statement.callback = me.callback
+      statement.original_callback = me.original_callback
       statement.in_conditional = me.in_conditional
       rv.push statement.js()
-      if current_callback isnt original_callback
+      if current_callback isnt previous_cb
         me.callbacks.unshift me.callback
         me.callback = current_callback
-        original_callback = current_callback
+        previous_cb = current_callback
     rv = rv.join '\n'
     dedent()
     if me.callbacks.length > 0

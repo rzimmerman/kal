@@ -5,21 +5,6 @@
   ast = require('./ast');
   ASTBase = ast.ASTBase;
   KEYWORDS = ['true', 'false', 'yes', 'no', 'on', 'off', 'function', 'return', 'if', 'unless', 'except', 'when', 'otherwise', 'and', 'or', 'but', 'xor', 'not', 'new', 'while', 'for', 'else', 'method', 'class', 'exists', 'doesnt', 'exist', 'is', 'isnt', 'inherits', 'from', 'nothing', 'empty', 'null', 'break', 'try', 'catch', 'throw', 'raise', 'arguments', 'of', 'in', 'nor', 'instanceof', 'property', 'value', 'with', 'from', 'task', 'fail', 'parallel', 'series'];
-  function File () {
-    return ASTBase.prototype.constructor.apply(this,arguments);
-  }__extends(File,ASTBase);
-    File.prototype.parse = function () {
-        this.lock();
-      
-      this.statements = [];
-      
-      while (!(this.opt('EOF'))) {
-          this.statements.push(this.req(Statement));
-          
-          this.lock();
-          
-      }
-    };
   function Block () {
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(Block,ASTBase);
@@ -35,6 +20,21 @@
       this.statements = [];
       
       while (!(this.opt('DEDENT'))) {
+          this.statements.push(this.req(Statement));
+          
+          this.lock();
+          
+      }
+    };
+  function File () {
+    return Block.prototype.constructor.apply(this,arguments);
+  }__extends(File,Block);
+    File.prototype.parse = function () {
+        this.lock();
+      
+      this.statements = [];
+      
+      while (!(this.opt('EOF'))) {
           this.statements.push(this.req(Statement));
           
           this.lock();
@@ -119,7 +119,8 @@
     return ASTBase.prototype.constructor.apply(this,arguments);
   }__extends(IfStatement,ASTBase);
     IfStatement.prototype.parse = function () {
-        this.condition = this.req_val('if', 'unless', 'when', 'except');
+      var keep_going, got_raw_else, new_else;
+      this.condition = this.req_val('if', 'unless', 'when', 'except');
       
       this.lock();
       
@@ -127,10 +128,29 @@
       
       this.conditional = this.req(Expression);
       
-      this.true_block = this.req(Block, Statement);
+      this.block = this.req(Block, Statement);
       
-      this.else_block = this.opt(ElseStatement);
+      this.elses = [];
       
+      keep_going = true;
+      
+      got_raw_else = false;
+      
+      while (keep_going) {
+          new_else = this.opt(ElseStatement);
+          
+          if ((new_else == null)) {
+            keep_going = false;
+            
+          } else {
+            this.elses.push(new_else);
+            
+            if ((new_else.conditional == null)) {
+              keep_going = false;
+              
+            }
+          }
+      }
     };
   function ElseStatement () {
     return ASTBase.prototype.constructor.apply(this,arguments);
@@ -140,7 +160,11 @@
       
       this.lock();
       
-      this.false_block = this.req(Block, Statement);
+      if (this.opt_val('if')) {
+        this.conditional = this.req(Expression);
+        
+      }
+      this.block = this.req(Block, Statement);
       
     };
   function WhileStatement () {

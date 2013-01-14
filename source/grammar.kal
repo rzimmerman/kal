@@ -3,14 +3,6 @@ ASTBase = ast.ASTBase
 
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series']
 
-class File inherits from ASTBase
-  method parse()
-    me.lock()
-    me.statements = []
-    while not me.opt('EOF')
-      me.statements.push me.req Statement
-      me.lock()
-
 class Block inherits from ASTBase
   method parse()
     me.req 'NEWLINE'
@@ -19,6 +11,14 @@ class Block inherits from ASTBase
     me.lock()
     me.statements = []
     while not me.opt('DEDENT')
+      me.statements.push me.req Statement
+      me.lock()
+      
+class File inherits from Block
+  method parse()
+    me.lock()
+    me.statements = []
+    while not me.opt('EOF')
       me.statements.push me.req Statement
       me.lock()
 
@@ -65,14 +65,27 @@ class IfStatement inherits from ASTBase
     me.lock()
     me.req_val('when') if me.condition.value is 'except'
     me.conditional = me.req Expression
-    me.true_block = me.req Block, Statement
-    me.else_block = me.opt ElseStatement
+    me.block = me.req Block, Statement
+    me.elses = []
+    keep_going = yes
+    got_raw_else = no
+    while keep_going
+      new_else = me.opt ElseStatement
+      if new_else doesnt exist
+        keep_going = no
+      else
+        me.elses.push new_else
+        if new_else.conditional doesnt exist
+          keep_going = no
+    
     
 class ElseStatement inherits from ASTBase
   method parse()
     me.req_val 'else', 'otherwise'
     me.lock()
-    me.false_block = me.req Block, Statement
+    if me.opt_val 'if'
+      me.conditional = me.req Expression
+    me.block = me.req Block, Statement
 
 class WhileStatement inherits from ASTBase
   method parse()

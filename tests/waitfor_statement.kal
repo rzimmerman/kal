@@ -101,6 +101,40 @@ describe 'Wait For Statement', ->
     (t doesnt exist).should.be.true
     (z doesnt exist).should.be.true
     done()
+    
+  it 'should work inside of nested if statements (3)', (done) ->
+    task callbacker5(arg1)
+      return arg1 * 3
+    x = 2
+    y = 3
+    if x is 5
+      wait for z from callbacker5 7
+      if y is 3
+        z = 10
+        n = 0
+      else
+        n = 1
+        wait for y from callbacker5 y
+        n = 0
+        y += 1
+      n = 2
+    else if x is 2 #true
+      n = 4
+      if y isnt 3
+        z = 10
+      else #true
+        if x is 2 # true
+          wait for z from callbacker5 8
+          z += 1
+      if z is 25 # true
+        wait for z from callbacker5 z
+    else #true
+      n = 5
+      if yes
+        wait for p from callbacker4 1
+    z.should.equal 75
+    n.should.equal 4
+    done()
   ###
   it 'should work inside of for parallel in loops', (done) ->
     task callbacker3(arg1)

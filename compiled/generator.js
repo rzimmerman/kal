@@ -149,7 +149,7 @@
     self = this;
     
     this.File.prototype.js = function  (options) {
-      var code, ki$1, kobj$1, statement, snip, key, rv, comment;
+      var code, snip, ki$1, kobj$1, key, rv, comment;
       i = '';
       
       scopes = [];
@@ -168,19 +168,9 @@
       
       use_snippets = {  };
       
-      code = [];
-      
       this.callback = current_callback;
       
-      kobj$1 = this.statements;
-      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
-        statement = kobj$1[ki$1];
-          if (!((statement.statement instanceof self.BlankStatement))) {
-            code.push(statement.js());
-            
-          }
-      }
-      code = code.join('\n');
+      code = self.Block.prototype.js.apply(this);
       
       snip = [];
       
@@ -236,6 +226,8 @@
       this.statement.parent_block = this.parent_block;
       
       this.statement.callback = this.callback;
+      
+      this.statement.original_callback = this.original_callback;
       
       rv += i + this.statement.js();
       
@@ -535,14 +527,14 @@
       
     };
     this.IfStatement.prototype.js = function  () {
-      var original_callback, conditional_js, rv, true_block_js, else_block_js, callback_js;
-      original_callback = this.callback;
-      
-      if (!(this.is_else_if)) {
-    this.callback = create_callback();
+      var conditional_js, cb_counter, rv, ki$1, kobj$1, else_clause, inner_js;
+      if (!((this.original_callback != null))) {
+    this.original_callback = this.callback;
       }
       
       conditional_js = this.conditional.js();
+      
+      cb_counter = callback_counter;
       
       if (this.condition.value === 'unless' || this.condition.value === 'except') {
         conditional_js = ("!(" + conditional_js + ")");
@@ -550,81 +542,104 @@
       }
       rv = ("if (" + conditional_js + ") {\n");
       
-      this.true_block.in_conditional = true;
+      this.block.in_conditional = true;
       
-      this.true_block.callback = this.callback;
-      
-      if ((this.else_block != null)) {
-    this.else_block.callback = this.callback;
+      kobj$1 = this.elses;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        else_clause = kobj$1[ki$1];
+          else_clause.block.in_conditional = true;
+          
       }
+      inner_js = this.js_no_callbacks();
       
-      true_block_js = this.true_block.js();
-      
-      if ((this.else_block != null)) {
-        this.else_block.in_conditional = true;
+      if ((this.callback !== current_callback) && (!(this.is_else_if))) {
+        callback_counter = cb_counter;
         
-        else_block_js = this.else_block.js();
-        
-      } else {
-        else_block_js = "";
+        inner_js = this.js_callbacks();
         
       }
-      if ((this.callback !== current_callback) && (!(this.is_else_if))) { /*something triggered a callback in our blocks*/
-        callback_js = ("\n" + i + "return " + (this.callback) + "();");
-        
-        callback_js += ("\n" + i + "function " + (this.callback) + "() {");
-        
-        indent(); /*rv += "#{i}try {"*/
-        
-        create_callback(); /*generate a new callback for future if statements/for loops*/
-        
-        this.parent_block.closeout_callback = original_callback;
-        
-      } else     if (!(this.is_else_if)) {
-        callback_js = "";
-        
-        cancel_callback();
-        
-      } else {
-        callback_js = "";
-        
-      }
-      rv += true_block_js + this.true_block.js_closeout() + ("\n" + i + "}");
-      
-      if ((this.else_block != null)) {
-        rv += else_block_js + this.else_block.js_closeout();
-        
-      }
-      rv += callback_js;
-      
-      return rv;
+      return rv + inner_js;
       
     };
-    this.ElseStatement.prototype.js = function  () {
-        this.false_block.in_conditional = true;
+    this.IfStatement.prototype.js_no_callbacks = function  () {
+      var block_js, else_js, ki$1, kobj$1, else_clause;
+      this.block.callback = this.callback;
       
-      if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
-        this.false_block.statement.callback = this.callback;
-        
-        this.false_block.statement.is_else_if = true;
-        
-        return (" else " + (this.false_block.statement.js()));
-        
-      } else {
-        this.false_block.callback = this.callback;
-        
-        return (" else {\n" + (this.false_block.js()));
-        
+      block_js = this.block.js() + this.block.js_closeout() + '}';
+      
+      else_js = "";
+      
+      kobj$1 = this.elses;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        else_clause = kobj$1[ki$1];
+          else_clause.block.callback = this.callback;
+          
+          else_clause.block.original_callback = this.original_callback;
+          
+          else_js += "\n else ";
+          
+          if ((else_clause.conditional != null)) {
+            else_js += ("if (" + (else_clause.conditional.js()) + ")");
+            
+          }
+          else_js += " {\n";
+          
+          else_js += else_clause.block.js() + else_clause.block.js_closeout();
+          
+          else_js += '}';
+          
       }
+      return block_js + else_js;
+      
     };
-    this.ElseStatement.prototype.js_closeout = function  () {
-        if (this.false_block instanceof self.Statement && (this.false_block.statement instanceof self.IfStatement)) {
-        return "";
-        
-      } else {
-        return ("" + (this.false_block.js_closeout()) + "\n" + i + "}");
-        
+    this.IfStatement.prototype.js_callbacks = function  () {
+      var block_js, ki$1, kobj$1, else_clause, else_js, callback_js;
+      this.callback = create_callback();
+      
+      this.block.callback = this.callback;
+      
+      this.block.original_callback = this.callback;
+      
+      block_js = this.block.js();
+      
+      kobj$1 = this.elses;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        else_clause = kobj$1[ki$1];
+          else_clause.block.callback = this.callback;
+          
+          else_clause.block.original_callback = this.callback;
+          
+          else_clause.block_js = "\n else ";
+          
+          if ((else_clause.conditional != null)) {
+            else_clause.block_js += ("if (" + (else_clause.conditional.js()) + ")");
+            
+          }
+          else_clause.block_js += " {\n";
+          
+          else_clause.block_js += else_clause.block.js();
+          
       }
+      block_js += this.block.js_closeout() + '}';
+      
+      else_js = "";
+      
+      kobj$1 = this.elses;
+      for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
+        else_clause = kobj$1[ki$1];
+          else_js += else_clause.block_js + else_clause.block.js_closeout() + '}';
+          
+      }
+      callback_js = ("\nreturn " + (this.callback) + "();");
+      
+      callback_js += ("\nfunction " + (this.callback) + "() {");
+      
+      this.parent_block.closeout_callback = this.original_callback;
+      
+      create_callback(); /*generate a new callback for future if statements/for loops*/
+      
+      return block_js + else_js + callback_js;
+      
     };
     this.BlankStatement.prototype.js = function  () {
         return '';
@@ -702,12 +717,16 @@
       
     };
     this.Block.prototype.js = function  () {
-      var original_callback, rv, ki$1, kobj$1, statement;
+      var previous_cb, rv, ki$1, kobj$1, statement;
       if (!((this.callback != null))) {
     this.callback = current_callback;
       }
       
-      original_callback = current_callback;
+      if (!((this.original_callback != null))) {
+    this.original_callback = current_callback;
+      }
+      
+      previous_cb = current_callback;
       
       this.callbacks = [];
       
@@ -722,16 +741,18 @@
           
           statement.callback = this.callback;
           
+          statement.original_callback = this.original_callback;
+          
           statement.in_conditional = this.in_conditional;
           
           rv.push(statement.js());
           
-          if (current_callback !== original_callback) {
+          if (current_callback !== previous_cb) {
             this.callbacks.unshift(this.callback);
             
             this.callback = current_callback;
             
-            original_callback = current_callback;
+            previous_cb = current_callback;
             
           }
       }
