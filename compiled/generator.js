@@ -9,17 +9,7 @@
   };
   exports.load = load;
   function apply_generator_to_grammar () {
-    var i, scopes, scope, try_block_stack, try_block_stacks, callback_counter, current_callback, current_callbacks, class_defs, class_def, use_snippets, self, for_depth, snippets;
-    i = '';
-    
-    function indent () {
-        i += '  ';
-      
-    };
-    function dedent () {
-        i = i.slice(0, 0 - 2);
-      
-    };
+    var scopes, scope, try_block_stack, try_block_stacks, callback_counter, current_callback, current_callbacks, class_defs, class_def, use_snippets, self, for_depth, snippets;
     scopes = [];
     
     scope = {  };
@@ -102,7 +92,7 @@
     };
     function pop_scope (code, wrap) {
       var rv, var_names, ki$1, kobj$1, var_name;
-      rv = i;
+      rv = "";
       
       var_names = [];
       
@@ -114,23 +104,17 @@
           }
       }
       if (wrap) {
-        rv += '(function () {\n';
-        
-        indent();
-        
-        code = i + code.replace(/\n/g, '\n  ');
+        rv += '(function () {';
         
       }
       if (var_names.length > 0) {
-        rv += '  var ' + var_names.join(', ') + ';\n';
+        rv += 'var ' + var_names.join(', ') + ';';
         
       }
       rv += code;
       
       if (wrap) {
-        dedent();
-        
-        rv += ("\n" + i + "})()\n");
+        rv += "})()";
         
       }
       if (scopes !== []) {
@@ -160,8 +144,6 @@
     
     this.File.prototype.js = function  (options) {
       var code, snip, ki$1, kobj$1, key, rv, comment;
-      i = '';
-      
       scopes = [];
       
       scope = {  };
@@ -230,7 +212,7 @@
               pf += '/*' + comment.value + '*/';
               
             } else {
-              rv += i + '/*' + comment.value + '*/\n';
+              rv += '/*' + comment.value + '*/\n';
               
             }
           }
@@ -243,7 +225,7 @@
       
       this.statement.original_callback = this.original_callback;
       
-      rv += i + this.statement.js();
+      rv += this.statement.js();
       
       if (pf !== '') {
         if (rv.match(/\n/)) {
@@ -282,7 +264,7 @@
       arg_list = exprs_js.join(', ');
       
       if ((scope['k$next'] != null)) {
-        scope['k$rv'] = 'no closures'; /*rv = "k$rv = [#{arg_list}]; try {if (k$next) k$next.apply(this, k$rv);} catch (k$err) {k$next=null;throw k$err;}; return;"*/
+        scope['k$rv'] = 'no closures';
         
         rv = ("k$rv = [" + arg_list + "]; return k$next.apply(this, k$rv);");
         
@@ -454,7 +436,7 @@
       
     };
     this.WhenExpression.prototype.js = function  (true_block_js, must_return_value) {
-      var conditional_js, indented_js;
+      var conditional_js;
       conditional_js = this.condition.js();
       
       if (this.specifier.value === 'unless' || this.specifier.value === 'except') {
@@ -469,9 +451,7 @@
           return ("(" + conditional_js + ") ? " + true_block_js + " : void 0");
           
         } else {
-          indented_js = '  ' + true_block_js.replace(/\n/g, '\n  ');
-          
-          return ("if (" + conditional_js + ") {\n" + indented_js + "\n" + i + "}");
+          return ("if (" + conditional_js + ") {" + true_block_js + "}");
           
         }
       }
@@ -559,7 +539,7 @@
         conditional_js = ("!(" + conditional_js + ")");
         
       }
-      rv = ("if (" + conditional_js + ") {\n");
+      rv = ("if (" + conditional_js + ") {");
       
       this.block.in_conditional = true;
       
@@ -595,13 +575,13 @@
           
           else_clause.block.original_callback = this.original_callback;
           
-          else_js += "\n else ";
+          else_js += " else ";
           
           if ((else_clause.conditional != null)) {
             else_js += ("if (" + (else_clause.conditional.js()) + ")");
             
           }
-          else_js += " {\n";
+          else_js += " {";
           
           else_js += else_clause.block.js() + else_clause.block.js_closeout();
           
@@ -628,13 +608,13 @@
           
           else_clause.block.original_callback = this.callback;
           
-          else_clause.block_js = "\n else ";
+          else_clause.block_js = " else ";
           
           if ((else_clause.conditional != null)) {
             else_clause.block_js += ("if (" + (else_clause.conditional.js()) + ")");
             
           }
-          else_clause.block_js += " {\n";
+          else_clause.block_js += " {";
           
           else_clause.block_js += else_clause.block.js();
           
@@ -649,9 +629,9 @@
           else_js += else_clause.block_js + else_clause.block.js_closeout() + '}';
           
       }
-      callback_js = ("\nreturn " + (this.callback) + "();");
+      callback_js = ("return " + (this.callback) + "();");
       
-      callback_js += ("\nfunction " + (this.callback) + "() {");
+      callback_js += ("function " + (this.callback) + "() {");
       
       callback_js += render_try_blocks();
       
@@ -682,13 +662,9 @@
       
       scope[terminator] = 'no closures';
       
-      indent();
-      
       for_depth += 1;
       
       loop_block_js = this.loop_block.js() + this.loop_block.js_closeout();
-      
-      dedent();
       
       if (this.callback !== current_callback) { /*something in this loop uses callbacks*/
         if (((this.execution_style != null) ? this.execution_style.value : void 0) === 'parallel') {
@@ -700,19 +676,19 @@
         }
       } else {
         if (this.type.value === 'in') { /*normal for loop*/
-          rv += ("" + terminator + " = " + (this.iterable.js()) + ";\n" + i + "for (" + iterator + " = 0; " + iterator + " < " + terminator + ".length; " + iterator + "++) {\n");
+          rv += ("" + terminator + " = " + (this.iterable.js()) + ";for (" + iterator + " = 0; " + iterator + " < " + terminator + ".length; " + iterator + "++) {");
           
         } else {
-          rv += ("" + terminator + " = " + (this.iterable.js()) + ";\n" + i + "for (" + (this.iterant.js()) + " in " + terminator + ") {\n");
+          rv += ("" + terminator + " = " + (this.iterable.js()) + ";for (" + (this.iterant.js()) + " in " + terminator + ") {");
           
         }
         if (this.type.value === 'in') {
-          rv += ("" + i + "" + (this.iterant.js()) + " = " + terminator + "[" + iterator + "];\n");
+          rv += ("" + (this.iterant.js()) + " = " + terminator + "[" + iterator + "];");
           
         }
         rv += loop_block_js;
         
-        rv += ("\n" + i + "}");
+        rv += "}";
         
       }
       return rv;
@@ -720,15 +696,11 @@
     };
     this.WhileStatement.prototype.js = function  () {
       var rv;
-      rv = ("while (" + (this.expr.js()) + ") {\n");
-      
-      indent();
+      rv = ("while (" + (this.expr.js()) + ") {");
       
       rv += this.block.js() + this.block.js_closeout();
       
-      dedent();
-      
-      rv += ("\n" + i + "}");
+      rv += "}";
       
       if (this.callback !== current_callback) {
         throw "Not Implemented";
@@ -750,8 +722,6 @@
       previous_cb = current_callback;
       
       this.callbacks = [];
-      
-      indent();
       
       rv = [];
       
@@ -779,11 +749,9 @@
       }
       rv = rv.join('\n');
       
-      dedent();
-      
       if (this.callbacks.length > 0) {
         if ((scope['k$next'] != null)) {
-          rv += "var k$done = (typeof k$next == 'function') ? k$next : function (){}; k$next=function (){}; return k$done();\n";
+          rv += "var k$done = (typeof k$next == 'function') ? k$next : function (){}; k$next=function (){}; return k$done();";
           
         }
       }
@@ -795,7 +763,7 @@
       rv = "";
       
       if ((this.closeout_callback != null) && this.callbacks.length !== 0 && this.in_conditional) {
-        rv += ("\nreturn " + (this.closeout_callback) + "();");
+        rv += ("return " + (this.closeout_callback) + "();");
         
       }
       kobj$1 = this.callbacks;
@@ -803,7 +771,7 @@
         callback = kobj$1[ki$1];
           rv += render_catch_blocks();
           
-          rv += "}\n";
+          rv += "}";
           
       }
       return rv;
@@ -1000,20 +968,20 @@
       if ((this.callback != null)) {
         this.args.push(this.callback);
         
-        block_code = "try {\n" + block_code;
+        block_code = "try {" + block_code;
         
       }
       rv += pop_scope(block_code, false);
       
       if ((this.callback != null)) {
-        rv += "\n} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}";
+        rv += "} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}";
         
-        rv += ("\n" + i + "return k$next ? k$next() : void 0;");
+        rv += "return k$next ? k$next() : void 0;";
         
       }
-      rv += ("\n" + i + "}");
+      rv += "}";
       
-      rv = (" (" + (this.args.join(', ')) + ") {\n") + rv;
+      rv = (" (" + (this.args.join(', ')) + ") {") + rv;
       
       return rv;
       
@@ -1073,14 +1041,14 @@
         rv += ("function " + (class_def.name) + " () {");
         
         if ((this.parent != null)) {
-          rv += ("\n" + i + "  return " + (this.parent.value) + ".prototype.constructor.apply(this,arguments);\n");
+          rv += ("return " + (this.parent.value) + ".prototype.constructor.apply(this,arguments);");
           
         }
         rv += "}";
         
       }
       if ((this.parent != null)) {
-        rv += ("" + i + "__extends(" + (this.name.value) + "," + (this.parent.value) + ");\n");
+        rv += ("__extends(" + (this.name.value) + "," + (this.parent.value) + ");");
         
         use_snippets['inherits'] = snippets['inherits'];
         
@@ -1166,7 +1134,7 @@
       
       rv += this.js_wrapper_catch();
       
-      rv += ("\nfunction " + (this.callback) + "() {");
+      rv += ("function " + (this.callback) + "() {");
       
       try_block_stack.shift();
       
@@ -1179,7 +1147,7 @@
     };
     this.TryCatch.prototype.js_wrapper_try = function  () {
       var rv;
-      rv = "try {\n";
+      rv = "try {";
       
       return rv;
       
@@ -1189,7 +1157,7 @@
       rv = "}";
       
       if ((this.catch_block != null)) {
-        rv += (" catch (" + (this.identifier.value) + ") {\n");
+        rv += (" catch (" + (this.identifier.value) + ") {");
         
         rv += this.catch_block.js() + this.catch_block.js_closeout();
         
@@ -1200,7 +1168,7 @@
       rv += '}';
       
       if ((this.closeout_callback != null)) {
-        rv += ("\nreturn " + (this.closeout_callback) + "();");
+        rv += ("return " + (this.closeout_callback) + "();");
         
       }
       return rv;
@@ -1234,7 +1202,7 @@
       
       this.rvalue.accessors[this.rvalue.accessors.length - 1].callback_name = this.new_callback;
       
-      rv = ("return " + (this.rvalue.js()) + ";\n");
+      rv = ("return " + (this.rvalue.js()) + ";");
       
       rv_block = "";
       
@@ -1243,7 +1211,7 @@
       kobj$1 = this.lvalue.arguments;
       for (ki$1 = 0; ki$1 < kobj$1.length; ki$1++) {
         argument = kobj$1[ki$1];
-          rv_block += ("" + i + "  " + (argument.base.value) + " = arguments[" + arg_i + "];\n");
+          rv_block += ("" + (argument.base.value) + " = arguments[" + arg_i + "];");
           
           if (!((scope[argument.base.value] != null))) {
     scope[argument.base.value] = 'closures ok';
@@ -1258,7 +1226,7 @@
     rv = this.conditional.js(rv, false);
       }
       
-      rv += ("" + i + "function " + (this.new_callback) + " () {\n");
+      rv += ("function " + (this.new_callback) + " () {");
       
       rv += render_try_blocks();
       
@@ -1267,15 +1235,13 @@
       rv += rv_block;
       
       if (this.in_conditional) {
-        rv += ("return " + (this.parent_block.callback) + "();\n");
+        rv += ("return " + (this.parent_block.callback) + "();");
         
       } else     if (scope['k$next']) {
-        rv += "return k$next ? k$next() : void 0;\n";
+        rv += "return k$next ? k$next() : void 0;";
         
       }
       rv += this.block.js_closeout();
-      
-      dedent();
       
       return rv;
       
