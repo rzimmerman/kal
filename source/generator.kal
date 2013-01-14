@@ -14,6 +14,8 @@ function apply_generator_to_grammar()
   
   scopes = []
   scope = {}
+  try_block_stack = []
+  try_block_stacks = []
   
   callback_counter = 0
   current_callback = "k$cb0"
@@ -44,6 +46,8 @@ function apply_generator_to_grammar()
   
   function push_scope()
     scopes.push scope
+    try_block_stacks.push try_block_stack
+    try_block_stack = []
     new_scope = {}
     current_callbacks.push current_callback
     for k of scope
@@ -74,6 +78,7 @@ function apply_generator_to_grammar()
       rv += "\n#{i}})()\n"
     if scopes isnt []
       scope = scopes.pop()
+    try_block_stack = try_block_stacks.pop()
     current_callback = current_callbacks.pop()
     return rv
   
@@ -90,6 +95,8 @@ function apply_generator_to_grammar()
     i = ''
     scopes = []
     scope = {}
+    try_block_stack = []
+    try_block_stacks = []
     callback_counter = 0
     current_callback = 'k$cb0'
     current_callbacks = []
@@ -132,7 +139,10 @@ function apply_generator_to_grammar()
     return rv
     
   me.ThrowStatement.prototype.js = ->  
-    rv = "throw #{this.expr.js()};"
+    if scope['k$next'] exists
+      rv = "return k$next.apply(this, [#{me.expr.js()}]);"
+    else
+      rv = "throw #{me.expr.js()};"
     rv = me.conditional.js(rv, no) if me.conditional?
     return rv
     
@@ -339,6 +349,7 @@ function apply_generator_to_grammar()
     
     callback_js = "\nreturn #{me.callback}();"
     callback_js += "\nfunction #{me.callback}() {"
+    callback_js += render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
     
     create_callback() #generate a new callback for future if statements/for loops
@@ -412,14 +423,10 @@ function apply_generator_to_grammar()
   me.Block.prototype.js_closeout = ->
     rv = ""
     if me.closeout_callback exists and me.callbacks.length isnt 0 and me.in_conditional
-      rv += "#{i}return #{me.closeout_callback}();"
+      rv += "\nreturn #{me.closeout_callback}();"
     for callback in me.callbacks
-      dedent()
-      #if scope['k$next'] exists
-      #  rv += "#{i}} catch (k$err) {return k$next(k$err);}\n"
-      #else
-      #  rv += "#{i}} catch (k$err) {throw k$err;}\n"
-      rv += "#{i}}\n"
+      rv += render_catch_blocks()
+      rv += "}\n"
     return rv
   
   me.ParenExpression.prototype.js = ->
@@ -520,10 +527,10 @@ function apply_generator_to_grammar()
     block_code = me.block.js(yes) + me.block.js_closeout()
     if me.callback exists
       me.args.push me.callback
-      #block_code = "#{i}try {\n" + block_code
+      block_code = "try {\n" + block_code
     rv += pop_scope(block_code, no)
     if me.callback exists
-      #rv += "\n#{i}} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}"
+      rv += "\n} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}"
       rv += "\n#{i}return k$next ? k$next() : void 0;"
     rv += "\n#{i}}"
     rv = " (#{me.args.join(', ')}) {\n" + rv
@@ -569,19 +576,60 @@ function apply_generator_to_grammar()
     pop_class()
     return rv
   
+  function render_try_blocks()
+    rv = ""
+    for try_block in try_block_stack
+      rv += try_block.js_wrapper_try()
+    return rv
+  
+  function render_catch_blocks()
+    rv = ""
+    for try_block in try_block_stack
+      rv += try_block.js_wrapper_catch()
+    return rv
+  
   me.TryCatch.prototype.js = ->
-    rv = "try {\n"
-    indent()
+    try_block_stack.unshift me
+    me.try_block.in_conditional = yes
+    me.original_callback = me.callback unless me.original_callback exists
+    rv = me.js_no_callbacks()
+    
+    if me.callback isnt current_callback
+      me.callback = create_callback()
+      me.closeout_callback = me.callback
+      rv = me.js_callbacks()
+    return rv
+    
+  me.TryCatch.prototype.js_no_callbacks = ->
+    rv = me.js_wrapper_try()
+    me.try_block.original_callback = me.original_callback
     rv += me.try_block.js() + me.try_block.js_closeout()
-    dedent()
-    rv += "#{i}}"
+    rv += me.js_wrapper_catch()
+    try_block_stack.shift()
+    return rv
+  me.TryCatch.prototype.js_callbacks = ->
+    rv = me.js_wrapper_try()
+    me.try_block.original_callback = me.original_callback
+    rv += me.try_block.js() + me.try_block.js_closeout()
+    rv += me.js_wrapper_catch()
+    rv += "\nfunction #{me.callback}() {"
+    try_block_stack.shift()
+    rv += render_try_blocks()
+    me.parent_block.closeout_callback = me.original_callback
+    return rv
+  me.TryCatch.prototype.js_wrapper_try = ->
+    rv = "try {\n"
+    return rv
+  me.TryCatch.prototype.js_wrapper_catch = ->
+    rv = "}"
     if me.catch_block exists
-      rv += " catch (#{this.identifier.value}) {\n"
-      indent()
+      rv += " catch (#{me.identifier.value}) {\n"
       rv += me.catch_block.js() + me.catch_block.js_closeout()
-      rv += "}"
     else
-      rv += "catch (k$e) {}"
+      rv += " catch (k$e) {"
+    rv += '}'
+    if me.closeout_callback exists
+      rv += "\nreturn #{me.closeout_callback}();"
     return rv
     
   me.SuperStatement.prototype.js = ->
@@ -609,17 +657,15 @@ function apply_generator_to_grammar()
     rv_block += me.block.js()
     rv = me.conditional.js(rv, no) when me.conditional exists #TODO support this for wait fors
     rv += "#{i}function #{me.new_callback} () {\n"
-    indent()
-    #rv += "#{i}try {if (arguments[0]) {throw arguments[0];}\n"
+    rv += render_try_blocks()
+    rv += "if (arguments[0] != null) throw arguments[0];"
     rv += rv_block
     if me.in_conditional
       rv += "return #{me.parent_block.callback}();\n"
     else if scope['k$next']
       rv += "return k$next ? k$next() : void 0;\n"
     rv += me.block.js_closeout()
-    #rv += "} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}\n"
     dedent()
-    #rv += "#{i}}\n"
     return rv
     
   snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'}

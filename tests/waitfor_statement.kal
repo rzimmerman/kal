@@ -148,19 +148,43 @@ describe 'Wait For Statement', ->
     for o in output
       (o in expected).should.be.true
     done()
-  
-  it 'should throw when called back with an error', (done) ->
-    task callbacker2(arg1)
+  ###
+  it 'should throw when called back with an error from a task', (done) ->
+    task callbacker10(arg1)
       fail with "error!!!"
     error_happened = no
     try
-      wait for x from callbacker2 5
+      wait for x from callbacker10 5
     catch e
       e.should.equal "error!!!"
       error_happened = yes
     error_happened.should.be.true
     done()
-  ###
+  
+  it 'should preserve try/catch blocks within callbacks', (done) ->
+    task callbacker11(arg1)
+      return arg1
+    caught = []
+    try
+      wait for x from callbacker11 5
+      fail with 'test1'
+    catch e
+      e.should.equal 'test1'
+      caught.push 1
+    try
+      try
+        wait for x from callbacker11 5
+        fail with 'test2'
+      catch e
+        e.should.equal 'test2'
+        caught.push 2
+      fail with 'test3'  
+    catch e
+      e.should.equal 'test3'
+      caught.push 3
+    caught.should.eql [1,2,3]
+    done()
+  
   it 'should work if the called task takes no arguments', (done) ->
     task callbacker4()
       return 5
