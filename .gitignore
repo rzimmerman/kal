@@ -1,5 +1,6 @@
 # This project
 *.pyc
+compiled/
 
 # npm
 node_modules
