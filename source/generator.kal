@@ -116,6 +116,7 @@ function apply_generator_to_grammar()
         else
           rv += '/*' + comment.value + '*/\n'
     me.statement.in_conditional = me.in_conditional
+    me.statement.in_loop = me.in_loop
     me.statement.parent_block = me.parent_block
     me.statement.callback = me.callback
     me.statement.original_callback = me.original_callback
@@ -348,27 +349,45 @@ function apply_generator_to_grammar()
   for_depth = 1
   me.ForStatement.prototype.js = ->
     me.callback = current_callback
+    me.loop_block.in_loop = yes
     rv = ""
     iterator   = "ki$#{for_depth}"
     terminator = "kobj$#{for_depth}"
+    loop_counter = "klc$#{for_depth}"
     scope[iterator] = 'no closures'
     scope[terminator] = 'no closures'
     for_depth += 1
     loop_block_js = me.loop_block.js() + me.loop_block.js_closeout()
     if me.callback isnt current_callback #something in this loop uses callbacks
-      if me.execution_style?.value is 'parallel'
-        throw "Not Implemented"
-      else
-        throw "Not Implemented"
+      return me.js_callbacks iterator, terminator, loop_counter
     else #normal for loop
       if me.type.value is 'in'
         rv += "#{terminator} = #{me.iterable.js()};for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
+        rv += "#{me.iterant.js()} = #{terminator}[#{iterator}];"
       else
         rv += "#{terminator} = #{me.iterable.js()};for (#{me.iterant.js()} in #{terminator}) {"
-      if me.type.value is 'in'
-        rv += "#{me.iterant.js()} = #{terminator}[#{iterator}];"
       rv += loop_block_js
       rv += "}"
+    return rv
+  me.ForStatement.prototype.js_callbacks = (iterator, terminator, loop_counter) ->
+    rv = ""
+    me.callback = create_callback()
+    me.loop_block.callback = me.callback
+    me.loop_block.original_callback = me.callback
+    scope[loop_counter] = 'no closures'
+    if me.execution_style?.value is 'parallel'
+      rv += "#{terminator} = #{me.iterable.js()};#{loop_counter} = 1;for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
+      rv += "(function (#{me.iterant.js()}) {"
+      rv += "#{loop_counter}++;"
+      rv += me.loop_block.js() + me.loop_block.js_closeout()
+      rv += "})(#{terminator}[#{iterator}]);"
+      rv += "}"
+      rv += "return #{me.callback}();"
+      rv += "function #{me.callback}() {"
+      rv += "if (--#{loop_counter}) return;"
+      me.parent_block.closeout_callback = me.original_callback
+    else
+      throw "Not Implemented"
     return rv
     
   me.WhileStatement.prototype.js = ->
@@ -390,6 +409,7 @@ function apply_generator_to_grammar()
       statement.callback = me.callback
       statement.original_callback = me.original_callback
       statement.in_conditional = me.in_conditional
+      statement.in_loop = me.in_loop
       rv.push statement.js()
       if current_callback isnt previous_cb
         me.callbacks.unshift me.callback
@@ -403,7 +423,7 @@ function apply_generator_to_grammar()
     
   me.Block.prototype.js_closeout = ->
     rv = ""
-    if me.closeout_callback exists and me.callbacks.length isnt 0 and me.in_conditional
+    if me.closeout_callback exists and me.callbacks.length isnt 0 and (me.in_conditional or me.in_loop)
       rv += "return #{me.closeout_callback}();"
     for callback in me.callbacks
       rv += render_catch_blocks()
@@ -641,7 +661,7 @@ function apply_generator_to_grammar()
     rv += render_try_blocks()
     rv += "if (arguments[0] != null) throw arguments[0];"
     rv += rv_block
-    if me.in_conditional
+    if me.in_conditional or me.in_loop
       rv += "return #{me.parent_block.callback}();"
     else if scope['k$next']
       rv += "return k$next ? k$next() : void 0;"
