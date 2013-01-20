@@ -161,9 +161,11 @@ describe 'Wait For Statement', ->
     output.should.eql expected
     done()
   
-  it 'should handle nested loops', (done) ->
+  it 'should handle nested loops (1)', (done) ->
     task shrinker(i)
       return i - 9
+    task decrementer(i)
+      return i - 1
     grids = [[[1,2,3],[4,5,6],[7,8,9]],[[10,11,12],[13,14,15],[16,17,18]]]
     sum = 0
     for parallel grid in grids
@@ -178,9 +180,31 @@ describe 'Wait For Statement', ->
           sum += icolumn
     sum.should.equal 90
     done()
-          
+    
+  it 'should handle nested loops (2)', (done) ->
+    task shrinker(i)
+      return i - 9
+    task decrementer(i)
+      return i - 1
+    grids = [[[1,2,3],[4,5,6],[7,8,9]],[[10,11,12],[13,14,15],[16,17,18]]]
+    sum = 0
+    for series grid in grids
+      grid.length.should.equal 3
+      for series row in grid
+        row.length.should.equal 3
+        for series column in row
+          if column > 9
+            wait for icolumn from shrinker(column)
+          else
+            icolumn = column
+          while icolumn > 0
+            wait for icolumn from decrementer(icolumn)
+            sum += 1
+    sum.should.equal 90
+    done()
   #TODO: test error handling in loops
   #TODO: test nested loops/ifs
+
   it 'should work inside of while loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2

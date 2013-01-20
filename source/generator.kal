@@ -420,15 +420,15 @@ function apply_generator_to_grammar()
     while_depth += 1
     while_wrapper = "kw$#{while_depth}"
     me.callback = create_callback()
-    me.block.callback = me.callback
-    me.block.original_callback = me.callback
+    me.block.callback = "k$lcb"
+    me.block.original_callback = "k$lcb"
     use_snippets['async'] = snippets['async']
-    rv += "return #{me.callback}();"
+    rv += "return #{while_wrapper}();"
     rv += "function #{while_wrapper} () {"
+    rv += "var k$lcb = function () {if (#{me.expr.js()}) return $kasync(function () {#{while_wrapper}();}); else return #{me.callback}();};"
     rv += me.block.js() + me.block.js_closeout()
     rv += "}"
     rv += "function #{me.callback}() {"
-    rv += "if (#{me.expr.js()}) return $kasync(#{while_wrapper});"
     me.parent_block.closeout_callback = me.original_callback
     return rv
   
