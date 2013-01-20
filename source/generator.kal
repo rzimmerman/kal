@@ -354,13 +354,13 @@ function apply_generator_to_grammar()
     iterator   = "ki$#{for_depth}"
     terminator = "kobj$#{for_depth}"
     loop_counter = "klc$#{for_depth}"
-    scope[iterator] = 'no closures'
-    scope[terminator] = 'no closures'
     for_depth += 1
     loop_block_js = me.loop_block.js() + me.loop_block.js_closeout()
     if me.callback isnt current_callback #something in this loop uses callbacks
       return me.js_callbacks iterator, terminator, loop_counter
     else #normal for loop
+      scope[iterator] = 'no closures'
+      scope[terminator] = 'no closures'
       if me.type.value is 'in'
         rv += "#{terminator} = #{me.iterable.js()};for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
         rv += "#{me.iterant.js()} = #{terminator}[#{iterator}];"
@@ -374,8 +374,10 @@ function apply_generator_to_grammar()
     me.callback = create_callback()
     me.loop_block.callback = me.callback
     me.loop_block.original_callback = me.callback
-    scope[loop_counter] = 'no closures'
+    scope[iterator] = 'no closures'
+    scope[terminator] = 'no closures'
     if me.execution_style?.value is 'parallel'
+      scope[loop_counter] = 'no closures'
       rv += "#{terminator} = #{me.iterable.js()};#{loop_counter} = 1;for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
       rv += "(function (#{me.iterant.js()}) {"
       rv += "#{loop_counter}++;"
@@ -387,7 +389,16 @@ function apply_generator_to_grammar()
       rv += "if (--#{loop_counter}) return;"
       me.parent_block.closeout_callback = me.original_callback
     else
-      throw "Not Implemented"
+      use_snippets['async'] = snippets['async']
+      rv += "#{terminator} = #{me.iterable.js()};#{iterator} = 0;"
+      rv += "return #{loop_counter}();"
+      rv += "function #{loop_counter} () {"
+      rv += "#{me.iterant.js()} = #{terminator}[#{iterator}];"
+      rv += me.loop_block.js() + me.loop_block.js_closeout()
+      rv += "}"
+      rv += "function #{me.callback}() {"
+      rv += "if (++#{iterator} < #{terminator}.length) return $kasync(#{loop_counter});"
+      me.parent_block.closeout_callback = me.original_callback
     return rv
     
   me.WhileStatement.prototype.js = ->
@@ -668,4 +679,4 @@ function apply_generator_to_grammar()
     rv += me.block.js_closeout()
     return rv
     
-  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'}
+  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}', 'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn) {setTimeout(fn, 0);}) : process.nextTick;'}

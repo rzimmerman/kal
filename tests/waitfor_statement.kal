@@ -148,6 +148,18 @@ describe 'Wait For Statement', ->
     for o in output
       (o in expected).should.be.true
     done()
+    
+  it 'should work inside of for serial in loops', (done) ->
+    task callbacker3(arg1)
+      return arg1 * 2
+    output = []
+    for series i in [1,2,3,4]
+      wait for j from callbacker3 i
+      output.push j
+    expected = [2,4,6,8]
+
+    output.should.eql expected
+    done()
   
   it 'should throw when called back with an error from a task', (done) ->
     task callbacker10(arg1)
