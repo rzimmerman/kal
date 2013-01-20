@@ -400,15 +400,35 @@ function apply_generator_to_grammar()
       rv += "if (++#{iterator} < #{terminator}.length) return $kasync(#{loop_counter});"
       me.parent_block.closeout_callback = me.original_callback
     return rv
-    
+  
+  while_depth = 1
   me.WhileStatement.prototype.js = ->
+    me.block.in_loop = yes
     rv = "while (#{me.expr.js()}) {"
     rv += me.block.js() + me.block.js_closeout()
     rv += "}"
     if me.callback isnt current_callback
-      throw "Not Implemented"
+      return me.js_callbacks()
+    else
+      return rv
+  
+  me.WhileStatement.prototype.js_callbacks = ->
+    rv = ""
+    while_depth += 1
+    while_wrapper = "kw$#{while_depth}"
+    me.callback = create_callback()
+    me.block.callback = me.callback
+    me.block.original_callback = me.callback
+    use_snippets['async'] = snippets['async']
+    rv += "return #{me.callback}();"
+    rv += "function #{while_wrapper} () {"
+    rv += me.block.js() + me.block.js_closeout()
+    rv += "}"
+    rv += "function #{me.callback}() {"
+    rv += "if (#{me.expr.js()}) return $kasync(#{while_wrapper});"
+    me.parent_block.closeout_callback = me.original_callback
     return rv
-    
+  
   me.Block.prototype.js = ->
     me.callback = current_callback unless me.callback exists
     me.original_callback = current_callback unless me.original_callback exists

@@ -160,7 +160,23 @@ describe 'Wait For Statement', ->
 
     output.should.eql expected
     done()
-  
+  #TODO: test nested loops
+  #TODO: test error handling in loops
+  #TODO: test nested loops/ifs
+  it 'should work inside of while loops', (done) ->
+    task callbacker3(arg1)
+      return arg1 * 2
+    output = []
+    i = 1
+    while i <= 4
+      wait for j from callbacker3 i
+      output.push j
+      i += 1
+    expected = [2,4,6,8]
+
+    output.should.eql expected
+    done()
+    
   it 'should throw when called back with an error from a task', (done) ->
     task callbacker10(arg1)
       fail with "error!!!"
