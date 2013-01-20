@@ -9,6 +9,8 @@ function apply_generator_to_grammar()
   scope = {}
   try_block_stack = []
   try_block_stacks = []
+  parfor_cb = null
+  parfor_cb_stack = []
   
   callback_counter = 0
   current_callback = "k$cb0"
@@ -41,6 +43,8 @@ function apply_generator_to_grammar()
     scopes.push scope
     try_block_stacks.push try_block_stack
     try_block_stack = []
+    parfor_cb_stack.push parfor_cb
+    parfor_cb = null
     new_scope = {}
     current_callbacks.push current_callback
     for k of scope
@@ -70,6 +74,7 @@ function apply_generator_to_grammar()
       scope = scopes.pop()
     try_block_stack = try_block_stacks.pop()
     current_callback = current_callbacks.pop()
+    parfor_cb = parfor_cb_stack.pop()
     return rv
   
   function check_existence_wrapper(code, undefined_unary, invert)
@@ -86,6 +91,8 @@ function apply_generator_to_grammar()
     scope = {}
     try_block_stack = []
     try_block_stacks = []
+    parfor_cb = null
+    parfor_cb_stack = []
     callback_counter = 0
     current_callback = 'k$cb0'
     current_callbacks = []
@@ -334,8 +341,8 @@ function apply_generator_to_grammar()
     else_js = ""
     for else_clause in me.elses
       else_js += else_clause.block_js + else_clause.block.js_closeout() + '}'
-    
-    callback_js = "return #{me.callback}();"
+    use_snippets['async'] = snippets['async']
+    callback_js = "return $kasync(#{me.callback},this);"
     callback_js += "function #{me.callback}() {"
     callback_js += render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
@@ -372,35 +379,48 @@ function apply_generator_to_grammar()
   me.ForStatement.prototype.js_callbacks = (iterator, terminator, loop_counter) ->
     rv = ""
     if me.execution_style?.value is 'parallel'
+      loop_callback = create_callback()
       me.callback = create_callback()
-      me.loop_block.callback = me.callback
-      me.loop_block.original_callback = me.callback
+      me.loop_block.callback = loop_callback
+      me.loop_block.original_callback = loop_callback
+      parfor_cb_stack.push parfor_cb
+      parfor_cb = loop_callback
       scope[iterator] = 'no closures'
       scope[terminator] = 'no closures'
-      scope[loop_counter] = 'no closures'
-      rv += "#{terminator} = #{me.iterable.js()};#{loop_counter} = 1;for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
+      rv += "(function (#{loop_counter}) {"
+      rv += "#{terminator} = #{me.iterable.js()};for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
       rv += "(function (#{me.iterant.js()}) {"
+      rv += render_try_blocks()
       rv += "#{loop_counter}++;"
       rv += me.loop_block.js() + me.loop_block.js_closeout()
+      rv += render_catch_blocks()
       rv += "})(#{terminator}[#{iterator}]);"
       rv += "}"
-      rv += "return #{me.callback}();"
+      use_snippets['async'] = snippets['async']
+      rv += "return $kasync(#{loop_callback},this);"
+      rv += "function #{loop_callback}() {"
+      rv += "if (--#{loop_counter} == 0) return #{me.callback}();"
+      rv += "}"
+      rv += "})(1);"
       rv += "function #{me.callback}() {"
-      rv += "if (--#{loop_counter}) return;"
+      rv += render_try_blocks()
       me.parent_block.closeout_callback = me.original_callback
+      parfor_cb = parfor_cb_stack.pop()
     else
       me.callback = create_callback()
       me.loop_block.callback = "k$lcb"
       me.loop_block.original_callback = "k$lcb"
       use_snippets['async'] = snippets['async']
-      rv += "return #{loop_counter}(0,#{me.iterable.js()});"
-      rv += "function #{loop_counter} (k$i,k$obj) {"
-      rv += "#{me.iterant.js()} = k$obj[k$i];"
+      rv += "return $kasync(#{loop_counter},this,[0,#{me.iterable.js()},#{me.iterable.js()}[0]]);"
+      rv += "function #{loop_counter} (k$i,k$obj,#{me.iterant.js()}) {"
+      rv += render_try_blocks()
       rv += "k$i++;"
-      rv += "var k$lcb = function () {if (k$i < k$obj.length) return $kasync(function () {#{loop_counter}(k$i,k$obj);}); else return #{me.callback}();};"
+      rv += "var k$lcb = function () {if (k$i < k$obj.length) return #{loop_counter}.apply(this,[k$i,k$obj,k$obj[k$i]]); else return #{me.callback}.apply(this);};"
       rv += me.loop_block.js() + me.loop_block.js_closeout()
+      rv += render_catch_blocks()
       rv += "}"
       rv += "function #{me.callback}() {"
+      rv += render_try_blocks()
       me.parent_block.closeout_callback = me.original_callback
     return rv
   
@@ -425,10 +445,13 @@ function apply_generator_to_grammar()
     use_snippets['async'] = snippets['async']
     rv += "return #{while_wrapper}();"
     rv += "function #{while_wrapper} () {"
-    rv += "var k$lcb = function () {if (#{me.expr.js()}) return $kasync(function () {#{while_wrapper}();}); else return #{me.callback}();};"
+    rv += render_try_blocks()
+    rv += "var k$lcb = function () {if (#{me.expr.js()}) return $kasync(#{while_wrapper},this); else return $kasync(#{me.callback},this);};"
     rv += me.block.js() + me.block.js_closeout()
+    rv += render_catch_blocks()
     rv += "}"
     rv += "function #{me.callback}() {"
+    rv += render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
     return rv
   
@@ -458,7 +481,8 @@ function apply_generator_to_grammar()
   me.Block.prototype.js_closeout = ->
     rv = ""
     if me.closeout_callback exists and me.callbacks.length isnt 0 and (me.in_conditional or me.in_loop)
-      rv += "return #{me.closeout_callback}();"
+      use_snippets['async'] = snippets['async']
+      rv += "return $kasync(#{me.closeout_callback},this);"
     for callback in me.callbacks
       rv += render_catch_blocks()
       rv += "}"
@@ -565,7 +589,7 @@ function apply_generator_to_grammar()
       block_code = "try {" + block_code
     rv += pop_scope(block_code, no)
     if me.callback exists
-      rv += "} catch (k$err) {if (k$next) {return k$next(k$err);} else {throw k$err;}}"
+      rv += "} catch (k$err) {if (k$next) {return k$next.apply(this,[k$err]);} else {throw k$err;}}"
       rv += "return k$next ? k$next() : void 0;"
     rv += "}"
     rv = " (#{me.args.join(', ')}) {" + rv
@@ -633,6 +657,8 @@ function apply_generator_to_grammar()
       me.callback = create_callback()
       me.closeout_callback = me.callback
       rv = me.js_callbacks()
+    else 
+      try_block_stack.shift()
     return rv
     
   me.TryCatch.prototype.js_no_callbacks = ->
@@ -640,7 +666,6 @@ function apply_generator_to_grammar()
     me.try_block.original_callback = me.original_callback
     rv += me.try_block.js() + me.try_block.js_closeout()
     rv += me.js_wrapper_catch()
-    try_block_stack.shift()
     return rv
   me.TryCatch.prototype.js_callbacks = ->
     rv = me.js_wrapper_try()
@@ -657,14 +682,17 @@ function apply_generator_to_grammar()
     return rv
   me.TryCatch.prototype.js_wrapper_catch = ->
     rv = "}"
+    loop_clearout_js = ""
     if me.catch_block exists
       rv += " catch (#{me.identifier.value}) {"
       rv += me.catch_block.js() + me.catch_block.js_closeout()
     else
       rv += " catch (k$e) {"
-    rv += '}'
-    if me.closeout_callback exists
+    if parfor_cb exists
+      rv += "return #{parfor_cb}();"
+    else if me.closeout_callback exists
       rv += "return #{me.closeout_callback}();"
+    rv += '}'
     return rv
     
   me.SuperStatement.prototype.js = ->
@@ -696,10 +724,11 @@ function apply_generator_to_grammar()
     rv += "if (arguments[0] != null) throw arguments[0];"
     rv += rv_block
     if me.in_conditional or me.in_loop
-      rv += "return #{me.parent_block.callback}();"
+      use_snippets['async'] = snippets['async']
+      rv += "return $kasync(#{me.parent_block.callback},this);"
     else if scope['k$next']
       rv += "return k$next ? k$next() : void 0;"
     rv += me.block.js_closeout()
     return rv
     
-  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}', 'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn) {setTimeout(fn, 0);}) : process.nextTick;'}
+  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}', 'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'}

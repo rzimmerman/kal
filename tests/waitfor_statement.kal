@@ -175,9 +175,9 @@ describe 'Wait For Statement', ->
         for parallel column in row
           if column > 9
             wait for icolumn from shrinker(column)
+            sum += icolumn
           else
-            icolumn = column
-          sum += icolumn
+            sum += column
     sum.should.equal 90
     done()
     
@@ -223,16 +223,38 @@ describe 'Wait For Statement', ->
             for parallel column in row
               if column > 9
                 wait for icolumn from shrinker(column)
+                sum += icolumn
               else
-                icolumn = column
-              sum += icolumn
+                sum += column
         else
           wait for x from decrementer(grid.length)
           sum += x
-    sum.should.equal 45+2
+    sum.should.equal 45+3-1
     done()
-  #TODO: test error handling in loops
-
+  
+  it 'should support try/catch statements in callback loops', (done) ->
+    task shrinker(i)
+      return i - 9
+    task decrementer(i)
+      return i - 1
+    grids = [[[1,2,3],[4,5,6],[7,8,9]],[[10,11,12],[13,14,15],[16,17,18]]]
+    sum = 0
+    for parallel grid in grids
+      grid.length.should.equal 3
+      try
+        for series row in grid
+          row.length.should.equal 3
+          for parallel column in row
+            wait for icolumn from decrementer(column)
+            if icolumn >= 9
+              fail with "TOO BIG"
+            else
+              sum += icolumn + 1
+      catch e
+        sum += 1
+    sum.should.equal 45 + 9 #because the inner loop is parallel, all 9 items will throw errors, it will not exit early
+    done()
+  
 
   it 'should work inside of while loops', (done) ->
     task callbacker3(arg1)
