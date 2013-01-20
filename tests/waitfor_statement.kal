@@ -202,8 +202,37 @@ describe 'Wait For Statement', ->
             sum += 1
     sum.should.equal 90
     done()
+    
+    
+  it 'should handle nested loops (3)', (done) ->
+    task shrinker(i)
+      return i - 9
+    task decrementer(i)
+      return i - 1
+    grids = [[[1,2,3],[4,5,6],[7,8,9]],[[10,11,12],[13,14,15],[16,17,18]]]
+    sum = 0
+    g = 5
+    if g is 5
+      wait for g from decrementer(g)
+      g.should.equal 4
+      for parallel grid in grids
+        grid.length.should.equal 3
+        if grid[0][0] isnt 1
+          for series row in grid
+            row.length.should.equal 3
+            for parallel column in row
+              if column > 9
+                wait for icolumn from shrinker(column)
+              else
+                icolumn = column
+              sum += icolumn
+        else
+          wait for x from decrementer(grid.length)
+          sum += x
+    sum.should.equal 45+2
+    done()
   #TODO: test error handling in loops
-  #TODO: test nested loops/ifs
+
 
   it 'should work inside of while loops', (done) ->
     task callbacker3(arg1)
