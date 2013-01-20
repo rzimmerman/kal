@@ -160,7 +160,25 @@ describe 'Wait For Statement', ->
 
     output.should.eql expected
     done()
-  #TODO: test nested loops
+  
+  it 'should handle nested loops', (done) ->
+    task shrinker(i)
+      return i - 9
+    grids = [[[1,2,3],[4,5,6],[7,8,9]],[[10,11,12],[13,14,15],[16,17,18]]]
+    sum = 0
+    for parallel grid in grids
+      grid.length.should.equal 3
+      for series row in grid
+        row.length.should.equal 3
+        for parallel column in row
+          if column > 9
+            wait for icolumn from shrinker(column)
+          else
+            icolumn = column
+          sum += icolumn
+    sum.should.equal 90
+    done()
+          
   #TODO: test error handling in loops
   #TODO: test nested loops/ifs
   it 'should work inside of while loops', (done) ->
