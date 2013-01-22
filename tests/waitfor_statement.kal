@@ -312,3 +312,31 @@ describe 'Wait For Statement', ->
     wait for x from callbacker4()
     x.should.equal 5
     done()
+    
+  #gh-52
+  it 'should support for of loops with callbacks (serial)', (done) ->
+    task callbacker12(arg1)
+      return arg1+3
+    obj = {'this':1,'is':2,'a':3,'test':4}
+    s = ""
+    for series p of obj
+      s += p
+      wait for x from callbacker12(obj[p])
+      s += x
+    s.should.equal "this4is5a6test7"
+    done()
+    
+  #gh-52
+  it 'should support for of loops with callbacks (parallel)', (done) ->
+    task callbacker13(arg1)
+      return arg1+3
+    obj1 = {'this':1,'is':2,'a':3,'test':4}
+    obj2 = {}
+    t = 0
+    for parallel p of obj1
+      t += obj1[p]
+      wait for x from callbacker13(obj1[p])
+      obj2[p] = x
+    t.should.equal 1+2+3+4
+    obj2.should.eql {'this':4,'is':5,'a':6,'test':7}
+    done()

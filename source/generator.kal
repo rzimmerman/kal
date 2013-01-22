@@ -388,13 +388,20 @@ function apply_generator_to_grammar()
       scope[iterator] = 'no closures'
       scope[terminator] = 'no closures'
       rv += "(function (#{loop_counter}) {"
-      rv += "#{terminator} = #{me.iterable.js()};for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
+      rv += "#{terminator} = #{me.iterable.js()};"
+      if me.type.value is 'in'
+        rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {"
+      else
+        rv += "for (#{iterator} in #{terminator}) {"
       rv += "(function (#{me.iterant.js()}) {"
       rv += render_try_blocks()
       rv += "#{loop_counter}++;"
       rv += me.loop_block.js() + me.loop_block.js_closeout()
       rv += render_catch_blocks()
-      rv += "})(#{terminator}[#{iterator}]);"
+      if me.type.value is 'in'
+        rv += "})(#{terminator}[#{iterator}]);"
+      else
+        rv += "})(#{iterator});"
       rv += "}"
       use_snippets['async'] = snippets['async']
       rv += "return $kasync(#{loop_callback},this);"
@@ -411,7 +418,13 @@ function apply_generator_to_grammar()
       me.loop_block.callback = "k$lcb"
       me.loop_block.original_callback = "k$lcb"
       use_snippets['async'] = snippets['async']
-      rv += "return $kasync(#{loop_counter},this,[0,#{me.iterable.js()},#{me.iterable.js()}[0]]);"
+      if me.type.value is 'in'
+        rv += "return $kasync(#{loop_counter},this,[0,#{me.iterable.js()},#{me.iterable.js()}[0]]);"
+      else
+        scope[terminator] = 'no closures'
+        scope[iterator] = 'no closures'
+        rv += "#{terminator} = []; for (#{iterator} in #{me.iterable.js()}) {if ((#{me.iterable.js()}).hasOwnProperty(#{iterator})) {#{terminator}.push(#{iterator})};}"
+        rv += "return $kasync(#{loop_counter},this,[0,#{terminator},#{terminator}[0]]);"
       rv += "function #{loop_counter} (k$i,k$obj,#{me.iterant.js()}) {"
       rv += render_try_blocks()
       rv += "k$i++;"
