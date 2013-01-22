@@ -70,7 +70,7 @@ exports.eval = (code, options) ->
   for k of options
     if options.hasOwnProperty(k)
       o[k] = options[k]
-  o.bare = on # ensure return value
+  o.return_last = on # ensure a return value 
   js = compile code, o
   console.log(js) when options.show_js
   if sandbox is global

@@ -15,8 +15,8 @@ Module       = require 'module'
 
 # Config
 REPL_PROMPT = 'kal> '
-REPL_PROMPT_MULTILINE = '------> '
-REPL_PROMPT_CONTINUATION = '......> '
+REPL_PROMPT_MULTILINE = '---> '
+REPL_PROMPT_CONTINUATION = '...> '
 enableColors = no
 unless process.platform is 'win32'
   enableColors = not process.env.NODE_DISABLE_COLORS
