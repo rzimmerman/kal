@@ -373,7 +373,9 @@ function apply_generator_to_grammar()
         rv += "#{me.iterant.js()} = #{terminator}[#{iterator}];"
       else
         rv += "#{terminator} = #{me.iterable.js()};for (#{me.iterant.js()} in #{terminator}) {"
+        rv += "if (#{terminator}.hasOwnProperty(#{me.iterant.js()})) {"
       rv += loop_block_js
+      rv += "}" when me.type.value isnt 'in'
       rv += "}"
     return rv
   me.ForStatement.prototype.js_callbacks = (iterator, terminator, loop_counter) ->
