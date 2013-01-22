@@ -44,3 +44,13 @@ describe 'For Statement', ->
       y += x
     y.should.equal "abcdef"
     
+  it 'should support object property enumeration', ->
+    i = 0
+    iterable = {'this':1,'is':2,'a':3,'test':4}
+    out_s = ''
+    for s of iterable
+      out_s += s
+      i += iterable[s]
+    i.should.equal 1+2+3+4
+    out_s.should.equal 'thisisatest'
+    
