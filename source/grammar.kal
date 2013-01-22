@@ -131,7 +131,7 @@ class WaitForStatement inherits from ASTBase
     me.req_val 'from'
     me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
     me.rvalue = me.req UnaryExpression
-    me.conditional = me.rvalue.transform_when_statement
+    #me.conditional = me.rvalue.transform_when_statement()
     last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
     me.error("expected a function call after 'from'") unless last_accessor instanceof FunctionCall
     me.block = me.req BlockWithoutIndent
@@ -184,6 +184,8 @@ class Expression inherits from ASTBase
       rv = me.conditional
       me.conditional = null
       return rv
+    else if me.right instanceof Expression
+      return me.right.transform_when_statement()
     else
       return null
   method parse()

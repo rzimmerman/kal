@@ -22,4 +22,26 @@ describe 'Other', ->
          4,
          5]
     a.should.eql [1,2,3,4,5]
-    
+  
+  #gh-47
+  it 'should correctly support chained conditionals', ->
+    t1 = {'callback':1,'is_else_if':yes,'isnt_else_if':no}
+    if t1.callback isnt 5 but not t1.is_else_if
+      require('should').fail('chained conditional failed')
+    if t1.callback isnt 1 but not t1.is_else_if
+      require('should').fail('chained conditional failed')
+    if t1.callback isnt 5 but not t1.isnt_else_if
+      a = 0 #ok, do nothing
+    else
+      require('should').fail('chained conditional failed')
+    rv = "aaa"
+    a = "test"
+    t1.some_func = ->
+      return 'stuff'
+    rv += a + t1.some_func() when t1.callback exists
+    rv.should.equal "aaateststuff"
+    rv += a + t1.some_func() when t1.garbage exists
+    rv.should.equal "aaateststuff"
+    rv += a + a + t1.some_func() when (no)
+    rv.should.equal "aaateststuff"
+  
