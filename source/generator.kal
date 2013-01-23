@@ -100,7 +100,7 @@ function apply_generator_to_grammar()
     class_def = {name: '',code: '',args: [],has_constructor: no}
     use_snippets = {}
     me.callback = current_callback
-    code = self.Block.prototype.js.apply me, [options.return_last]
+    code = self.Block.prototype.js.apply me
     snip = []
     for key of use_snippets
       snip.push use_snippets[key]
@@ -474,7 +474,7 @@ function apply_generator_to_grammar()
     me.parent_block.closeout_callback = me.original_callback
     return rv
   
-  me.Block.prototype.js = (return_last) ->
+  me.Block.prototype.js = ->
     me.callback = current_callback unless me.callback exists
     me.original_callback = current_callback unless me.original_callback exists
     previous_cb = current_callback
@@ -491,8 +491,6 @@ function apply_generator_to_grammar()
         me.callbacks.unshift me.callback
         me.callback = current_callback
         previous_cb = current_callback
-    if return_last and (me.statements[me.statements.length-1].statement instanceof self.ExpressionStatement)
-      rv[rv.length-1] = "return " + rv[rv.length-1]
     rv = rv.join '\n'
     if me.callbacks.length > 0
       if scope['k$next'] exists
