@@ -21,6 +21,7 @@ function parseOptions()
   optimist = optimist.options('bare',{alias:'b',boolean:yes,description:'don\'t wrap the output in a function'})
   optimist = optimist.options('version',{alias:'v',boolean:yes,description:'display the version number'})
   optimist = optimist.options('output',{alias:'o',description:'the output directory for the compiled source'})
+  optimist = optimist.options('format',{alias:'f',description:'the output format, one of: minify, concise, beautify (default)'})
   return optimist.argv
 
 existsSync = fs.existsSync or path.existsSync
@@ -45,6 +46,10 @@ run = function run()
   for file_name in options._
     if options.output exists
       js_output = Kal.compile fs.readFileSync(file_name), compile_options
+      if options.format is 'minify'
+        js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code
+      else if options.format isnt 'concise'
+        js_output = require('uglify-js').minify(js_output, {fromString:yes,output:{beautify:yes}}).code
       printLine js_output if options.javascript
       fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
     else

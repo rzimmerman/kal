@@ -19,8 +19,8 @@
     "kal":     "./scripts/kal"
   },
   "scripts": {
-	"make": "kal -o compiled/ source/*.kal",
-	"prepublish": "kal -o compiled/ source/*.kal && scripts/kal -o compiled/ source/*.kal && npm test",
+	"make": "kal -f minify -o compiled/ source/*.kal",
+	"prepublish": "kal -o compiled/ source/*.kal && scripts/kal -f minify -o compiled/ source/*.kal && npm test",
   "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
   },
   "homepage":     "https://github.com/rzimmerman/kal",
@@ -30,7 +30,8 @@
     "url": "git://github.com/rzimmerman/kal.git"
   },
   "dependencies": {
-    "optimist": "0.3.5"
+    "optimist": "0.3.5",
+    "uglify-js": "2.2.3"
   },
   "devDependencies": {
     "mocha": "1.6.x",
