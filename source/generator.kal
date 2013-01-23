@@ -301,8 +301,10 @@ function apply_generator_to_grammar()
       conditional_js = "!(#{conditional_js})"
     rv = "if (#{conditional_js}) {"
     me.block.in_conditional = yes
+    me.block.in_loop = me.in_loop
     for else_clause in me.elses
       else_clause.block.in_conditional = yes
+      else_clause.block.in_loop = me.in_loop
     inner_js = me.js_no_callbacks()
     if (me.callback isnt current_callback) and (not me.is_else_if)
       callback_counter = cb_counter
@@ -357,6 +359,7 @@ function apply_generator_to_grammar()
   me.ForStatement.prototype.js = ->
     me.callback = current_callback
     me.loop_block.in_loop = yes
+    me.loop_block.in_conditional = me.in_conditional
     rv = ""
     iterator   = "ki$#{for_depth}"
     terminator = "kobj$#{for_depth}"
@@ -442,6 +445,7 @@ function apply_generator_to_grammar()
   while_depth = 1
   me.WhileStatement.prototype.js = ->
     me.block.in_loop = yes
+    me.block.in_conditional = me.in_conditional
     rv = "while (#{me.expr.js()}) {"
     rv += me.block.js() + me.block.js_closeout()
     rv += "}"
@@ -667,6 +671,7 @@ function apply_generator_to_grammar()
   me.TryCatch.prototype.js = ->
     try_block_stack.unshift me
     me.try_block.in_conditional = yes
+    me.try_block.in_loop = me.in_loop
     me.original_callback = me.callback unless me.original_callback exists
     rv = me.js_no_callbacks()
     
@@ -733,7 +738,8 @@ function apply_generator_to_grammar()
       rv_block += "#{argument.base.value} = arguments[#{arg_i}];"
       scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
       arg_i += 1
-    
+    me.block.in_conditional = me.in_conditional
+    me.block.in_loop = me.in_loop
     rv_block += me.block.js()
     rv = me.conditional.js(rv, no) when me.conditional exists #TODO support this for wait fors
     rv += "function #{me.new_callback} () {"
