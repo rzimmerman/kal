@@ -732,6 +732,9 @@ function apply_generator_to_grammar()
     me.rvalue.callback_args = me.lvalue
     me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
     rv = "return #{me.rvalue.js()};"
+    if me.conditional exists
+      rv = me.conditional.js(rv, no)
+      rv += "return #{me.new_callback}();"
     rv_block = ""
     arg_i = 1
     for argument in me.lvalue.arguments
@@ -741,7 +744,6 @@ function apply_generator_to_grammar()
     me.block.in_conditional = me.in_conditional
     me.block.in_loop = me.in_loop
     rv_block += me.block.js()
-    rv = me.conditional.js(rv, no) when me.conditional exists #TODO support this for wait fors
     rv += "function #{me.new_callback} () {"
     rv += render_try_blocks()
     rv += "if (arguments[0] != null) throw arguments[0];"

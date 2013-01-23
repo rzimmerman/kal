@@ -340,3 +340,13 @@ describe 'Wait For Statement', ->
     t.should.equal 1+2+3+4
     obj2.should.eql {'this':4,'is':5,'a':6,'test':7}
     done()
+    
+  it 'should accept tail conditionals', (done) ->
+    task callbacker15 (arg1)
+      return arg1 * 2
+    a = 1
+    wait for x from callbacker15 5 when a isnt 1
+    wait for x from callbacker15 6 when a is 1
+    wait for x from callbacker15 x
+    x.should.equal 6 * 2 * 2
+    done()
