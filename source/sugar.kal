@@ -103,6 +103,9 @@ function noparen_function_calls (tokens)
       out_tokens.push token
     last_token = token
     i += 1
+  while closures.length > 0
+    closure = closures.pop()
+    out_tokens.push({text:closure, line:token.line, value:closure, type:'LITERAL'}) if closure isnt ''
   return out_tokens
 
 function coffee_style_functions (tokens)
