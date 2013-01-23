@@ -1,8 +1,8 @@
 language: node_js
 before_script:
-  - pushd ~ && npm install kal && popd
+  - sudo npm install -g kal
   - mkdir compiled
-  - ~/node_modules/kal/scripts/kal -o compiled/ source/*
+  - npm run-script prepublish
 node_js:
   - 0.6
   - 0.8
