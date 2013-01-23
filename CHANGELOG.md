@@ -1,5 +1,15 @@
 #Change Log
 
+### [0.4.0](https://github.com/rzimmerman/kal/compare/r0.3.2...r0.4.0)
+* Added support for `wait for` statements which simplify callback use
+* `wait for` statements are supported inside conditionals and loops
+* `for` loops have a `parallel` or `series` specifier available for when they contain `wait for` statements
+* `try` blocks also support `wait for` statements
+* Fixed some bugs with tail conditionals
+* Fixed a bug where parentheses were not optional if the last line of a file was a function call
+* Output files are now beautified by default using uglify-js. They can also be minified or "compact" which is just standard output without most of the whitespace.
+* Known issues: the REPL is not really complete (scope is reset between each line) and running a script directly from the command line using `kal script.kal` doesn't always work right. Compiling a script using `kal -o out_dir/ script.kal` works fine.
+
 ### [0.3.2](https://github.com/rzimmerman/kal/compare/r0.3.1...r0.3.2)
 * Better error reporting from the compiler
 * List comprehension over objects is supported using the syntaxes:
