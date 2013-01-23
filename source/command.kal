@@ -47,9 +47,9 @@ run = function run()
     if options.output exists
       js_output = Kal.compile fs.readFileSync(file_name), compile_options
       if options.format is 'minify'
-        js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code
+        js_output = require('uglify-js').minify(js_output, {fromString:yes}).code
       else if options.format isnt 'concise'
-        js_output = require('uglify-js').minify(js_output, {fromString:yes,output:{beautify:yes}}).code
+        js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no,output:{beautify:yes}}).code
       printLine js_output if options.javascript
       fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
     else
