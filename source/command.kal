@@ -44,6 +44,8 @@ run = function run()
   
   
   for file_name in options._
+    compile_options.filename = file_name
+    compile_options.module_name = file_name.split('.')[0]
     if options.output exists
       js_output = Kal.compile fs.readFileSync(file_name), compile_options
       if options.format is 'minify'
@@ -53,6 +55,7 @@ run = function run()
       printLine js_output if options.javascript
       fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
     else
+      compile_options.sandbox = yes
       Kal.eval fs.readFileSync(file_name), compile_options
 exports.run = run
 

@@ -31,48 +31,36 @@ exports.eval = (code, options) ->
   options = {} if options doesnt exist
   code = code.toString().trim()
   return when code is ""
-  vm   = require 'vm'
-  path = require 'path'
-  Script = vm.Script
-  if Script
-    if options.sandbox exists
-      if options.sandbox instanceof Script.createContext().constructor
-        sandbox = options.sandbox
-      else
-        sandbox = Script.createContext()
-        for k of options.sandbox
-          sandbox[k] = options.sandbox[k] if options.sanbox.hasOwnProperty k
-      sandbox.GLOBAL = sandbox
-      sandbox.root   = sandbox
-      sandbox.global = sandbox
-    else
-      sandbox = global
-    sandbox.__filename = options.filename or 'eval'
-    sandbox.__dirname  = path.dirname sandbox.__filename
-    # define module/require only if they chose not to specify their own
-    unless sandbox isnt global or sandbox.module or sandbox.require
-      Module = require 'module'
-      _module  = new Module(options.modulename or 'eval')
-      sandbox.module  = _module
-      _require = (path) ->
-        Module._load path, _module, true
-      sandbox.require = _require
-      _module.filename = sandbox.__filename
-      for r in Object.getOwnPropertyNames(require)
-        if r isnt 'paths'
-          _require[r] = require[r]
-      # use the same hack node currently uses for their own REPL
-      _module.paths = Module._nodeModulePaths process.cwd()
-      _require.paths = _module.paths
-      _require.resolve = (request) ->
-        Module._resolveFilename request, _module
   o = {}
   for k of options
-    if options.hasOwnProperty(k)
-      o[k] = options[k]
+    o[k] = options[k]
   js = compile code, o
   console.log(js) when options.show_js
-  if sandbox is global
-    return vm.runInThisContext js
-  else
+  vm   = require 'vm'
+  path = require 'path'
+  if options.sandbox
+    sandbox = vm.createContext(global)
+    sandbox.__filename = options.filename or 'eval'
+    sandbox.__dirname  = path.dirname sandbox.__filename
+    Module = require 'module'
+    _module  = new Module(options.modulename or 'eval')
+    sandbox.module  = _module
+    _require = (path) ->
+      return Module._load path, _module, true
+    sandbox.require = _require
+    _module.filename = sandbox.__filename
+    for r in Object.getOwnPropertyNames(require)
+      if r isnt 'paths'
+        _require[r] = require[r]
+    # use the same hack node currently uses for their own REPL
+    _module.paths = Module._nodeModulePaths process.cwd()
+    _require.paths = _module.paths
+    _require.resolve = (request) ->
+      return Module._resolveFilename request, _module
     return vm.runInContext js, sandbox
+  else
+    return vm.runInThisContext js
+  #unless options.sandbox
+  #  for global_var of sandbox
+  #    global[global_var] = sandbox[global_var]
+  #return rv

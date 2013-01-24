@@ -113,7 +113,7 @@ function run (buffer)
   backlog = ""
   try
     _ = global._
-    returnValue = Kal.eval(code, {filename: 'repl', modulename: 'repl', bare:yes})
+    returnValue = Kal.eval(code, {filename: 'repl', modulename: 'repl', bare:yes, sandbox:no})
     if returnValue is undefined
       global._ = _
     repl.output.write "#{inspect(returnValue, no, 2, enableColors)}\n"
