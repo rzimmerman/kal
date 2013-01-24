@@ -1,5 +1,8 @@
 #Change Log
 
+### [0.4.1](https://github.com/rzimmerman/kal/compare/r0.4.0...r0.4.1)
+* Fixed the REPL and executable to actually work correctly
+
 ### [0.4.0](https://github.com/rzimmerman/kal/compare/r0.3.2...r0.4.0)
 * Added support for `wait for` statements which simplify callback use
 * `wait for` statements are supported inside conditionals and loops
