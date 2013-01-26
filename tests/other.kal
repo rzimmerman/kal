@@ -49,3 +49,12 @@ describe 'Other', ->
   it 'should be able to handle function calls at the end of a file', ->
     b = Kal.eval 'function test(a)\n  return a + 5\ntest 3', {sandbox:yes,bare:yes}
     b.should.equal 8
+    
+  #gh-28
+  it 'should correctly add parentheses to strings with embedded code', ->
+    function tester(a,b)
+      return a + b
+    c = "test"
+    r = tester "this is a #{c}", " of strings"
+    r.should.equal "this is a test of strings"
+    
