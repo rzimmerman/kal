@@ -701,6 +701,7 @@ function apply_generator_to_grammar()
     rv = "try {"
     return rv
   me.TryCatch.prototype.js_wrapper_catch = ->
+    try_block_stack[0].in_catch = yes when try_block_stack[0] exists #bit of a hack until we support catch callbacks
     rv = "}"
     loop_clearout_js = ""
     if me.catch_block exists
@@ -713,6 +714,7 @@ function apply_generator_to_grammar()
     else if me.closeout_callback exists
       rv += "return #{me.closeout_callback}();"
     rv += '}'
+    try_block_stack[0].in_catch = no when try_block_stack[0] exists 
     return rv
     
   me.SuperStatement.prototype.js = ->
@@ -726,6 +728,7 @@ function apply_generator_to_grammar()
     return rv
     
   me.WaitForStatement.prototype.js = ->
+    throw new Error "wait fors not supported in catch blocks" when try_block_stack[0]?.in_catch
     me.new_callback = create_callback()
     me.rvalue.callback_args = me.lvalue
     me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback

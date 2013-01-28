@@ -23,4 +23,14 @@ describe 'Try/Catch/Throw Statements', ->
     (z exists).should.be.false
     x.should.equal 1
     y.should.equal 2
-  
+    
+  it 'should fail to compile if there are callbacks in the catch clause (not supported)', ->
+    Kal = require '../compiled/kal'
+    thrown = no
+    try
+      b = Kal.eval 'function x()\n  try\n    x = 1\n  catch e\n    wait for x from callbackthing()\n', {sandbox:yes,bare:yes}
+    catch e
+      thrown = yes
+      e.should.match /not supported/ig
+    thrown.should.be.true
+    
