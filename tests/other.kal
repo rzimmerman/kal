@@ -23,6 +23,21 @@ describe 'Other', ->
          5]
     a.should.eql [1,2,3,4,5]
   
+  #gh-46
+  it "should support coffee-style object declarations", ->
+    b = x:2
+    b.should.eql {'x':2}
+    c = x:2, y:{'a':1}
+    c.should.eql {'x':2,'y':{'a':1}}
+    d = 
+      x:2
+      y:
+        a:1
+      'z':[1
+        2
+        3]
+    d.should.eql {x:2,y:{a:1},z:[1,2,3]}
+  
   #gh-47
   it 'should correctly support chained conditionals', ->
     t1 = {'callback':1,'is_else_if':yes,'isnt_else_if':no}
