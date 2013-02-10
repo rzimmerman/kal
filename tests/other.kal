@@ -25,19 +25,10 @@ describe 'Other', ->
   
   #gh-46
   it "should support coffee-style object declarations", ->
-    b = x:2
-    b.should.eql {'x':2}
-    c = x:2, y:{'a':1}
-    c.should.eql {'x':2,'y':{'a':1}}
-    d = 
-      x:2
-      y:
-        a:1
-      'z':[1
-        2
-        3]
-    d.should.eql {x:2,y:{a:1},z:[1,2,3]}
-  
+    d = Kal.eval "d =\n  x:2\n  y:\n    a:1\n    b:\n      n:'hey',m:'you'\n  'z':[1\n    2\n    3]\nd", {sandbox:yes,bare:yes}
+    expect = {x:2,y:{a:1,b:{n:'hey',m:'you'}},z:[1,2,3]}
+    expect.should.eql d
+    
   #gh-47
   it 'should correctly support chained conditionals', ->
     t1 = {'callback':1,'is_else_if':yes,'isnt_else_if':no}

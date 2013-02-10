@@ -27,7 +27,7 @@ function clean (tokens)
   return out_tokens
 
 function multiline_statements (tokens)
-  # allow multi-line statements with line breaks after commas, colons, and equal signs
+  # allow multi-line statements with line breaks after commas
   out_tokens = []
   last_token = null
   continue_line = no
@@ -35,7 +35,7 @@ function multiline_statements (tokens)
   
   for token in tokens
     skip_token = no
-    if last_token?.value in [',','=',':'] and token.type is 'NEWLINE'
+    if last_token?.value in [','] and token.type is 'NEWLINE'
       continue_line = yes
       skip_token = yes
     else if continue_line
@@ -184,11 +184,11 @@ function multiline_lists (tokens)
   for token in tokens
     skip_this_token = no
     token_is_white = (token.type in ['NEWLINE','INDENT', 'DEDENT'] or token.value is ',')
-    if token.value is '['
+    if token.value is '[' or token.value is '{'
       list_depth += 1 
       indent_depths.push indent_depth
       indent_depth = 0
-    else if token.value is ']'
+    else if token.value is ']' or token.value is '}'
       list_depth -= 1
       leftover_indent = indent_depth
       indent_depth = indent_depths.pop()

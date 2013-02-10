@@ -210,7 +210,7 @@ class UnaryExpression inherits from ASTBase
     return yes
   method parse()
     me.preop       = me.opt_val 'not', 'new', '-'
-    me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
+    me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, ImplicitMapExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
     #if a paren expression occurs immediately after the function block dedent, this would
     #normally be interpreted as a function call on the function expression. While this may
     #be desired it is usually just confusing, so we explicitly avoid it here.
@@ -344,14 +344,31 @@ class MapItem inherits from ASTBase
     me.end_token = me.req_val ',', '}'
     if me.end_token.value is '}'
       me.ts.prev()
-    
+
+class ImplicitMapItem inherits from MapItem
+  method parse()
+    me.key = me.req Expression
+    me.req_val ':'
+    me.lock()
+    me.val = me.req Expression
+    unless me.val.left?.base instanceof ImplicitMapExpression
+      me.end_token = me.opt_multi 'NEWLINE'
+      me.end_token = me.req_val ',' when me.end_token.length is 0
+
 class MapExpression inherits from ASTBase
   method parse()
     me.req_val '{'
     me.lock()
     me.items = me.opt_multi MapItem
     me.req_val '}'
-    
+
+class ImplicitMapExpression inherits from MapExpression
+  method parse()
+    me.req 'NEWLINE'
+    me.indents = me.req_multi 'INDENT'
+    me.lock()
+    me.items = me.req_multi ImplicitMapItem
+    me.req 'DEDENT'
   
 class Ellipsis inherits from ASTBase
   method parse()
@@ -402,7 +419,7 @@ class SuperStatement inherits from ASTBase
     me.lock()
     me.accessor = me.opt FunctionCall
 
-Nodes = [ASTBase,File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,ObjectComprehension,MapItem,MapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement,BlockWithoutIndent,WaitForStatement,MultipleReturnValues]
+Nodes = [ASTBase,File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,ObjectComprehension,MapItem,MapExpression,ImplicitMapItem,ImplicitMapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement,BlockWithoutIndent,WaitForStatement,MultipleReturnValues]
 
 exports.Grammar = {}
 for v in Nodes
