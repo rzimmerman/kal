@@ -1,5 +1,10 @@
 #Change Log
 
+### [0.4.2](https://github.com/rzimmerman/kal/compare/r0.4.1...r0.4.2)
+* Added support for no-brace multiline CoffeeScript style object assignments
+* Fixed a bug with double quoted strings as the first argument to function calls
+* Better error messages for when `wait for` statements get included in `catch` blocks
+
 ### [0.4.1](https://github.com/rzimmerman/kal/compare/r0.4.0...r0.4.1)
 * Fixed the REPL and executable to actually work correctly
 
