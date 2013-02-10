@@ -1,7 +1,10 @@
 ast = require './ast'
 ASTBase = ast.ASTBase
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series']
+KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
+            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
+            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',
+            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series']
 
 class Block inherits from ASTBase
   method parse()
@@ -419,7 +422,13 @@ class SuperStatement inherits from ASTBase
     me.lock()
     me.accessor = me.opt FunctionCall
 
-Nodes = [ASTBase,File,Block,Statement,ThrowStatement,ReturnStatement,IfStatement,ElseStatement,WhileStatement,ForStatement,DeclarationStatement,AssignmentStatement,ExpressionStatement,BlankStatement,BinOp,Expression,UnaryExpression,ExisentialCheck,WhenExpression,NumberConstant,StringConstant,RegexConstant,IndexExpression,PropertyAccess,FunctionCallArgument,FunctionCall,ParenExpression,ListExpression,ListComprehension,ObjectComprehension,MapItem,MapExpression,ImplicitMapItem,ImplicitMapExpression,Ellipsis,FunctionDefArgument,FunctionExpression,ClassDefinition,TryCatch,SuperStatement,BlockWithoutIndent,WaitForStatement,MultipleReturnValues]
+Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement,
+         WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement,
+         BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant,
+         StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall,
+         ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
+         ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, 
+         ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, MultipleReturnValues]
 
 exports.Grammar = {}
 for v in Nodes

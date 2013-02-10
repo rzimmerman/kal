@@ -34,7 +34,7 @@ class TokenStream
     if me.index > me.tokens.length - 1
       me.current = {type: 'EOF', text: '', line: 0, value: ''}
     else if me.index < 0
-      throw('Parser Error: tried to read before beginning of file')
+      throw 'Parser Error: tried to read before beginning of file'
     else
       me.current = me.tokens[me.index]
     me.type = me.current.type

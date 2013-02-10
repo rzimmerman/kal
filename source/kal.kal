@@ -60,7 +60,3 @@ exports.eval = (code, options) ->
     return vm.runInContext js, sandbox
   else
     return vm.runInThisContext js
-  #unless options.sandbox
-  #  for global_var of sandbox
-  #    global[global_var] = sandbox[global_var]
-  #return rv

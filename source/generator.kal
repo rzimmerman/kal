@@ -1,4 +1,31 @@
-KEYWORD_TRANSLATE = {'yes':'true','on':'true','no':'false','off':'false','is':'===','isnt':'!==','==':'===','!=':'!==','and':'&&','but':'&&','or':'||','xor':'^','^':'pow','not':'!','new':'new ','me':'this','this':'this','null':'null','nothing':'null','none':'null','break':'break','throw':'throw','raise':'throw','instanceof':'instanceof','of':'in','EndOfList':'undefined','fail':'throw'}
+KEYWORD_TRANSLATE = 
+  'yes':        'true'
+  'on':         'true'
+  'no':         'false'
+  'off':        'false'
+  'is':         '==='
+  'isnt':       '!=='
+  '==':         '==='
+  '!=':         '!=='
+  'and':        '&&'
+  'but':        '&&'
+  'or':         '||'
+  'xor':        '^'
+  '^':          'pow'
+  'not':        '!'
+  'new':        'new '
+  'me':         'this'
+  'this':       'this'
+  'null':       'null'
+  'nothing':    'null'
+  'none':       'null'
+  'break':      'break'
+  'throw':      'throw'
+  'raise':      'throw'
+  'instanceof': 'instanceof'
+  'of':         'in'
+  'EndOfList':  'undefined'
+  'fail':       'throw'
 
 load = function load (grammar)
   apply_generator_to_grammar.apply grammar
@@ -757,4 +784,9 @@ function apply_generator_to_grammar()
     rv += me.block.js_closeout()
     return rv
     
-  snippets = {'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };', 'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }', 'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};', 'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}', 'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'}
+  snippets = 
+    'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
+    'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'
+    'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'
+    'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'
+    'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'
