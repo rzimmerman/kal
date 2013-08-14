@@ -413,6 +413,7 @@ class TryCatch inherits from ASTBase
     me.lock()
     me.try_block = me.req Block
     if me.opt_val('catch')
+      me.lock()
       me.identifier = me.req 'IDENTIFIER'
       me.catch_block = me.req Block
   
