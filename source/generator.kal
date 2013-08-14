@@ -733,7 +733,7 @@ function apply_generator_to_grammar()
     rv = "}"
     loop_clearout_js = ""
     if me.catch_block exists
-      rv += " catch (#{me.identifier.value}) {"
+      rv += " catch (#{me.identifier?.value or 'k$e'}) {"
       rv += me.catch_block.js() + me.catch_block.js_closeout()
     else
       rv += " catch (k$e) {"

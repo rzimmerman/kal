@@ -414,7 +414,7 @@ class TryCatch inherits from ASTBase
     me.try_block = me.req Block
     if me.opt_val('catch')
       me.lock()
-      me.identifier = me.req 'IDENTIFIER'
+      me.identifier = me.opt 'IDENTIFIER'
       me.catch_block = me.req Block
   
 class SuperStatement inherits from ASTBase
