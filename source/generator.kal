@@ -135,6 +135,7 @@ function apply_generator_to_grammar()
     rv = [snip, code].join '\n'
     for comment in me.ts.comments # reset the AST modifications in case something else wants to use it
       comment.written = null
+    rv += "}" when current_callback isnt 'k$cb0'
     return pop_scope(rv, not options.bare)
     
   me.Statement.prototype.js = ->

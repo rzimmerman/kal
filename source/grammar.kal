@@ -30,7 +30,7 @@ class BlockWithoutIndent inherits from Block
     me.req 'NEWLINE'
     me.lock()
     me.statements = []
-    while not me.opt('DEDENT')
+    while not me.opt('DEDENT', 'EOF')
       me.statements.push me.req Statement
       me.lock()
     me.ts.prev() #unsee the dedent
