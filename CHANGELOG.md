@@ -1,5 +1,15 @@
 #Change Log
 
+### [0.4.3](https://github.com/rzimmerman/kal/compare/r0.4.2...r0.4.3)
+* Fixed a bug with `for parallel` blocks that could cause them to return multiple times
+* Better syntax error reporting in `catch` blocks
+* Added support for `catch` blocks with no error variable
+* `wait for` statements now work in the main file body instead of just in functions
+* Added support for `safe wait for` for functions that don't call back with an error argument
+* `wait for` statements now work in the REPL and bare files
+* Added the `pass` keyword for blank statements (like Python)
+* Added the `print` keyword as an alias for `console.log`
+
 ### [0.4.2](https://github.com/rzimmerman/kal/compare/r0.4.1...r0.4.2)
 * Added support for no-brace multiline CoffeeScript style object assignments
 * Fixed a bug with double quoted strings as the first argument to function calls
