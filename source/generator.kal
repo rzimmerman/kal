@@ -441,6 +441,7 @@ function apply_generator_to_grammar()
       rv += "if (--#{loop_counter} == 0) return #{me.callback}();"
       rv += "}"
       rv += "})(1);"
+      rv += "return;"
       rv += "function #{me.callback}() {"
       rv += render_try_blocks()
       me.parent_block.closeout_callback = me.original_callback

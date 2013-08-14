@@ -148,7 +148,21 @@ describe 'Wait For Statement', ->
     for o in output
       (o in expected).should.be.true
     done()
-    
+  
+  it 'should only call back once from for parallel loops', (done) -> # gh-63
+    function callbacker99(next)
+      setTimeout next, 0
+    counter = 0
+    task callbacker98()
+      for parallel i in [1,2,3,4]
+        wait for ish from callbacker99()
+        counter += 1
+      return counter
+    wait for c from callbacker98()
+    c.should.equal 4
+    done()
+
+
   it 'should work inside of for serial in loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
