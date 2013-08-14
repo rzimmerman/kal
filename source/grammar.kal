@@ -126,6 +126,7 @@ class AssignmentStatement inherits from ASTBase
     
 class WaitForStatement inherits from ASTBase
   method parse()
+    me.no_errors = me.opt_val 'safe'
     me.req_val 'wait'
     me.lock()
     me.req_val 'for'

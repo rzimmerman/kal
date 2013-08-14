@@ -364,3 +364,20 @@ describe 'Wait For Statement', ->
     wait for x from callbacker15 x
     x.should.equal 6 * 2 * 2
     done()
+
+  it 'should support a "safe wait for" syntax for nonstandard callbacks', (done) ->
+    function nscallbacker1(arg1, next)
+      next arg1 * 10
+    task callbacker97(arg1)
+      return arg1 * 20
+    a = 3
+    safe wait for x from nscallbacker1 a
+    x.should.equal 30
+    try
+      wait for x from nscallbacker1 a
+    catch e
+      e.should.equal 30
+    safe wait for x, y from callbacker97(a)
+    (x exists).should.be.false
+    y.should.equal 60
+    done()

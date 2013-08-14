@@ -766,7 +766,7 @@ function apply_generator_to_grammar()
       rv = me.conditional.js(rv, no)
       rv += "return #{me.new_callback}();"
     rv_block = ""
-    arg_i = 1
+    arg_i = 0 when me.no_errors otherwise 1
     for argument in me.lvalue.arguments
       rv_block += "#{argument.base.value} = arguments[#{arg_i}];"
       scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
@@ -776,7 +776,7 @@ function apply_generator_to_grammar()
     rv_block += me.block.js()
     rv += "function #{me.new_callback} () {"
     rv += render_try_blocks()
-    rv += "if (arguments[0] != null) throw arguments[0];"
+    rv += "if (arguments[0] != null) throw arguments[0];" except when me.no_errors
     rv += rv_block
     if me.in_conditional or me.in_loop
       use_snippets['async'] = snippets['async']
