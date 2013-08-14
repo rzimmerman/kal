@@ -127,6 +127,7 @@ function apply_generator_to_grammar()
     class_def = {name: '',code: '',args: [],has_constructor: no}
     use_snippets = {}
     me.callback = current_callback
+    me.bare = options.bare
     code = self.Block.prototype.js.apply me
     snip = []
     for key of use_snippets
@@ -758,13 +759,14 @@ function apply_generator_to_grammar()
     
   me.WaitForStatement.prototype.js = ->
     throw new Error "wait fors not supported in catch blocks" when try_block_stack[0]?.in_catch
+    prefix = "" if me.parent_block.bare otherwise "return "
     me.new_callback = create_callback()
     me.rvalue.callback_args = me.lvalue
     me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
-    rv = "return #{me.rvalue.js()};"
+    rv = "#{prefix} #{me.rvalue.js()};"
     if me.conditional exists
       rv = me.conditional.js(rv, no)
-      rv += "return #{me.new_callback}();"
+      rv += "#{prefix} #{me.new_callback}();"
     rv_block = ""
     arg_i = 0 when me.no_errors otherwise 1
     for argument in me.lvalue.arguments
@@ -780,9 +782,9 @@ function apply_generator_to_grammar()
     rv += rv_block
     if me.in_conditional or me.in_loop
       use_snippets['async'] = snippets['async']
-      rv += "return $kasync(#{me.parent_block.callback},this);"
+      rv += "#{prefix} $kasync(#{me.parent_block.callback},this);"
     else if scope['k$next']
-      rv += "return k$next ? k$next() : void 0;"
+      rv += "#{prefix} k$next ? k$next() : void 0;"
     rv += me.block.js_closeout()
     return rv
     
