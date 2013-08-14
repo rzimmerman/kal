@@ -39,24 +39,30 @@ exports.eval = (code, options) ->
   vm   = require 'vm'
   path = require 'path'
   if options.sandbox
-    sandbox = vm.createContext(global)
-    sandbox.__filename = options.filename or 'eval'
-    sandbox.__dirname  = path.dirname sandbox.__filename
-    Module = require 'module'
-    _module  = new Module(options.modulename or 'eval')
-    sandbox.module  = _module
-    _require = (path) ->
-      return Module._load path, _module, true
-    sandbox.require = _require
-    _module.filename = sandbox.__filename
-    for r in Object.getOwnPropertyNames(require)
-      if r isnt 'paths'
-        _require[r] = require[r]
-    # use the same hack node currently uses for their own REPL
-    _module.paths = Module._nodeModulePaths process.cwd()
-    _require.paths = _module.paths
-    _require.resolve = (request) ->
-      return Module._resolveFilename request, _module
+    sandbox = exports.makeSandbox(options) if options.sandbox is yes otherwise options.sandbox
     return vm.runInContext js, sandbox
   else
     return vm.runInThisContext js
+
+exports.makeSandbox = (options) ->
+  vm   = require 'vm'
+  path = require 'path'
+  sandbox = vm.createContext(global)
+  sandbox.__filename = options?.filename or 'eval'
+  sandbox.__dirname  = path.dirname sandbox.__filename
+  Module = require 'module'
+  _module  = new Module(options?.modulename or 'eval')
+  sandbox.module  = _module
+  _require = (path) ->
+    return Module._load path, _module, true
+  sandbox.require = _require
+  _module.filename = sandbox.__filename
+  for r in Object.getOwnPropertyNames(require)
+    if r isnt 'paths'
+      _require[r] = require[r]
+  # use the same hack node currently uses for their own REPL
+  _module.paths = Module._nodeModulePaths process.cwd()
+  _require.paths = _module.paths
+  _require.resolve = (request) ->
+    return Module._resolveFilename request, _module
+  return sandbox
