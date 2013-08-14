@@ -73,3 +73,6 @@ describe 'Other', ->
     tttt()
     pass
     a.should.equal 1
+
+  it 'should alias print to console.log', ->
+    print.should.equal console.log

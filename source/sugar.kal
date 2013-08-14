@@ -6,7 +6,7 @@ NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isn
                  'except','for','with','wait','task','fail','parallel','series','safe']
 
 function translate_sugar (tokens, options, tokenizer)
-  out_tokens = coffee_style_functions noparen_function_calls multiline_statements multiline_lists clean code_in_strings tokens, tokenizer
+  out_tokens = coffee_style_functions print_statement noparen_function_calls multiline_statements multiline_lists clean code_in_strings tokens, tokenizer
   if options?.show_tokens
     debug = []
     for t in out_tokens
@@ -222,3 +222,13 @@ function multiline_lists (tokens)
     last_token_was_white = token_is_white and (list_depth > 0)
   return out_tokens
   
+function print_statement (tokens)
+  new_tokens = []
+  for token in tokens
+    if token.value is 'print' and token.type is 'IDENTIFIER'
+      new_tokens.push {text:'print', line:token.line, value:'console', type:'IDENTIFIER'}
+      new_tokens.push {text:'print', line:token.line, value:'.', type:'LITERAL'}
+      new_tokens.push {text:'print', line:token.line, value:'log', type:'IDENTIFIER'}
+    else
+      new_tokens.push token
+  return new_tokens
