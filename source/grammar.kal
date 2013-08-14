@@ -4,7 +4,8 @@ ASTBase = ast.ASTBase
 KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
             'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',
-            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series']
+            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series',
+            'pass']
 
 class Block inherits from ASTBase
   method parse()
@@ -166,7 +167,12 @@ class ExpressionStatement inherits from ASTBase
 
 class BlankStatement inherits from ASTBase
   method parse()
-    me.req 'NEWLINE'
+    if me.opt_val 'pass'
+      me.lock()
+      me.req 'NEWLINE', 'EOF'
+      me.ts.prev()
+    else
+      me.req 'NEWLINE'
 
 class BinOp inherits from ASTBase
   method parse()

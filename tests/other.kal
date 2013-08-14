@@ -63,4 +63,13 @@ describe 'Other', ->
     c = "test"
     r = tester "this is a #{c}", " of strings"
     r.should.equal "this is a test of strings"
-    
+  
+  #gh-33  
+  it 'should support the pass statement for blank statements', ->
+    pass
+    a = 1
+    function tttt()
+      pass
+    tttt()
+    pass
+    a.should.equal 1
