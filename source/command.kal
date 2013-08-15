@@ -44,22 +44,38 @@ run = function run()
   compile_options.bare = no
   compile_options.show_js = options.javascript
   
-  
-  for file_name in options._
-    compile_options.filename = file_name
-    compile_options.module_name = file_name.split('.')[0]
-    if options.output exists
-      js_output = Kal.compile fs.readFileSync(file_name), compile_options
-      if options.format is 'minify'
+  if options.output exists
+    # if the user just specified one directory, assume they just want all the files in it
+    if options._.length is 1 and fs.statSync(options._[0]).isDirectory()
+      files = [path.join(options._[0],file) for file in fs.readdirSync(options._[0])]
+      compile_files files, options.output, compile_options, options.format
+    else
+      compile_files options._, options.output, compile_options, options.format
+  else
+    compile_options.sandbox = yes
+    for filename in options._
+      Kal.eval fs.readFileSync(filename), compile_options
+exports.run = run
+
+function compile_files(filenames, output_dir, options, format)
+  for filename in filenames
+    stat = fs.statSync filename
+    if stat.isDirectory()
+      new_outdir = path.join(output_dir, path.basename(filename))
+      fs.mkdirSync new_outdir, stat.mode
+      subfiles = [path.join(filename, child) for child in fs.readdirSync(filename)]
+      compile_files subfiles, new_outdir, options, format
+    else if path.extname(filename) is '.kal'
+      options.filename = filename
+      options.module_name = path.basename(filename, '.kal')
+      js_output = Kal.compile fs.readFileSync(filename), options
+      if format is 'minify'
         js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code
-      else if options.format isnt 'concise'
+      else if format isnt 'concise'
         js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no,output:{beautify:yes}}).code
       printLine js_output if options.javascript
-      fs.writeFileSync(options.output + '/' + file_name.split('/').slice(-1)[0].replace('.kal','.js'), js_output)
-    else
-      compile_options.sandbox = yes
-      Kal.eval fs.readFileSync(file_name), compile_options
-exports.run = run
+      js_filename = path.join(output_dir, path.basename(filename, '.kal')) + '.js'
+      fs.writeFileSync js_filename, js_output
 
 function version()
   printLine "Kal version #{Kal.VERSION}"
