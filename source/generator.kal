@@ -165,7 +165,7 @@ function apply_generator_to_grammar()
     return rv
     
   me.ThrowStatement.prototype.js = ->  
-    if scope['k$next'] exists
+    if try_block_stack.length is 0 but scope['k$next'] exists
       rv = "return k$next.apply(this, [#{me.expr.js()}]);"
     else
       rv = "throw #{me.expr.js()};"
@@ -719,7 +719,7 @@ function apply_generator_to_grammar()
     return rv
   me.TryCatch.prototype.js_callbacks = ->
     rv = me.js_wrapper_try()
-    me.try_block.original_callback = me.original_callback
+    me.try_block.original_callback = me.callback
     rv += me.try_block.js() + me.try_block.js_closeout()
     rv += me.js_wrapper_catch()
     rv += "function #{me.callback}() {"

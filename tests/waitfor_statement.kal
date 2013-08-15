@@ -381,3 +381,26 @@ describe 'Wait For Statement', ->
     (x exists).should.be.false
     y.should.equal 60
     done()
+
+it 'should work with other nested cases', (done) ->
+  task tester99(ev)
+    task thing()
+      return 'text'
+    try
+      if ev.match /.*\.txt/
+        wait for return_text from thing()
+        ev.should.equal 'test.txt'
+      else if ev is 'error'
+        throw 'ish'
+      else
+        # for a non-text file, asynchronously read the file size
+        wait for file_stats from thing()
+        return_text = 'File of size '+ file_stats
+        ev.should.equal 'test.dat'
+      (return_text in ['text', 'File of size text']).should.be.true
+    catch e
+      e.should.equal 'ish'
+      ev.should.equal 'error'
+  for series text in ['test.txt','test.dat','error']
+    wait for n from tester99 text
+  done()
