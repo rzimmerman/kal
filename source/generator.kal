@@ -763,10 +763,10 @@ function apply_generator_to_grammar()
     me.new_callback = create_callback()
     me.rvalue.callback_args = me.lvalue
     me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
-    rv = "#{prefix} #{me.rvalue.js()};"
+    rv = "#{prefix}#{me.rvalue.js()};"
     if me.conditional exists
       rv = me.conditional.js(rv, no)
-      rv += "#{prefix} #{me.new_callback}();"
+      rv += "#{prefix}#{me.new_callback}();"
     rv_block = ""
     arg_i = 0 when me.no_errors otherwise 1
     for argument in me.lvalue.arguments
@@ -782,9 +782,9 @@ function apply_generator_to_grammar()
     rv += rv_block
     if me.in_conditional or me.in_loop
       use_snippets['async'] = snippets['async']
-      rv += "#{prefix} $kasync(#{me.parent_block.callback},this);"
+      rv += "#{prefix}$kasync(#{me.parent_block.callback},this);"
     else if scope['k$next']
-      rv += "#{prefix} k$next ? k$next() : void 0;"
+      rv += "#{prefix}k$next ? k$next() : void 0;"
     rv += me.block.js_closeout()
     return rv
     
