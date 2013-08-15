@@ -34,13 +34,3 @@ describe 'Try/Catch/Throw Statements', ->
       e.should.match /not supported/ig
     thrown.should.be.true
     
-  it 'should allow a catch block with no error variable', ->
-    try
-      x = 1
-      y = 2
-      throw 'e'
-      z = 3
-    catch
-      x.should.equal 1
-      y.should.equal 2
-    (z exists).should.be.false
