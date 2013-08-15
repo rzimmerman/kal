@@ -89,8 +89,10 @@ process.on('uncaughtException', error)
 # The current backlog of multi-line code.
 backlog = ''
 
-# The current sandbox, initialized for the first call to eval
-sandbox = null
+# The current sandbox. We run in the current scope because certain globals
+# (like Array) are not identical in a sandbox. For example, [1,2] instanceof Array
+# would be false in a sandbox.
+sandbox = global
 
 # The main REPL function. **run** is called every time a line of code is entered.
 # Attempt to evaluate the command. If there's an exception, print it out instead

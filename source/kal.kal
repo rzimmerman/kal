@@ -40,14 +40,25 @@ exports.eval = (code, options) ->
   path = require 'path'
   if options.sandbox
     sandbox = exports.makeSandbox(options) if options.sandbox is yes otherwise options.sandbox
-    return vm.runInContext js, sandbox
   else
+    sandbox = global
+  if sandbox is global
+    if sandbox.module doesnt exist and sandbox.require doesnt exist
+      sandbox = exports.makeSandbox sandbox, options
     return vm.runInThisContext js
+  else
+    return vm.runInContext js, sandbox
 
-exports.makeSandbox = (options) ->
+exports.makeSandbox = (sandbox, options) ->
   vm   = require 'vm'
   path = require 'path'
-  sandbox = vm.createContext(global)
+  if sandbox doesnt exist
+    sandbox = vm.createContext(global)
+  else if not (sandbox instanceof vm.Script.createContext().constructor) but sandbox isnt global
+    new_sandbox = vm.createContext(global)
+    for k of sandbox
+      new_sandbox[k] = sandbox[k]
+    sandbox = new_sandbox
   sandbox.__filename = options?.filename or 'eval'
   sandbox.__dirname  = path.dirname sandbox.__filename
   Module = require 'module'
