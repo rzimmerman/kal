@@ -20,7 +20,7 @@
   },
   "scripts": {
 	"make": "kal -f compact -o compiled/ source/*.kal",
-	"prepublish": "kal -o compiled/ source/*.kal && scripts/kal -f minify -o compiled/ source/*.kal && npm test",
+	"bootstrap": "kal -o compiled/ source/*.kal && scripts/kal -f minify -o compiled/ source/*.kal && npm test",
   "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
   },
   "homepage":     "https://github.com/rzimmerman/kal",

@@ -2,7 +2,7 @@ language: node_js
 before_script:
   - npm install -g kal
   - mkdir compiled
-  - npm run-script prepublish
+  - npm run-script bootstrap
 node_js:
   - 0.6
   - 0.8
