@@ -13,7 +13,9 @@ function hidden(file)
   /^\.|~$/.test file
 
 function parseOptions()
-  BANNER = 'Usage: kal [options] path/to/script.kal\n\nIf called without options, `kal` will run your script.\n$0'
+  BANNER = 'Usage: kal [options] SOURCE [-o OUTPUT_DIR]\n\n'
+  BANNER += 'If called without the -o option, `kal` will run SOURCE.\n'
+  BANNER += 'If called without any options, `kal` will start an interactive session.\n'
   optimist = optimist.usage(BANNER)
   optimist = optimist.options('help',{alias:'h',boolean:yes,description:'show the command line usage options'})
   optimist = optimist.options('tokens',{alias:'t',boolean:yes,description:'print out the tokens that the lexer/sugarer produce'})
