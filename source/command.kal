@@ -52,7 +52,6 @@ run = function run()
     else
       compile_files options._, options.output, compile_options, options.format
   else
-    compile_options.sandbox = yes
     for filename in options._
       Kal.eval fs.readFileSync(filename), compile_options
 exports.run = run
