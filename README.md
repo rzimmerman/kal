@@ -4,13 +4,88 @@ Kal is a highly readable, easy-to-use language that compiles to JavaScript. It's
 
 Kal is also _expressive_ and offers many useful synonyms and constructs to make code readable in almost plain English.
 
-**If you are familiar with JavaScript and/or CoffeeScript, please check out the [wait for](#asynchronous-wait-for) section for an idea of what makes Kal special.**
-
 Kal is designed with a unique philosophy:
 
  1. Eliminate the yucky parts of JavaScript, but keep the good stuff including the compatibility, and the great server and client runtime support.
  2. Make code as readable as possible and make writing code straightforward. Eliminate the urge (and the need) to be terse and complicated.
  * Provide an alternative to callbacks (which look weird) and promises (which are weird) while providing excellent, easy-to-use asynchronous support.
+
+Check out the [examples](./examples) for some sample use cases.
+
+## Asynchronous Wait
+
+`wait for` allows a function to pause asynchronously, then resume when a task is complete. For example, the following JavaScript:
+```javascript
+var getUserFriends(userName, next) {
+    db.users.findOne({name:userName}, function (err, user) {
+        if (err != null) return next(err);
+        db.friends.find({userId:user.id}, function (err, friends) {
+            if (err != null) return next(err);
+            return next(null, friends);
+        });
+    });
+}
+```
+
+would be equivalent to this in Kal:
+
+```kal
+    task getUserFriends = function (userName)
+      wait for user from db.users.findOne {name:userName}
+      wait for friends from db.friends.find {userId:user.id}
+      return friends
+```
+
+This includes error handling via callbacks. Consider a more complicated example:
+
+```javascript
+async = require('async');
+
+var getUserFriends = function (userName, next) {
+    db.users.findOne({name:userName}, function (err, user) {
+        if (err != null) return next(err);
+        getFriendsById(userId, function (err, friends) {
+            if (err != null) return next(err);
+            if (user.type == 'power user') {
+                async.map(friends, getFriendsById, function (err, friendsOfFriends) {
+                    for (var i = 0; i < friendsOfFriends.length; i++) {
+                        for (var j = 0; j < friendsOfFriends[i].length; j++) {
+                            if (friends.indexOf(friendsOfFriends[i][j]) != -1) {
+                                friends.push(friendsOfFriends[i][j]);
+                            }
+                        }
+                    }
+                    return next(null, friends);
+                });
+            } else {
+                return next(null, friends);
+            }
+        });
+    });
+}
+var getFriendsById = function (userId, next) {
+    db.friends.find({userId:userId}, function (err, friends) {
+        if (err != null) return next(err);
+        return next(null, friends);
+    });
+}
+```
+
+Even using [async](https://github.com/caolan/async), it's lot. Here's the equivalent Kal:
+
+```kal
+task getUserFriends(userName)
+  wait for user from db.users.findOne {name:userName}
+  wait for friends from db.friends.find {userId:user.id}
+  if user.type is 'power user'
+    for parallel friend in friends
+      wait for friendsOfFriend from db.friends.find friend
+      for newFriend in friendsOfFriend
+        friends.push newFriend unless newFriend in friends
+  return friends
+```
+
+There are no additional libraries required and everything's a lot more ... vertical. Notice that the `wait for` statement works in loops, `if` statements, `try`/`catch` blocks, and all nested permutations. It's completely JavaScript compatible - `getUserFriends` would be called the same way and call back with the same results.
 
 ## Installation Using npm
 

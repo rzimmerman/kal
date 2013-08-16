@@ -1,0 +1,41 @@
+#!/usr/bin/env kal
+
+# This demo shows some of the condition constructs
+# and synonyms used in Kal
+
+steve = {name: 'Steve', age: 25, clearance: 'Double Secret'}
+
+jen = {name: 'Jen', age: 27, clearance: 'None'}
+
+# if statements work like you'd expect (like CoffeeScript)
+if jen.age is 27
+  print 'Jen is 27'
+
+if steve.name is 'Joe'
+  print 'wat'
+else if steve.name is 'Sam'
+  print 'que?'
+else
+  print 'OK'
+
+# many keywords have synonyms to make code more English-like
+# `but` is equivalent to `and`
+when jen.age < 30 but jen.clearance isnt 'Double Secret'
+  print 'ACCESS DENIED'
+otherwise
+  print 'ACCESS GRANTED'
+
+unless steve.name is 'Steve' and jen.name is 'Jen'
+  print 'bad data'
+else
+  print 'OK'
+
+except when steve.name is 'Steve'
+  print 'bad data'
+
+# Kal supports tail conditionals on statements
+name = jen.name if jen.age > 20
+age = steve.age except when steve.name is 'Steve' #assignment will not execute, age is undefined
+
+# Ternary operators also exist, and all synonyms work
+number = (20 if jen.name is 'Jen' otherwise 30)

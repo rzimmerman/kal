@@ -1,0 +1,55 @@
+#!/usr/bin/env kal
+
+# This demo shows some of the features of arrays, objects
+# and list/object comprehensions in Kal
+
+# simple list definition
+a = [1, 2, 3, 4, 5]
+
+# alternate syntax, commas are optional after line breaks
+a = [1, 2
+     3,
+     4
+     5]
+
+# simple comprehension
+b = [x * 2 for x in a]
+print b # [2, 4, 6, 8, 10]
+
+# boolean search
+print 1 in a # true
+print 1 in b # false
+
+# a simple for loop over a list
+for x in a
+    print x
+
+# JavaScript operations all work as expected
+c = a.concat b
+c.push 100
+print c # [1, 2, 3, 4, 5, 2, 4, 6, 8, 10, 100]
+
+# JavaScript-like object definition
+g = {a:1,b:2,c:{n:1}}
+
+# Multi-line syntax
+h =
+  a: 1
+  b: 2
+  c:
+    n: 1
+
+# Loop iteration is similar to CoffeeScript
+# prints a 1, b 2, c {n:1}
+for key of g
+  print key, g[key]
+
+
+# Comprehensions for objects
+keys = [k for property k in g]
+print keys # ['a', 'b', 'c']
+vals = [v for property value v in g]
+print vals #[1, 2, {n:1}]
+kvs  = [k + v.toString() for property k with value v in g]
+print kvs # ['a1','b2','c[object Object]']
+

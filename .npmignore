@@ -8,5 +8,6 @@ $RECYCLE.BIN
 dev
 source
 tests
+examples
 CHANGELOG.md
 .travis*

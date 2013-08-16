@@ -1,0 +1,63 @@
+#!/usr/bin/env kal
+
+# This demo starts a web server on port 8888 on
+# the local machine, accessible in the browser from
+# http://localhost:8000/
+
+# The root path '/' will give a listing of all files
+# in the current directory. Things to try:
+# * Click on the links. Files with .txt or .md extensions
+#   will return their contents. Other files will return the
+#   size of the file
+# * Try a bad path to see the 404 message
+# * Look at the terminal output
+
+
+# This script uses express.js, so make sure
+# you have run npm install to include dependencies
+
+fs = require 'fs'
+express = require 'express'
+
+app = express()
+
+# return a file list for the root path
+app.get '/', (req, res) ->
+  print 'Request for directory listing'
+  # this path returns HTML with links
+  res.setHeader 'Content-Type', 'text/html'
+  # asynchronous call to readdir to get the files list of the current directory
+  wait for file_list from fs.readdir '.'
+  # list comprehension to generate the list of links
+  links = ["<a href=\"#{file_name}\">#{file_name}</a>" for file_name in file_list]
+  # string inlining to generate the HTML output
+  res.send "<html><head><title>Kal Demo</title></head><body>#{links.join('<br>')}</body></html>"
+
+app.get '/:file_name', (req, res) ->
+  print "Request for #{req.params.file_name}"
+  # this route always returns plain text
+  res.setHeader 'Content-Type', 'text/plain'
+  # get the file name from the request
+  file_name = req.params.file_name
+  # try to read the file, use the catch clause if it doesn't exist
+  try
+    # check if it's a text file or markdown file
+    if file_name.match /.*\.(txt|kal)/
+      # for a text file, asynchronously read the contents
+      wait for return_text from fs.readFile file_name
+      print "...returning file contents for #{req.params.file_name}"
+    else
+      # for a non-text file, asynchronously read the file size
+      wait for file_stats from fs.stat file_name
+      return_text = 'File of size '+ file_stats.size
+      print "...returning file size for #{req.params.file_name}"
+    res.send return_text
+  catch e
+    print "...could not find #{req.params.file_name}"
+    # if any function above calls back with an error, return a 404
+    res.send 404, 'File not found'
+
+port = 8888
+app.listen 8888
+
+print "Listening on port #{port}"

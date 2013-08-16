@@ -1,0 +1,21 @@
+#!/usr/bin/env kal
+
+# This demo prints out the name and size of each
+# file in the user's home directory. It retrieves
+# the file listing and size asynchronously using
+# a standard for loop.
+
+fs = require 'fs'
+path = require 'path'
+
+# `print` is just an alias for `console.log`
+print 'Reading files...'
+# asynchronous call to readdir
+wait for file_list from fs.readdir process.env.HOME
+# execution resumes when the API function calls back with
+# a result
+for file_name in file_list
+  # an async call within a loop works like you'd expect
+  wait for stats from fs.stat path.join(process.env.HOME, file_name)
+  print file_name, stats.size
+print 'Done!'
