@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Kal by rzimmerman</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Kal</h1>
+        <h2>A powerful, easy-to-use, and easy-to-read programming language for the future</h2>
+        <a href="https://github.com/rzimmerman/kal" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="kal" class="anchor" href="#kal"><span class="octicon octicon-link"></span></a>Kal</h1>
+
+<p>Kal is a highly readable, easy-to-use language that compiles to JavaScript. It's designed to be asynchronous and can run both on <a href="http://nodejs.org/">node.js</a> and in the browser. Kal makes asynchronous programming easy and clean by allowing functions to <a href="#asynchronous-wait-for">pause and wait for I/O</a>, replacing an awkward callback syntax with a clean, simple syntax.</p>
+
+<p>Kal is also <em>expressive</em> and offers many useful synonyms and constructs to make code readable in almost plain English.</p>
+
+<p>Kal is designed with a unique philosophy:</p>
+
+<ol>
+<li>Eliminate the yucky parts of JavaScript, but keep the good stuff including the compatibility, and the great server and client runtime support.</li>
+<li>Make code as readable as possible and make writing code straightforward. Eliminate the urge (and the need) to be terse and complicated.</li>
+<li>Provide an alternative to callbacks (which look weird) and promises (which are weird) while providing excellent, easy-to-use asynchronous support.</li>
+</ol><p>Check out the <a href="./examples">examples</a> for some sample use cases.</p>
+
+<h2>
+<a name="asynchronous-wait" class="anchor" href="#asynchronous-wait"><span class="octicon octicon-link"></span></a>Asynchronous Wait</h2>
+
+<p><code>wait for</code> allows a function to pause asynchronously, then resume when a task is complete. For example, the following JavaScript:</p>
+
+<div class="highlight"><pre><span class="kd">var</span> <span class="nx">getUserFriends</span><span class="p">(</span><span class="nx">userName</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">db</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">findOne</span><span class="p">({</span><span class="nx">name</span><span class="o">:</span><span class="nx">userName</span><span class="p">},</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+        <span class="nx">db</span><span class="p">.</span><span class="nx">friends</span><span class="p">.</span><span class="nx">find</span><span class="p">({</span><span class="nx">userId</span><span class="o">:</span><span class="nx">user</span><span class="p">.</span><span class="nx">id</span><span class="p">},</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">friends</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+            <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">friends</span><span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>would be equivalent to this in Kal:</p>
+
+<pre lang="kal"><code>    task getUserFriends = function (userName)
+      wait for user from db.users.findOne {name:userName}
+      wait for friends from db.friends.find {userId:user.id}
+      return friends
+</code></pre>
+
+<p>This includes error handling via callbacks. Consider a more complicated example:</p>
+
+<div class="highlight"><pre><span class="nx">async</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'async'</span><span class="p">);</span>
+
+<span class="kd">var</span> <span class="nx">getUserFriends</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">userName</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">db</span><span class="p">.</span><span class="nx">users</span><span class="p">.</span><span class="nx">findOne</span><span class="p">({</span><span class="nx">name</span><span class="o">:</span><span class="nx">userName</span><span class="p">},</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">user</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+        <span class="nx">getFriendsById</span><span class="p">(</span><span class="nx">userId</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">friends</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nx">user</span><span class="p">.</span><span class="nx">type</span> <span class="o">==</span> <span class="s1">'power user'</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">async</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">friends</span><span class="p">,</span> <span class="nx">getFriendsById</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">friendsOfFriends</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">friendsOfFriends</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                        <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">j</span> <span class="o">&lt;</span> <span class="nx">friendsOfFriends</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">length</span><span class="p">;</span> <span class="nx">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+                            <span class="k">if</span> <span class="p">(</span><span class="nx">friends</span><span class="p">.</span><span class="nx">indexOf</span><span class="p">(</span><span class="nx">friendsOfFriends</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="nx">j</span><span class="p">])</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+                                <span class="nx">friends</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">friendsOfFriends</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="nx">j</span><span class="p">]);</span>
+                            <span class="p">}</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                    <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">friends</span><span class="p">);</span>
+                <span class="p">});</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">friends</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+<span class="kd">var</span> <span class="nx">getFriendsById</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">userId</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">db</span><span class="p">.</span><span class="nx">friends</span><span class="p">.</span><span class="nx">find</span><span class="p">({</span><span class="nx">userId</span><span class="o">:</span><span class="nx">userId</span><span class="p">},</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">friends</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+        <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">friends</span><span class="p">);</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Even using <a href="https://github.com/caolan/async">async</a>, it's lot. Here's the equivalent Kal:</p>
+
+<pre lang="kal"><code>task getUserFriends(userName)
+  wait for user from db.users.findOne {name:userName}
+  wait for friends from db.friends.find {userId:user.id}
+  if user.type is 'power user'
+    for parallel friend in friends
+      wait for friendsOfFriend from db.friends.find friend
+      for newFriend in friendsOfFriend
+        friends.push newFriend unless newFriend in friends
+  return friends
+</code></pre>
+
+<p>There are no additional libraries required and everything's a lot more ... vertical. Notice that the <code>wait for</code> statement works in loops, <code>if</code> statements, <code>try</code>/<code>catch</code> blocks, and all nested permutations. It's completely JavaScript compatible - <code>getUserFriends</code> would be called the same way and call back with the same results.</p>
+
+<h2>
+<a name="installation-using-npm" class="anchor" href="#installation-using-npm"><span class="octicon octicon-link"></span></a>Installation Using npm</h2>
+
+<p>This is the preferred method for installing Kal. Make sure you have installed <a href="http://nodejs.org/">node.js</a>. Kal works with versions 0.6, 0.8, and 0.10. It might work with other versions as well. Install the latest "stable" release of Kal using npm:</p>
+
+<pre><code>sudo npm install -g kal
+</code></pre>
+
+<p><code>sudo</code> may not be required depending on how you installed <code>node</code>.</p>
+
+<h2>
+<a name="syntax-highlighting" class="anchor" href="#syntax-highlighting"><span class="octicon octicon-link"></span></a>Syntax Highlighting</h2>
+
+<p>A <a href="https://github.com/rzimmerman/kal.tmbundle">TextMate bundle</a> for TextMate and Sublime Text is available with limited but very useful support for Kal's syntax.</p>
+
+<h2>
+<a name="installing-from-the-repository" class="anchor" href="#installing-from-the-repository"><span class="octicon octicon-link"></span></a>Installing from the Repository</h2>
+
+<p><a href="https://travis-ci.org/rzimmerman/kal"><img src="https://secure.travis-ci.org/rzimmerman/kal.png?branch=master" alt="Build Status"></a></p>
+
+<p>If you need the latest and greatest (possibly unstable/broken) build, you can build Kal manually. Most users can skip this section and just use the latest <code>npm</code> version.</p>
+
+<p>Kal is written in Kal, so you need a prebuilt version of the compiler available to do the initial build:</p>
+
+<pre><code>sudo npm install -g kal
+</code></pre>
+
+<p>Then you can clone and build the repo:</p>
+
+<pre><code>git clone https://github.com/rzimmerman/kal kal
+cd kal
+npm run-script make
+</code></pre>
+
+<p>Run the tests to make sure everything is going well:</p>
+
+<pre><code>npm test
+</code></pre>
+
+<p>If you're extra serious, you can use your new build to rebuild itself in case there were any notable changes to the compiler between the npm release and the latest commit. This will also run the tests.</p>
+
+<pre><code>npm run-script bootstrap
+</code></pre>
+
+<p>Now install your latest version using npm:</p>
+
+<pre><code>npm pack
+</code></pre>
+
+<p>Assuming the tests pass, this will make an archive file that you can install (the filename depends on the version):</p>
+
+<pre><code>sudo npm install -g kal-0.x.x.tgz
+</code></pre>
+
+<p>Alternatively you can just run the <code>scripts/kal</code> file if you don't want to install it globally.</p>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>If you installed Kal globally (using the <code>-g</code> option), you can run the interactive shell by running <code>kal</code> with no arguments.</p>
+
+<pre><code>$ kal
+kal&gt; 'hello' + ' ' + 'world'
+'hello world'
+</code></pre>
+
+<p>You can use the kal utility to run or compile files. Run <code>kal -h</code> for the full option set. If you installed kal locally (didn't use the -g option), you will need to specify the path to the kal executable, usually located at <code>node_modules/kal/scripts/kal</code>.</p>
+
+<pre><code>kal path/to/file.kal                                            --runs the specified file
+kal -o path/for/output path/to/file1.kal path/to/file2.kal ...  --compiles all files/directories listed to javascript
+                                                                  and writes the output into the folder specified by -o
+</code></pre>
+
+<p>Using the <code>-j</code> or <code>--javascript</code> switches will show the output of the compiler.</p>
+
+<p>If you import Kal in your Javascript code, it installs a compile hook that allows you to directly import .kal files:</p>
+
+<div class="highlight"><pre><span class="nx">require</span><span class="p">(</span><span class="s1">'kal'</span><span class="p">);</span>
+<span class="nx">require</span><span class="p">(</span><span class="s1">'./mykalfile'</span><span class="p">);</span> <span class="c1">//refers to mykalfile.kal</span>
+</pre></div>
+
+<h2>
+<a name="whitespace-and-indentation" class="anchor" href="#whitespace-and-indentation"><span class="octicon octicon-link"></span></a>Whitespace and Indentation</h2>
+
+<p>In Kal, spaces for indentation are significant and tabs are not valid. Indents are required for function definitions and blocks of code inside of <code>if</code> statements, <code>try</code>/<code>catch</code> blocks, and loops.</p>
+
+<p>You should use two spaces to denote an indent. You can technically use any multiple of two spaces, but two is recommended stylistically. Any whitespace on blank lines is ignored. Semicolons at the end of statements are not required nor are they valid.</p>
+
+<p>In general single statements cannot contain line breaks. Notable exceptions are list and object definitions. For example:</p>
+
+<pre lang="kal"><code>a = [1, 2,
+    3,
+    4]
+
+b = {a:1
+     c:2}
+</code></pre>
+
+<p>Will work, however:</p>
+
+<pre lang="kal"><code>a = 1 +
+    1
+</code></pre>
+
+<p>Is invalid. Future versions may include better support for line breaks within statements.</p>
+
+<h2>
+<a name="comments" class="anchor" href="#comments"><span class="octicon octicon-link"></span></a>Comments</h2>
+
+<p>Comments are preceeded by a <code>#</code> sign. Anything after the <code>#</code> on the line will be ignored.</p>
+
+<pre lang="kal"><code>print 5 #this is a comment
+</code></pre>
+
+<p>Multiline comments are enclosed by <code>###</code>:</p>
+
+<pre lang="kal"><code>###
+A multiline
+comment
+###
+</code></pre>
+
+<h2>
+<a name="functions-and-tasks" class="anchor" href="#functions-and-tasks"><span class="octicon octicon-link"></span></a>Functions and Tasks</h2>
+
+<p><strong>Functions</strong> are defined with an optional name and a list of arguments.</p>
+
+<pre lang="kal"><code>function my_function(arg1, arg2)
+  return arg1 + arg2
+</code></pre>
+
+<p>and</p>
+
+<pre lang="kal"><code>my_function = function (arg1, arg2)
+  return arg1 + arg2
+</code></pre>
+
+<p>Both define a variable <code>my_function</code> that takes two arguments and returns their sum. CoffeeScript syntax is also valid:</p>
+
+<pre lang="kal"><code>my_function = (arg1, arg2) -&gt;
+  return arg1 + arg2
+</code></pre>
+
+<p>But is generally discouraged unless it significantly helps readability. It was originally included to ease porting of the Kal compiler from CoffeeScript to Kal. Coffee-style functions must contain a line break after the <code>-&gt;</code>. <code>=&gt;</code> is not supported.</p>
+
+<p>Functions are called using parentheses.</p>
+
+<pre lang="kal"><code>my_function(1, 2)
+</code></pre>
+
+<p>Will return <code>3</code>. Parentheses are optional if the function has at least one argument:</p>
+
+<pre lang="kal"><code>my_function 1, 2
+</code></pre>
+
+<p>Is also valid. Function calls can be chained this way as well, so any of the following</p>
+
+<pre lang="kal"><code>print(my_function(1,2))
+print my_function 1, 2
+print my_function(1, 2)
+</code></pre>
+
+<p>will all print <code>3</code>. When calling a function with no arguments, parentheses are required.</p>
+
+<p><strong>Tasks</strong> are similar to functions, except that they are intended to be called asynchronously (usually using a <code>wait for</code> statement).</p>
+
+<pre lang="kal"><code>task my_task(arg)
+  return arg * 2
+</code></pre>
+
+<p>or</p>
+
+<pre lang="kal"><code>my_task = task (arg)
+  return arg * 2
+</code></pre>
+
+<p>Tasks should not be called synchronously. If a task is called synchronously, it will return with no value. When called asynchronously.</p>
+
+<pre lang="kal"><code>print my_task 1
+</code></pre>
+
+<p>Is valid syntax, but will print <code>undefined</code>.</p>
+
+<pre lang="kal"><code>wait for x from my_task(1)
+print x
+</code></pre>
+
+<p>Will print <code>2</code> as expected. See the <code>wait for</code> section for more details on asynchronous calls.</p>
+
+<h2>
+<a name="objects-and-arrays" class="anchor" href="#objects-and-arrays"><span class="octicon octicon-link"></span></a>Objects and Arrays</h2>
+
+<p>Objects and arrays are defined similarly to JavaScript. Newlines <strong>are</strong> valid inside of an array or object definition and indentation is ignored. Commas are optional when followed by a newline. CoffeeScript style object definitions (no <code>{}</code>s) are only valid in assignments and must be preceded by a newline.</p>
+
+<pre lang="kal"><code>a = [1, 2, 3]
+b = [1
+     2,
+     3
+     4]
+c = {a:1,b:2,c:{d:3}}
+d =
+  a:1, b:2
+  c:
+    d:3
+</code></pre>
+
+<p>Objects work like JavaScript objects (because they are JavaScript objects), so you can access members either using array subscripts or <code>.</code> notation</p>
+
+<pre lang="kal"><code>x =
+  a : 1
+  b : 2
+print x['a'] #prints 1
+print x.b    #prints 2
+</code></pre>
+
+<h2>
+<a name="scoping" class="anchor" href="#scoping"><span class="octicon octicon-link"></span></a>Scoping</h2>
+
+<p>Variables are declared automatically and scoped within the current function unless used globally (like CoffeeScript).</p>
+
+<p>By default, nothing in your <code>.kal</code> file will leak to the global scope. Everything is wrapped within a function scope inside the module. If you need to export variables to global scope, you should use</p>
+
+<pre lang="kal"><code>module.exports.my_export = my_variable_or_function # in node.js
+window.my_export = my_variable_or_function         # in a browser
+</code></pre>
+
+<p><em>or</em> you can compile the file with the <code>--bare</code> option.</p>
+
+<h2>
+<a name="conditionals" class="anchor" href="#conditionals"><span class="octicon octicon-link"></span></a>Conditionals</h2>
+
+<p>The following defines a conditional statement:</p>
+
+<pre lang="kal"><code>x = 5
+if x is 5
+  print 'five'
+</code></pre>
+
+<p>will print <code>five</code>.</p>
+
+<pre lang="kal"><code>x = 6
+if x is 5
+  print 'five'
+else
+  print 'not five'
+</code></pre>
+
+<p>will print <code>not five</code></p>
+
+<p>The conditional has useful synonyms:</p>
+
+<ul>
+<li>
+<code>when</code> is equivalent to <code>if</code>
+</li>
+<li>
+<code>unless</code> is equivalent to <code>if not</code>
+</li>
+<li>
+<code>except when</code> is equivalent to <code>if not</code>
+</li>
+<li>
+<code>otherwise</code> is equivalent to <code>else</code>
+</li>
+</ul><p>So the following is valid, as are other permutations:</p>
+
+<pre lang="kal"><code>unless name is 'Steve'
+  print 'Impostor!'
+otherwise
+  print 'Steve'
+</code></pre>
+
+<p><code>else</code> (and synonyms) can be chained with <code>if</code> (and synonyms), so</p>
+
+<pre lang="kal"><code>if name is 'Steve'
+  print 'Steve'
+else if name is 'Brian'
+  print 'Brian'
+otherwise when name is 'Joe'
+  print 'Joe'
+else
+  print 'Somebody'
+</code></pre>
+
+<p>is valid.</p>
+
+<p>Conditionals can also tail a statement:</p>
+
+<pre lang="kal"><code>print 5 if 5 &gt; 10
+</code></pre>
+
+<p>will do nothing.</p>
+
+<p>Conditionals can be used in a ternary statement as well</p>
+
+<pre lang="kal"><code>print(5 if name is 'Joe' otherwise 6)
+</code></pre>
+
+<p>will print <code>5</code> if the variable name is equal to <code>'Joe'</code>, otherwise it will print <code>6</code>. Kind of like it says. Parentheses are required because tail conditionals associate right, meaning the following are equivalent:</p>
+
+<pre lang="kal"><code>print 5 if name is 'Joe' otherwise 6
+(print(5) if name is 'Joe') otherwise 6
+</code></pre>
+
+<h2>
+<a name="loops" class="anchor" href="#loops"><span class="octicon octicon-link"></span></a>Loops</h2>
+
+<p><code>for</code> loops work as follows:</p>
+
+<pre lang="kal"><code>for x in [1,2,3]
+  print x
+</code></pre>
+
+<p>Will print the numbers 1, 2, and 3. The value n the right of the <code>for ... in</code> expression is called the <code>iterant</code>. It must either be an array. Python-like iterable object support is coming soon.</p>
+
+<p><code>for</code> loops can also be used on objects:</p>
+
+<pre lang="kal"><code>obj = {a:1,b:2}
+for key of obj
+  print key, obj[key]
+</code></pre>
+
+<p>Will print <code>a 1</code> and <code>b 2</code>.</p>
+
+<p>When used on asynchronous code, the <code>parallel</code> and <code>series</code> specifiers are available:</p>
+
+<pre lang="kal"><code>for parallel x in y
+  wait for z from f(x)
+
+for series x in y
+  wait for z from f(x)
+</code></pre>
+
+<p><code>series</code> is the default if neither is specified. Parallel for loops are <strong>not</strong> guaranteed to execute in order! In fact, they often won't. Take special care when accessing variables separated by <code>wait for</code> asynchronous statements. Remember that a <code>wait for</code> releases control of execution, so other loop iterations running in parallel may alter local variables if you are not careful. See the <code>wait for</code> section for more details.</p>
+
+<p><code>while</code> loops continuously run their code block until a condition is satisfied.</p>
+
+<pre lang="kal"><code>x = 0
+while x &lt; 5
+  x += 1
+  print x
+</code></pre>
+
+<p>prints the numbers 1 through 5.</p>
+
+<h2>
+<a name="comprehensions" class="anchor" href="#comprehensions"><span class="octicon octicon-link"></span></a>Comprehensions</h2>
+
+<p>List comprehensions are a quick and useful way to create an array from another array:</p>
+
+<pre lang="kal"><code>y = [1,2,3]
+x = [value * 2 for value in y]
+</code></pre>
+
+<p>will set <code>x</code> equal to <code>[2,4,6]</code>. Comprehensions also support an iterable object. Iterable objects support a <code>next()</code> method which returns the next value in the sequence each time it is called. When there are no more values in the sequence, it should return <code>null</code>.</p>
+
+<pre lang="kal"><code>class RandomList:
+  method initialize(size)
+    me.counter = size
+  method next()
+    me.counter -= 1
+    if me.counter &gt;= 0
+      return Math.random()
+    else
+      return null
+
+x = [r * 10 for r in new RandomList(20)]
+</code></pre>
+
+<p>will set <code>x</code> to an array of 20 random numbers between 0 and 10.</p>
+
+<p>List comprehensions work on objects, too:</p>
+
+<pre lang="kal"><code>obj = {a:1, b:2}
+x = [p for property p in obj]               # ['a','b']
+x = [v for property value v in obj]         # [1, 2]
+x = [p+v for propert p with value v in obj] # ['a1', 'b2']
+</code></pre>
+
+<p>Conditionals in list comprehensions are coming soon.</p>
+
+<h2>
+<a name="operators-and-constants" class="anchor" href="#operators-and-constants"><span class="octicon octicon-link"></span></a>Operators And Constants</h2>
+
+<p>Listed below are Kal's operators and their other-language equivalents. Note that Kal has a lot of synonyms for some keywords, all of which compile to the same function.</p>
+
+<table>
+<thead><tr>
+<th align="center">Kal</th>
+<th align="center">CoffeeScript</th>
+<th align="center">JavaScript</th>
+<th>Function</th>
+</tr></thead>
+<tbody>
+<tr>
+<td align="center">
+<code>true</code>, <code>yes</code>, <code>on</code>
+</td>
+<td align="center">
+<code>true</code>, <code>yes</code>, <code>on</code>
+</td>
+<td align="center"><code>true</code></td>
+<td>Boolean true</td>
+</tr>
+<tr>
+<td align="center">
+<code>false</code>, <code>no</code>, <code>off</code>
+</td>
+<td align="center">
+<code>false</code>, <code>no</code>, <code>off</code>
+</td>
+<td align="center"><code>false</code></td>
+<td>Boolean false</td>
+</tr>
+<tr>
+<td align="center">
+<code>and</code>, <code>but</code>
+</td>
+<td align="center"><code>and</code></td>
+<td align="center"><code>&amp;&amp;</code></td>
+<td>Boolean and</td>
+</tr>
+<tr>
+<td align="center"><code>or</code></td>
+<td align="center"><code>or</code></td>
+<td align="center">`</td>
+<td></td>
+</tr>
+<tr>
+<td align="center"><code>nor</code></td>
+<td align="center">none</td>
+<td align="center">none</td>
+<td>Boolean or, inverted</td>
+</tr>
+<tr>
+<td align="center"><code>xor</code></td>
+<td align="center"><code>^</code></td>
+<td align="center"><code>^</code></td>
+<td>Bitwise xor</td>
+</tr>
+<tr>
+<td align="center">
+<code>bitwise and</code>*</td>
+<td align="center"><code>&amp;</code></td>
+<td align="center"><code>&amp;</code></td>
+<td>Bitwise and</td>
+</tr>
+<tr>
+<td align="center">
+<code>bitwise or</code>*</td>
+<td align="center">`</td>
+<td align="center">`</td>
+<td>`</td>
+</tr>
+<tr>
+<td align="center"><code>^</code></td>
+<td align="center">none</td>
+<td align="center">none</td>
+<td>Exponent (<code>Math.pow</code>)</td>
+</tr>
+<tr>
+<td align="center">
+<code>exists</code>, <code>?</code>
+</td>
+<td align="center"><code>?</code></td>
+<td align="center">none</td>
+<td>Existential check</td>
+</tr>
+<tr>
+<td align="center"><code>doesnt exist</code></td>
+<td align="center">none</td>
+<td align="center">none</td>
+<td>Existential check (inverted)</td>
+</tr>
+<tr>
+<td align="center">
+<code>is</code>, <code>==</code>
+</td>
+<td align="center">
+<code>is</code>, <code>==</code>
+</td>
+<td align="center"><code>===</code></td>
+<td>Boolean equality</td>
+</tr>
+<tr>
+<td align="center">
+<code>isnt</code>, <code>!=</code>
+</td>
+<td align="center">
+<code>isnt</code>, <code>==</code>
+</td>
+<td align="center"><code>!==</code></td>
+<td>Boolean inequality</td>
+</tr>
+<tr>
+<td align="center">
+<code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>
+</td>
+<td align="center">
+<code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>
+</td>
+<td align="center">
+<code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>
+</td>
+<td>Boolean comparisons</td>
+</tr>
+<tr>
+<td align="center">
+<code>me</code>, <code>this</code>
+</td>
+<td align="center">
+<code>@</code>, <code>this</code>
+</td>
+<td align="center"><code>this</code></td>
+<td>Current object</td>
+</tr>
+<tr>
+<td align="center"><code>in</code></td>
+<td align="center"><code>in</code></td>
+<td align="center">none</td>
+<td>Boolean search of array/string</td>
+</tr>
+<tr>
+<td align="center"><code>of</code></td>
+<td align="center"><code>of</code></td>
+<td align="center"><code>in</code></td>
+<td>Boolean search of object</td>
+</tr>
+<tr>
+<td align="center">
+<code>nothing</code>, <code>empty</code>, <code>null</code>
+</td>
+<td align="center"><code>null</code></td>
+<td align="center"><code>null</code></td>
+<td>Null value</td>
+</tr>
+<tr>
+<td align="center"><code>undefined</code></td>
+<td align="center"><code>undefined</code></td>
+<td align="center"><code>undefined</code></td>
+<td>no value</td>
+</tr>
+<tr>
+<td align="center"><code>instanceof</code></td>
+<td align="center"><code>instanceof</code></td>
+<td align="center"><code>instanceof</code></td>
+<td>inheritance check</td>
+</tr>
+<tr>
+<td align="center"><code>print</code></td>
+<td align="center"><code>console.log</code></td>
+<td align="center"><code>console.log</code></td>
+<td>alias for <code>console.log</code>
+</td>
+</tr>
+</tbody>
+</table><h2>
+<a name="exisential-checks" class="anchor" href="#exisential-checks"><span class="octicon octicon-link"></span></a>Exisential Checks</h2>
+
+<p>Kal implements the same existential operator features of CoffeeScript, with the addition of the <code>exists</code> and <code>doesnt exist</code> keyword suffixes, which perform the same function as the <code>?</code> operator. Examples:</p>
+
+<pre lang="kal"><code>a = {a:1}
+b = [1,2,3]
+
+print(c exists) # false
+print(c doesnt exist) #true
+print(c?) #false
+
+print(c.something) #throws an error!
+print(c?.something) #prints undefined
+
+print(a?.a) # 1
+print(a?.a?) # true
+print(b?[2]) # 3
+
+print c() # error!
+print c?() # prints undefined
+</code></pre>
+
+<h2>
+<a name="classes-and-inheritence" class="anchor" href="#classes-and-inheritence"><span class="octicon octicon-link"></span></a>Classes and Inheritence</h2>
+
+<p>Classes are defined with member <code>method</code> definitions. Methods are just functions that are added to the prototype of new instance objects (in other words, they are available to all instances of a class). The <code>initialize</code> method, if present, is used as the constructor when the <code>new</code> keyword is used. <code>me</code> (or its synonym <code>this</code>) is used in methods to access the current instance of the class. <code>instanceof</code> checks if an object is an instance of a class.</p>
+
+<pre lang="kal"><code>class Person
+  method initialize(name)
+    me.name = name
+  method printName()
+    print me.name
+  method nameLength()
+    return me.name.length
+
+jen = new Person('Jen')
+jen.printName() # prints 'Jen'
+print(jen instanceof Person) # prints true
+</code></pre>
+
+<p>Classes can inherit from other classes and override or add to their method definitions. The <code>super</code> keyword can be used in a method to call the same function in the parent class.</p>
+
+<pre lang="kal"><code>class FrumpyPerson inherits from Person
+  method printName()
+    print 'Frumpy ' + me.name
+  method nameLength()
+    return 0
+
+sue = new FrumpyPerson('Sue')
+sue.printName() # prints 'Frumpy Sue'
+print(sue instanceof Person) # prints true
+print(sue instanceof FrumpyPerson) # prints true
+print(jen instanceof FrumpyPerson) # prints false
+</code></pre>
+
+<h2>
+<a name="trycatch" class="anchor" href="#trycatch"><span class="octicon octicon-link"></span></a>Try/Catch</h2>
+
+<p><code>try</code> and <code>catch</code> blocks work similarly to JavaScript/CoffeeScript. <code>finally</code> blocks are not supported yet but are coming eventually. The <code>throw</code> statement (and its synonyms <code>raise</code> and <code>fail with</code>) work like JavaScript as well.</p>
+
+<pre lang="kal"><code>try
+  a = 'horse' / 2 # what are we doing? this will throw an error!
+  b = 1 # never runs
+catch e
+  print 'caught it!', e
+</code></pre>
+
+<p>The <code>e</code> variable above stores the error object thrown with <code>throw</code> or by the system. You can give it any name you want and it is optional. The following is valid:</p>
+
+<pre lang="kal"><code>try
+  throw 'a string'
+  b = 1 # never runs
+catch
+  print 'caught it!'
+</code></pre>
+
+<p><code>try</code>/<code>catch</code> blocks can be nested. <code>try</code> blocks can contain asynchronous <code>wait for</code> calls, but <code>catch</code> blocks cannot at this time.</p>
+
+<h2>
+<a name="strings" class="anchor" href="#strings"><span class="octicon octicon-link"></span></a>Strings</h2>
+
+<p>Strings can either be double-quoted (<code>"</code>) or single quoted (<code>'</code>). Backslashes can be used to escape quotes within strings if necessary.</p>
+
+<p>Double-quoted strings can contain interpolated values using <code>#{...}</code> blocks.</p>
+
+<pre lang="kal"><code>x = 'this is a "string" with quotes in it'
+y = "so is 'this'"
+z = 'this one is, \'too\' but I\'m not proud of it'
+w = "This is a string with the number 3: #{1+1+1}"
+</code></pre>
+
+<h2>
+<a name="regular-expressions" class="anchor" href="#regular-expressions"><span class="octicon octicon-link"></span></a>Regular Expressions</h2>
+
+<p>Kal supports JavaScripts regex syntax, but not CoffeeScript style block regex syntax.</p>
+
+<h2>
+<a name="asynchronous-wait-for" class="anchor" href="#asynchronous-wait-for"><span class="octicon octicon-link"></span></a>Asynchronous Wait For</h2>
+
+<p>The <code>wait for</code> statement executes a <code>task</code> and pauses execution (yielding to the runtime) until the <code>task</code> is complete. The following reads a file asynchronously and prints its contents (in node.js).</p>
+
+<pre lang="kal"><code>fs = require 'fs'
+wait for data from fs.readFile '/home/user/file.txt'
+print data.toString()
+</code></pre>
+
+<p>Note that:</p>
+
+<ul>
+<li>For users familiar with node.js and JavaScript, <code>fs.readFile</code> is called with the file name argument and a callback. <strong>You don't need to supply a callback.</strong>
+</li>
+<li>After the <code>wait for</code> line, execution is paused and other code can run. Keep this in mind if you have global variables that are modified asynchronously as they may change between the <code>wait for</code> line and the line after it.</li>
+<li>Any errors reported by <code>fs.readFile</code> (returned via callback) <strong>will be thrown automatically</strong>. You should wrap the <code>wait for</code> in a <code>try</code>/<code>catch</code> if you want to catch these errors.</li>
+</ul><p><code>wait for</code> can be used to call your own asynchronous tasks. It can also be used within <code>for</code> and <code>while</code> loops, <code>try</code> blocks, <code>if</code> statements, and <strong>any nesting combination</strong> you can think of. Really!</p>
+
+<pre><code>fs = require 'fs'
+task readFileSafe(filename)
+  if 'secret' in filename
+    throw 'Illegal Access!'
+  else
+    wait for d from fs.readFile filename
+    return d
+
+for parallel filename in ['secret/data.txt', 'test.txt', 'test2.txt']
+  try
+    wait for data from readFileSafe '/home/secret/file.txt'
+    print data.toString()
+  catch error
+    print "ERROR: #{error}"
+print 'DONE!'
+</code></pre>
+
+<p>Some node.js API functions (like <code>http.get</code>) don't follow the normal convention of calling back with an error argument. For these functions you must use the <code>safe</code> prefix, otherwise it will throw an error:</p>
+
+<pre lang="kal"><code>http = require 'http'
+safe wait for request from http.get 'http://www.google.com'
+print request.responseCode
+</code></pre>
+
+<p><code>wait for</code> statements also support multiple return values</p>
+
+<pre lang="kal"><code>wait for a, b from my_task()
+</code></pre>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/rzimmerman/kal/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/rzimmerman/kal/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/rzimmerman/kal"></a> is maintained by <a href="https://github.com/rzimmerman">rzimmerman</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-19725474-2");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
