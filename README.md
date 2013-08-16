@@ -22,6 +22,8 @@ A [TextMate bundle](https://github.com/rzimmerman/kal.tmbundle) for TextMate and
 
 ## Installing from the Repository
 
+[![Build Status](https://secure.travis-ci.org/rzimmerman/kal.png?branch=master)](https://travis-ci.org/rzimmerman/kal)
+
 If you need the latest and greatest (possibly unstable/broken) build, you can build Kal manually. Most users can skip this section and just use the latest `npm` version.
 
 Kal is written in Kal, so you need a prebuilt version of the compiler available to do the initial build:
