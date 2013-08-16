@@ -68,7 +68,7 @@
 
 <p>would be equivalent to this in Kal:</p>
 
-<pre lang="kal"><code>    task getUserFriends = function (userName)
+<pre lang="kal"><code>task getUserFriends = function (userName)
   wait for user from db.users.findOne {name:userName}
   wait for friends from db.friends.find {userId:user.id}
   return friends
