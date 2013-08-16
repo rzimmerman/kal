@@ -3,7 +3,7 @@ lexer     = require './lexer'
 parser    = require './parser'
 generator = require './generator'
 
-exports.VERSION = '0.4.4'
+exports.VERSION = '0.4.5'
 
 function compile(code, options)
   if options doesnt exist

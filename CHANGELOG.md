@@ -1,5 +1,9 @@
 #Change Log
 
+### [0.4.5](https://github.com/rzimmerman/kal/compare/r0.4.4...r0.4.5)
+* Cleaned up the npm configuration for users building the repo manually (does not affect npm repository packages)
+* Fixed a bug with the command line tool where things like list comprehensions were not working when running a script directly with `kal`
+
 ### [0.4.4](https://github.com/rzimmerman/kal/compare/r0.4.3...r0.4.4)
 * Fixed a bug with `try` blocks containing `wait for` statements that could throw unexpected errors when nested in certain ways
 * Improvements to the command-line tool
