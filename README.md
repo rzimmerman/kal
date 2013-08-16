@@ -6,6 +6,12 @@ Kal is also _expressive_ and offers many useful synonyms and constructs to make 
 
 **If you are familiar with JavaScript and/or CoffeeScript, please check out the [wait for](#asynchronous-wait-for) section for an idea of what makes Kal special.**
 
+Kal is designed with a unique philosophy:
+
+ 1. Eliminate the yucky parts of JavaScript, but keep the good stuff including the compatibility, and the great server and client runtime support.
+ 2. Make code as readable as possible and make writing code straightforward. Eliminate the urge (and the need) to be terse and complicated.
+ * Provide an alternative to callbacks (which look weird) and promises (which are weird) while providing excellent, easy-to-use asynchronous support.
+
 ## Installation Using npm
 
 This is the preferred method for installing Kal. Make sure you have installed [node.js](http://nodejs.org/). Kal works with versions 0.6, 0.8, and 0.10. It might work with other versions as well. Install the latest "stable" release of Kal using npm:
@@ -214,7 +220,7 @@ Will print `2` as expected. See the `wait for` section for more details on async
 
 ## Objects and Arrays
 
-Objects and arrays are defined similarly to JavaScript. Newlines **are** valid inside of an array or object definition and indentation is ignored. Commas are optional when followed by a newline. CoffeeScript style object definitions (no `{}`s) are only valid in assignments and must be preceeded by a newline.
+Objects and arrays are defined similarly to JavaScript. Newlines **are** valid inside of an array or object definition and indentation is ignored. Commas are optional when followed by a newline. CoffeeScript style object definitions (no `{}`s) are only valid in assignments and must be preceded by a newline.
 
 ```kal
 a = [1, 2, 3]
@@ -359,7 +365,7 @@ for series x in y
 
 `series` is the default if neither is specified. Parallel for loops are **not** guaranteed to execute in order! In fact, they often won't. Take special care when accessing variables separated by `wait for` asynchronous statements. Remember that a `wait for` releases control of execution, so other loop iterations running in parallel may alter local variables if you are not careful. See the `wait for` section for more details.
 
-`while` loops continuously run their code block until a condition is satisified.
+`while` loops continuously run their code block until a condition is satisfied.
 
 ```kal
 x = 0
@@ -438,7 +444,7 @@ Listed below are Kal's operators and their other-language equivalents. Note that
 
 ## Exisential Checks
 
-Kal implements the same exisential operator features of CoffeeScript, with the addition of the `exists` and `doesnt exist` keyword suffixes, which perform the same function as the `?` operator. Examples:
+Kal implements the same existential operator features of CoffeeScript, with the addition of the `exists` and `doesnt exist` keyword suffixes, which perform the same function as the `?` operator. Examples:
 
 ```kal
 a = {a:1}
@@ -461,7 +467,7 @@ print c?() # prints undefined
 
 ## Classes and Inheritence
 
-Classes are defined with member `method` definitions. Methods are just functions that are added to the prototype of new instance objects (in other words, they are available to all instances of a class). The `initialize` method, if present, is used as the constructor when the `new` keyword is used. `me` (or its synonymn `this`) is used in methods to access the current instance of the class. `instanceof` checks if an object is an instance of a class.
+Classes are defined with member `method` definitions. Methods are just functions that are added to the prototype of new instance objects (in other words, they are available to all instances of a class). The `initialize` method, if present, is used as the constructor when the `new` keyword is used. `me` (or its synonym `this`) is used in methods to access the current instance of the class. `instanceof` checks if an object is an instance of a class.
 
 ```kal
 class Person
@@ -495,7 +501,7 @@ print(jen instanceof FrumpyPerson) # prints false
 
 ## Try/Catch
 
-`try` and `catch` blocks work similarly to JavaScript/CoffeeScript. `finally` blocks are not supported yet but are coming eventually. The `throw` statement (and its synonymns `raise` and `fail with`) work like JavaScript as well.
+`try` and `catch` blocks work similarly to JavaScript/CoffeeScript. `finally` blocks are not supported yet but are coming eventually. The `throw` statement (and its synonyms `raise` and `fail with`) work like JavaScript as well.
 
 ```kal
 try
