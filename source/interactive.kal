@@ -1,7 +1,7 @@
 # The interactive shell. Compiles one line to Javascript and
 # executes it
 
-# A lot of this was lovingly stolen from 
+# A lot of this was lovingly stolen from
 # http://coffeescript.org/documentation/docs/repl.html
 
 # Start by opening up `stdin` and `stdout`.
@@ -23,7 +23,7 @@ REPL_PROMPT_CONTINUATION = '...> '
 enableColors = no
 unless process.platform is 'win32'
   enableColors = not process.env.NODE_DISABLE_COLORS
-  
+
 # Log an error.
 function error(err)
   stdout.write err.stack or err.toString()
@@ -136,13 +136,13 @@ if stdin.readable and stdin.isRaw
   repl = {}
   repl.prompt = ->
     stdout.write me._prompt
-  repl.setPrompt = (p) -> 
+  repl.setPrompt = (p) ->
     me._prompt = p
   repl.input = stdin
   repl.output = stdout
   repl.on = ->
     return
-  
+
   stdin.on 'data', (chunk) ->
     pipedInput += chunk
     nlre = /\n/
@@ -154,7 +154,7 @@ if stdin.readable and stdin.isRaw
         stdout.write "#{line}\n"
         run line, sandbox
     return
-  
+
   stdin.on 'end', ->
     for line in pipedInput.trim().split("\n")
       if line
@@ -162,7 +162,7 @@ if stdin.readable and stdin.isRaw
         run line, sandbox
     stdout.write "\n"
     process.exit(0)
-  
+
 else
   # Create the REPL by listening to **stdin**.
   if readline.createInterface.length < 3

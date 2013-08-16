@@ -17,7 +17,7 @@ class Block inherits from ASTBase
     while not me.opt('DEDENT')
       me.statements.push me.req Statement
       me.lock()
-      
+
 class File inherits from Block
   method parse()
     me.lock()
@@ -35,11 +35,11 @@ class BlockWithoutIndent inherits from Block
       me.statements.push me.req Statement
       me.lock()
     me.ts.prev() #unsee the dedent
-  
+
 class Statement inherits from ASTBase
   method parse()
     me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
-  
+
 class ThrowStatement inherits from ASTBase
   method parse()
     specifier = me.req_val 'throw', 'raise', 'fail'
@@ -47,7 +47,7 @@ class ThrowStatement inherits from ASTBase
     me.req_val 'with' if specifier.value is 'fail'
     me.expr = me.req Expression
     me.conditional = me.expr.transform_when_statement()
-    
+
 class ReturnStatement inherits from ASTBase
   method parse()
     me.req_val 'return'
@@ -81,8 +81,8 @@ class IfStatement inherits from ASTBase
         me.elses.push new_else
         if new_else.conditional doesnt exist
           keep_going = no
-    
-    
+
+
 class ElseStatement inherits from ASTBase
   method parse()
     me.req_val 'else', 'otherwise'
@@ -97,7 +97,7 @@ class WhileStatement inherits from ASTBase
     me.lock()
     me.expr = me.req Expression
     me.block = me.req Block
-  
+
 class ForStatement inherits from ASTBase
   method parse()
     me.req_val 'for'
@@ -107,7 +107,7 @@ class ForStatement inherits from ASTBase
     me.type = me.req_val 'in', 'of'
     me.iterable = me.req Expression
     me.loop_block = me.req Block
-    
+
 class DeclarationStatement inherits from ASTBase
   method tmp() #until the spec is changed to allow empty definitions
     return
@@ -124,7 +124,7 @@ class AssignmentStatement inherits from ASTBase
     me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
     me.rvalue   = me.req Expression
     me.conditional = me.rvalue.transform_when_statement()
-    
+
 class WaitForStatement inherits from ASTBase
   method parse()
     me.no_errors = me.opt_val 'safe'
@@ -160,7 +160,7 @@ class MultipleReturnValues inherits from ASTBase
         t = me.req_val 'from', ','
     me.ts.prev()
     me.require ')' if left_paren
-    
+
 class ExpressionStatement inherits from ASTBase
   method parse()
     me.expr = me.req Expression
@@ -187,7 +187,7 @@ class BinOp inherits from ASTBase
         me.op = me.req_val 'in', 'of'
         me.invert = yes
       me.error("unexpected operator #{this.op.value}") unless me.op.value in ['and','but','or','xor','nor','in','is','isnt','instanceof','of']
-  
+
 class Expression inherits from ASTBase
   method transform_when_statement()
     if me.conditional exists but me.conditional.false_expr doesnt exist
@@ -208,7 +208,7 @@ class Expression inherits from ASTBase
     if me.op?
       me.right = me.req Expression
     me.conditional = me.opt WhenExpression
-    
+
 class UnaryExpression inherits from ASTBase
   method is_lvalue()
     return no if me.can_be_lvalue is false
@@ -216,7 +216,7 @@ class UnaryExpression inherits from ASTBase
     return no if me.base.value in KEYWORDS
     for accessor in me.accessors
       if (accessor instanceof FunctionCall)
-        return no 
+        return no
     return yes
   method parse()
     me.preop       = me.opt_val 'not', 'new', '-'
@@ -242,7 +242,7 @@ class ExisentialCheck inherits from ASTBase
       me.invert = yes
     else
       me.invert = no
-    
+
 class WhenExpression inherits from ASTBase
   method parse()
     me.specifier  = me.req_val 'when', 'except', 'if', 'unless'
@@ -250,7 +250,7 @@ class WhenExpression inherits from ASTBase
     me.req_val('when') if me.specifier.value is 'except'
     me.condition  = me.req(Expression)
     me.false_expr = me.req(Expression) if me.opt_val 'otherwise', 'else'
-  
+
 class NumberConstant inherits from ASTBase
   method parse()
     me.token = me.req 'NUMBER'
@@ -295,14 +295,14 @@ class FunctionCall inherits from ASTBase
     me.lock()
     me.arguments = me.opt_multi FunctionCallArgument
     me.req_val ')'
-  
+
 class ParenExpression inherits from ASTBase
   method parse()
     me.req_val '('
     me.lock()
     me.expr = me.req Expression
     me.req_val ')'
-    
+
 class ListExpression inherits from ASTBase
   method parse()
     me.req_val '['
@@ -318,7 +318,7 @@ class ListExpression inherits from ASTBase
         else
           item = null
     me.req_val ']'
-  
+
 class ListComprehension inherits from ASTBase
   method parse()
     me.iter_expr = me.req Expression
@@ -327,7 +327,7 @@ class ListComprehension inherits from ASTBase
     me.iterant = me.req 'IDENTIFIER'
     me.req_val 'in'
     me.iterable = me.req Expression
-  
+
 class ObjectComprehension inherits from ASTBase
   method parse()
     me.iter_expr = me.req Expression
@@ -343,8 +343,8 @@ class ObjectComprehension inherits from ASTBase
         me.value_iterant = me.req 'IDENTIFIER'
     me.req_val 'in'
     me.iterable = me.req Expression
-    
-  
+
+
 class MapItem inherits from ASTBase
   method parse()
     me.key = me.req Expression
@@ -379,21 +379,21 @@ class ImplicitMapExpression inherits from MapExpression
     me.lock()
     me.items = me.req_multi ImplicitMapItem
     me.req 'DEDENT'
-  
+
 class Ellipsis inherits from ASTBase
   method parse()
     me.req_val '.'
     me.req_val '.'
     me.req_val '.'
-  
-  
+
+
 class FunctionDefArgument inherits from ASTBase
   method parse()
     me.name = me.req 'IDENTIFIER'
     me.lock()
     if me.req_val(',',')').value is ')'
       me.ts.prev()
-    
+
 class FunctionExpression inherits from ASTBase
   method parse()
     me.specifier = me.req_val 'function', 'method', 'task'
@@ -423,7 +423,7 @@ class TryCatch inherits from ASTBase
       me.lock()
       me.identifier = me.opt 'IDENTIFIER'
       me.catch_block = me.req Block
-  
+
 class SuperStatement inherits from ASTBase
   method parse()
     me.req_val 'super'
@@ -435,7 +435,7 @@ Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfSta
          BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant,
          StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall,
          ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
-         ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression, 
+         ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression,
          ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, MultipleReturnValues]
 
 exports.Grammar = {}

@@ -1,4 +1,4 @@
-KEYWORD_TRANSLATE = 
+KEYWORD_TRANSLATE =
   'yes':        'true'
   'on':         'true'
   'no':         'false'
@@ -38,11 +38,11 @@ function apply_generator_to_grammar()
   try_block_stacks = []
   parfor_cb = null
   parfor_cb_stack = []
-  
+
   callback_counter = 0
   current_callback = "k$cb0"
   current_callbacks = []
-  
+
   function create_callback()
     callback_counter += 1
     current_callback = "k$cb#{callback_counter}"
@@ -52,20 +52,20 @@ function apply_generator_to_grammar()
     callback_counter -= 1 when callback_counter > 0
     current_callback = "k$cb#{callback_counter}"
     return current_callback
-  
+
   class_defs = []
   class_def = {}
-  
+
   function push_class()
     class_defs.push class_def
     class_def = {name: '', code: '',args: [],has_constructor: no}
-    
+
   function pop_class()
     class_def = class_defs.pop()
     return class_def
-  
+
   use_snippets = {}
-  
+
   function push_scope()
     scopes.push scope
     try_block_stacks.push try_block_stack
@@ -83,7 +83,7 @@ function apply_generator_to_grammar()
       else if v is 'closure'
         new_scope[k] = 'closure'
     scope = new_scope
-    
+
   function pop_scope(code, wrap)
     rv = ""
     var_names = []
@@ -103,16 +103,16 @@ function apply_generator_to_grammar()
     current_callback = current_callbacks.pop()
     parfor_cb = parfor_cb_stack.pop()
     return rv
-  
+
   function check_existence_wrapper(code, undefined_unary, invert)
     if undefined_unary
       rv = "(typeof #{code} === 'undefined' || #{code} === null)" when invert otherwise "(typeof #{code} !== 'undefined' && #{code} !== null)"
     else
       rv = "#{code} == null" when invert otherwise "#{code} != null"
     return rv
-  
+
   self = me
-  
+
   me.File.prototype.js = (options) ->
     scopes = []
     scope = {}
@@ -138,7 +138,7 @@ function apply_generator_to_grammar()
       comment.written = null
     rv += "}" when current_callback isnt 'k$cb0'
     return pop_scope(rv, not options.bare)
-    
+
   me.Statement.prototype.js = ->
     rv = ''
     pf = ''
@@ -163,15 +163,15 @@ function apply_generator_to_grammar()
       else
         rv += pf
     return rv
-    
-  me.ThrowStatement.prototype.js = ->  
+
+  me.ThrowStatement.prototype.js = ->
     if try_block_stack.length is 0 but scope['k$next'] exists
       rv = "return k$next.apply(this, [#{me.expr.js()}]);"
     else
       rv = "throw #{me.expr.js()};"
     rv = me.conditional.js(rv, no) if me.conditional?
     return rv
-    
+
   me.ReturnStatement.prototype.js = ->
     exprs_js = [expr.js() for expr in me.exprs]
     exprs_js.unshift 'null' when me.parent_block.callback exists
@@ -190,14 +190,14 @@ function apply_generator_to_grammar()
       rv += ";"
       rv = me.conditional.js(rv, no) when me.conditional exists
       return rv
-      
+
   me.ExpressionStatement.prototype.js = ->
     rv = me.expr.js()
     if rv is ""
       return ""
     else
       return rv + ";"
-    
+
   me.Expression.prototype.js = (oop_reverse) ->
     rv = ''
     if oop_reverse
@@ -225,8 +225,8 @@ function apply_generator_to_grammar()
       rv = "!(#{rv})"
     rv = me.conditional.js(rv, yes) if me.conditional exists
     return rv
-    
-    
+
+
   me.UnaryExpression.prototype.js = ->
     rv = ''
     if me.base.type is 'IDENTIFIER'
@@ -237,18 +237,18 @@ function apply_generator_to_grammar()
         scope[base_val] = 'closures ok' unless scope[base_val] exists or (not me.is_lvalue()) or me.accessors.length > 0
     else
       rv += me.base.js()
-    
+
     # an undefined unary is a simple variable access to an undeclared variable
     # it requres we check if the variable exists before checking if it is null/undefined
     undefined_unary = (me.base.type is 'IDENTIFIER' and scope[base_val] doesnt exist and kw_translate doesnt exist)
     existence_qualifiers = []
-    
+
     last_accessor = me.accessors[me.accessors.length-1]
     for accessor in me.accessors
       existence_qualifiers.push accessor.js_existence rv, undefined_unary, last_accessor.invert
       rv += accessor.js()
       undefined_unary = no # only possible for the first accessor
-    
+
     existence_check = []
     for eq in existence_qualifiers
       if eq isnt ""
@@ -260,7 +260,7 @@ function apply_generator_to_grammar()
       else
         closeout = "void 0"
         rv = "((#{existence_check}) ? #{rv} : #{closeout})"
-      
+
     if me.preop?.value is 'new'
       rv = "#{KEYWORD_TRANSLATE[me.preop.value]} #{rv}"
     else if me.preop?.value is 'not'
@@ -268,11 +268,11 @@ function apply_generator_to_grammar()
     else if me.preop?.value is '-'
       rv = "-#{rv}"
     return rv
-    
+
   me.WhenExpression.prototype.js = (true_block_js, must_return_value) ->
     conditional_js = me.condition.js()
     if me.specifier.value is 'unless' or me.specifier.value is 'except'
-      conditional_js = "!(#{conditional_js})" 
+      conditional_js = "!(#{conditional_js})"
     if me.false_expr exists
       return "(#{conditional_js}) ? #{true_block_js} : #{me.false_expr.js()}"
     else
@@ -281,13 +281,13 @@ function apply_generator_to_grammar()
       else
         return "if (#{conditional_js}) {#{true_block_js}}"
     return rv
-  
+
   me.ExisentialCheck.prototype.js = ->
     return ""
-    
+
   me.ExisentialCheck.prototype.js_existence = (accessor, undefined_unary, invert) ->
     return check_existence_wrapper(accessor, undefined_unary, invert)
-  
+
   me.PropertyAccess.prototype.js = ->
     if me.expr.type is 'IDENTIFIER'
       rv = me.expr.value
@@ -300,7 +300,7 @@ function apply_generator_to_grammar()
       return check_existence_wrapper(accessor, undefined_unary, invert)
     else
       return ''
-  
+
   me.AssignmentStatement.prototype.js = ->
     op = me.assignOp.value
     if op isnt '='
@@ -308,20 +308,20 @@ function apply_generator_to_grammar()
     rv = "#{me.lvalue.js()} #{op} #{me.rvalue.js()};"
     rv = me.conditional.js(rv, no) if me.conditional exists
     return rv
-    
+
   me.NumberConstant.prototype.js = ->
     return me.token.text
-  
+
   me.StringConstant.prototype.js = ->
     rv = me.token.value
     return rv
-  
+
   me.RegexConstant.prototype.js = ->
     return me.token.text
-  
+
   me.BinOp.prototype.js = ->
     return KEYWORD_TRANSLATE[me.op.value] or me.op.value
-  
+
   me.IfStatement.prototype.js = ->
     me.original_callback = me.callback unless me.original_callback exists
     conditional_js = me.conditional.js()
@@ -339,7 +339,7 @@ function apply_generator_to_grammar()
       callback_counter = cb_counter
       inner_js = me.js_callbacks()
     return rv + inner_js
-    
+
   me.IfStatement.prototype.js_no_callbacks = ->
     me.block.callback = me.callback
     block_js = me.block.js() + me.block.js_closeout() + '}'
@@ -354,7 +354,7 @@ function apply_generator_to_grammar()
       else_js += else_clause.block.js() + else_clause.block.js_closeout()
       else_js += '}'
     return block_js + else_js
-  
+
   me.IfStatement.prototype.js_callbacks = ->
     me.callback = create_callback()
     me.block.callback = me.callback
@@ -377,13 +377,13 @@ function apply_generator_to_grammar()
     callback_js += "function #{me.callback}() {"
     callback_js += render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
-    
+
     create_callback() #generate a new callback for future if statements/for loops
     return block_js + else_js + callback_js
-  
+
   me.BlankStatement.prototype.js = ->
     return ''
-    
+
   for_depth = 1
   me.ForStatement.prototype.js = ->
     me.callback = current_callback
@@ -471,7 +471,7 @@ function apply_generator_to_grammar()
       rv += render_try_blocks()
       me.parent_block.closeout_callback = me.original_callback
     return rv
-  
+
   while_depth = 1
   me.WhileStatement.prototype.js = ->
     me.block.in_loop = yes
@@ -483,7 +483,7 @@ function apply_generator_to_grammar()
       return me.js_callbacks()
     else
       return rv
-  
+
   me.WhileStatement.prototype.js_callbacks = ->
     rv = ""
     while_depth += 1
@@ -503,7 +503,7 @@ function apply_generator_to_grammar()
     rv += render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
     return rv
-  
+
   me.Block.prototype.js = ->
     me.callback = current_callback unless me.callback exists
     me.original_callback = current_callback unless me.original_callback exists
@@ -526,7 +526,7 @@ function apply_generator_to_grammar()
       if scope['k$next'] exists
         rv += "var k$done = (typeof k$next == 'function') ? k$next : function (){}; k$next=function (){}; return k$done();"
     return rv
-    
+
   me.Block.prototype.js_closeout = ->
     rv = ""
     if me.closeout_callback exists and me.callbacks.length isnt 0 and (me.in_conditional or me.in_loop)
@@ -536,10 +536,10 @@ function apply_generator_to_grammar()
       rv += render_catch_blocks()
       rv += "}"
     return rv
-  
+
   me.ParenExpression.prototype.js = ->
     return "(#{me.expr.js()})"
-    
+
   me.IndexExpression.prototype.js = ->
     return "[#{me.expr.js()}]"
   me.IndexExpression.prototype.js_existence = (accessor, undefined_unary, invert) ->
@@ -547,7 +547,7 @@ function apply_generator_to_grammar()
       return check_existence_wrapper(accessor, undefined_unary, invert)
     else
       return ''
-  
+
   me.ListExpression.prototype.js = ->
     if me.comprehension doesnt exist
       rv = []
@@ -557,13 +557,13 @@ function apply_generator_to_grammar()
       return "[#{rv}]"
     else
       return me.comprehension.js()
-  
+
   me.ListComprehension.prototype.js = ->
     use_snippets['array list comprehension'] = snippets['array list comprehension']
     scope[me.iterant.value] = 'closures ok'
     rv = "$kcomprl(#{me.iterable.js()},function($ki){#{me.iterant.value} = $ki;return #{me.iter_expr.js()};})"
     return rv
-  
+
   me.ObjectComprehension.prototype.js = ->
     use_snippets['object list comprehension'] = snippets['object list comprehension']
     rv = ""
@@ -575,17 +575,17 @@ function apply_generator_to_grammar()
       rv += "#{me.value_iterant.value} = $kv;"
     rv = "$kcompro(#{me.iterable.js()},function($kp,$kv){#{rv};return #{me.iter_expr.js()};})"
     return rv
-  
+
   me.MapItem.prototype.js = ->
     return "#{me.key.js()}: #{me.val.js()}"
-    
+
   me.MapExpression.prototype.js = ->
     rv = []
     for item in me.items
       rv.push item.js()
     rv = rv.join(', ')
     return "{ #{rv} }"
-    
+
   me.FunctionExpression.prototype.js = ->
     me.args = []
     me.callback = 'k$next' when me.specifier.value is 'task'
@@ -597,7 +597,7 @@ function apply_generator_to_grammar()
         return me.js_class_member()
     else
       return me.js_bare_function()
-    
+
   me.FunctionExpression.prototype.js_bare_function   = ->
     rv = "function "
     if me.name exists
@@ -605,7 +605,7 @@ function apply_generator_to_grammar()
     for argument in me.arguments
       me.args.push argument.name.value
     return rv + me.js_body()
-    
+
   me.FunctionExpression.prototype.js_class_member   = ->
     if me.specifier.value is 'method'
       rv = "#{class_def.name}.prototype.#{me.name.value} = function"
@@ -614,7 +614,7 @@ function apply_generator_to_grammar()
     for argument in me.arguments
       me.args.push argument.name.value
     return rv + me.js_body()
-    
+
   me.FunctionExpression.prototype.js_constructor = ->
     class_def.has_constructor = yes
     rv = "function #{class_def.name}"
@@ -625,7 +625,7 @@ function apply_generator_to_grammar()
     rv += me.js_body class_def.args
     class_def.args.push me.callback_arg when me.callback_arg exists
     return rv
-    
+
   me.FunctionExpression.prototype.js_body = ->
     rv = ""
     push_scope()
@@ -643,7 +643,7 @@ function apply_generator_to_grammar()
     rv += "}"
     rv = " (#{me.args.join(', ')}) {" + rv
     return rv
-    
+
   me.FunctionCall.prototype.js = (as_list) ->
     rv = []
     for argument in me.arguments
@@ -654,16 +654,16 @@ function apply_generator_to_grammar()
       return "[#{rv}]"
     else
       return "(#{rv})"
-    
+
   me.FunctionCall.prototype.js_existence = (accessor, undefined_unary, invert) ->
     if me.exisential
       return check_existence_wrapper(accessor, undefined_unary, invert)
     else
       return ''
-    
+
   me.FunctionCallArgument.prototype.js = ->
     return me.val.js()
-    
+
   me.ClassDefinition.prototype.js = ->
     push_scope()
     push_class()
@@ -683,34 +683,34 @@ function apply_generator_to_grammar()
     rv += block_code
     pop_class()
     return rv
-  
+
   function render_try_blocks()
     rv = ""
     for try_block in try_block_stack
       rv += try_block.js_wrapper_try()
     return rv
-  
+
   function render_catch_blocks()
     rv = ""
     for try_block in try_block_stack
       rv += try_block.js_wrapper_catch()
     return rv
-  
+
   me.TryCatch.prototype.js = ->
     try_block_stack.unshift me
     me.try_block.in_conditional = yes
     me.try_block.in_loop = me.in_loop
     me.original_callback = me.callback unless me.original_callback exists
     rv = me.js_no_callbacks()
-    
+
     if me.callback isnt current_callback
       me.callback = create_callback()
       me.closeout_callback = me.callback
       rv = me.js_callbacks()
-    else 
+    else
       try_block_stack.shift()
     return rv
-    
+
   me.TryCatch.prototype.js_no_callbacks = ->
     rv = me.js_wrapper_try()
     me.try_block.original_callback = me.original_callback
@@ -744,9 +744,9 @@ function apply_generator_to_grammar()
     else if me.closeout_callback exists
       rv += "return #{me.closeout_callback}();"
     rv += '}'
-    try_block_stack[0].in_catch = no when try_block_stack[0] exists 
+    try_block_stack[0].in_catch = no when try_block_stack[0] exists
     return rv
-    
+
   me.SuperStatement.prototype.js = ->
     return "" when class_def.parent doesnt exist
     rv = "#{class_def.parent}.prototype.constructor.apply(this,"
@@ -756,7 +756,7 @@ function apply_generator_to_grammar()
       rv += "arguments"
     rv += ");"
     return rv
-    
+
   me.WaitForStatement.prototype.js = ->
     throw new Error "wait fors not supported in catch blocks" when try_block_stack[0]?.in_catch
     prefix = "" if me.parent_block.bare otherwise "return "
@@ -787,8 +787,8 @@ function apply_generator_to_grammar()
       rv += "#{prefix}k$next ? k$next() : void 0;"
     rv += me.block.js_closeout()
     return rv
-    
-  snippets = 
+
+  snippets =
     'in': 'var $kindexof = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
     'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'
     'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'

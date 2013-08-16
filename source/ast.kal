@@ -2,13 +2,13 @@ class ParseFailed
   method initialize(message)
     me.message = message
     me.not_compiler_issue = yes
-    
+
 class SyntaxError
   method initialize(message)
     me.message = message
     me.locked = yes
     me.not_compiler_issue = yes
-    
+
 exports.SyntaxError = SyntaxError
 
 class ASTBase
@@ -18,9 +18,9 @@ class ASTBase
     me.line = ts.line
     me.ast_parent = parent
     me.parse()
-    
+
   #optionally match one of the classes or tokens in the list
-  method opt() 
+  method opt()
     rv = null
     start_index = me.ts.index
     for cls in arguments
@@ -38,9 +38,9 @@ class ASTBase
           if e.locked or not e.not_compiler_issue
             throw e
     return null
-  
+
   #require match to one of the classes or tokens in the list
-  method req() 
+  method req()
     rv = me.opt.apply this, arguments
     return rv if rv?
     list = []
@@ -51,7 +51,7 @@ class ASTBase
     else
       message = "Expected one of #{list.join(', ')}"
     me.error "#{message}"
-  
+
   method opt_val() #require token value
     if me.ts.value in arguments
       rv = me.ts.current
@@ -59,7 +59,7 @@ class ASTBase
       return rv
     else
       return null
-      
+
   method req_val()
     rv = me.opt_val.apply this, arguments
     return rv if rv?
@@ -67,16 +67,16 @@ class ASTBase
     for v in arguments
       args.push v
     me.error "Expected '#{args.join('\' or \'')}'"
-  
+
   method req_multi() #require at least one
     rv = me.opt_multi.apply this, arguments
     return rv if rv.length > 0
-    
+
     list = []
     for cls in arguments
       list.push(cls.name or cls)
     me.error "Expected one of #{list.join(', ')}"
-  
+
   method opt_multi() #optionally have multiple
     cls = me.opt.apply this, arguments
     return [] unless cls?
@@ -85,13 +85,13 @@ class ASTBase
       cls = me.opt.apply this, arguments
       rv.push(cls) if cls?
     return rv
-  
+
   method parse()
     me.error 'Parser Not Implemented: ' + me.constructor.name
-    
+
   method js()
     me.error 'Javascript Generator Not Implemented: ' + me.constructor.name
-    
+
   method error(msg)
     if me.locked
       full_msg = msg + ' on line ' + me.line
@@ -100,9 +100,9 @@ class ASTBase
       throw new SyntaxError full_msg
     else
       throw new ParseFailed msg
-    
+
   method lock()
     me.locked = yes
     me.line = me.ts.line
-  
+
 exports.ASTBase = ASTBase

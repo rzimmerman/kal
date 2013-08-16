@@ -16,19 +16,19 @@ class TokenStream
     me.comments = comments
     me.options = options
     me.goto_token 0
-    
+
   method next()
     return me.goto_token me.index+1
-  
+
   method prev()
     return me.goto_token me.index-1
-  
+
   method peek(delta_index)
     me.goto_token me.index + delta_index
     token = me.current
     me.goto_token me.index - delta_index
     return token
-  
+
   method goto_token(index)
     me.index = index
     if me.index > me.tokens.length - 1
@@ -42,4 +42,4 @@ class TokenStream
     me.value = me.current.value
     me.line = me.current.line
     return me.current
-    
+

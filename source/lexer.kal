@@ -10,13 +10,13 @@ class Lexer
     me.indent = 0
     me.indents = []
     me.tokenize()
-    
+
   method tokenize()
     me.tokens = []
     me.comments = []
     last_token_type = null
     index = 0
-    
+
     while index < me.code.length
       chunk = me.code.slice(index)
       for tt in token_types
@@ -50,7 +50,7 @@ class Lexer
       me.line += text.match(/\n/g)?.length or 0
       last_token_type = type
     #add a trailing newline in case the user didn't
-    me.tokens.push {text:'\n',line:me.line, value:'', type:'NEWLINE'} 
+    me.tokens.push {text:'\n',line:me.line, value:'', type:'NEWLINE'}
     me.handleIndentation 'NEWLINE', '' #clear up any remaining indents at the end of the file
     #remove the newline if it wasn't needed
     me.tokens.pop() if me.tokens[me.tokens.length-1].type is 'NEWLINE'
@@ -66,7 +66,7 @@ class Lexer
         me.error('indentation is misaligned on line ' + me.line) if indentation > me.indent
         me.tokens.push {text:text, line:me.line, value:'', type:'DEDENT'}
       me.error('indentation is misaligned') if indentation isnt me.indent
-      
+
   method error(message)
     throw message
 

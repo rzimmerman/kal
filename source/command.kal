@@ -31,19 +31,19 @@ existsSync = fs.existsSync or path.existsSync
 run = function run()
   options = parseOptions()
   return version() if options.version
-  return usage() if optimist.argv.help 
+  return usage() if optimist.argv.help
   if options.output exists and not existsSync(options.output)
     printWarn('output path does not exist!')
     return usage()
   return require('./interactive') if options._.length is 0
   process.argv[0] = 'kal'
   process.execPath = require.main.filename
-  
+
   compile_options = {}
   compile_options.show_tokens = options.tokens
   compile_options.bare = no
   compile_options.show_js = options.javascript
-  
+
   if options.output exists
     # if the user just specified one directory, assume they just want all the files in it
     if options._.length is 1 and fs.statSync(options._[0]).isDirectory()
@@ -80,7 +80,7 @@ function compile_files(filenames, output_dir, options, format)
 function version()
   printLine "Kal version #{Kal.VERSION}"
   process.exit(0)
-  
+
 function usage()
   optimist.showHelp()
   process.exit(2)

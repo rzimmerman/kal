@@ -8,12 +8,12 @@ exports.VERSION = '0.4.3'
 function compile(code, options)
   if options doesnt exist
     options = {bare:no}
-  
+
   try
     token_rv = lexer.tokenize code
     raw_tokens = token_rv[0]
     comments   = token_rv[1]
-    
+
     tokens = sugar.translate_sugar raw_tokens, options, lexer.tokenize
     root_node = parser.parse tokens, comments, options
     generator.load parser.Grammar
