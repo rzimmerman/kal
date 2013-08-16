@@ -25,4 +25,4 @@ describe 'List Comprehensions', ->
     z2.should.eql([1,2,3])
     z3 = ["#{k}: #{v}" for property k with value v in y]
     z3.should.eql(['a: 1','b: 2','c: 3'])
-    
+

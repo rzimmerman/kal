@@ -14,7 +14,7 @@ describe 'Classes and Inheritance', ->
     j.val.should.equal 7
     j.get_val().should.equal 7
     KalC.other_thing()
-    
+
   it 'should support multilevel inheritance and method overloading', ->
     class KalC
       method initialize(val)
@@ -23,11 +23,11 @@ describe 'Classes and Inheritance', ->
         return me.val
       function other_thing()
         (me.val exists).should.be.false
-        
+
     class Child inherits from KalC
       method initialize(val)
         KalC.prototype.constructor.apply this, [val + 1] #no support for super yet
-        
+
     class GrandChild inherits from Child
       method new_thing(a)
         return a
@@ -40,7 +40,7 @@ describe 'Classes and Inheritance', ->
     Child.other_thing()
     GrandChild.other_thing().should.equal 2
     k.new_thing(1).should.equal 1
-    
+
   it 'should support the Javascript instanceof operator', ->
     class A
       method x()
@@ -64,21 +64,21 @@ describe 'Classes and Inheritance', ->
     (c instanceof A).should.be.true
     (d instanceof B).should.be.true
     (d instanceof A).should.be.true
-    
+
     #Issue 6
     function p(x,y)
       return 1 if x instanceof y
       return 2
-    
+
     p(b,A).should.equal 1
     p(a,B).should.equal 2
-    
+
     n = 1
     n = 2 if a instanceof B
     n.should.equal 1
     n = 3 if b instanceof A
     n.should.equal 3
-  
+
   it 'should support the super keyword', ->
     #Issue gh-10
     class X
@@ -86,24 +86,24 @@ describe 'Classes and Inheritance', ->
          me.a = a when a exists otherwise 99
          me.b = b
          me.c = c
-    
+
     class Y inherits from X
       method initialize(a,b)
          super a, b, 10
-    
+
     class Z inherits from X
       method initialize(a,b,c)
          super
-    
+
     class OMEGA inherits from X
       method other()
         return
-    
+
     x = new X 1, 2, 3
     y = new Y 8, 9
     z = new Z 10, 11, 12
     om = new OMEGA
-    
+
     x.a.should.equal 1
     x.b.should.equal 2
     x.c.should.equal 3
@@ -114,5 +114,5 @@ describe 'Classes and Inheritance', ->
     z.b.should.equal 11
     z.c.should.equal 12
     om.a.should.equal 99
-    
-    
+
+

@@ -5,7 +5,7 @@ describe 'Wait For Statement', ->
     wait for x from callbacker 5
     x.should.equal 6
     done()
-  
+
   it 'should accept multiple arguments', (done) ->
     task callbacker2 (arg1, arg2, arg3)
       return arg1 + 1, arg2 - 1, arg3 + 2
@@ -14,7 +14,7 @@ describe 'Wait For Statement', ->
     y.should.equal 5
     z.should.equal 9
     done()
-  
+
   it 'should work inside of if statements', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -28,7 +28,7 @@ describe 'Wait For Statement', ->
     n.should.equal 2
     (z doesnt exist).should.be.true
     done()
-  
+
   it 'should work inside of else if statements', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -45,7 +45,7 @@ describe 'Wait For Statement', ->
     n.should.equal 4
     (y doesnt exist).should.be.true
     done()
-  
+
   it 'should work inside of nested if statements (1)', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -73,7 +73,7 @@ describe 'Wait For Statement', ->
     (p doesnt exist).should.be.true
     (z doesnt exist).should.be.true
     done()
-    
+
   it 'should work inside of nested if statements (2)', (done) ->
     task callbacker4(arg1)
       return arg1 * 2
@@ -101,7 +101,7 @@ describe 'Wait For Statement', ->
     (t doesnt exist).should.be.true
     (z doesnt exist).should.be.true
     done()
-    
+
   it 'should work inside of nested if statements (3)', (done) ->
     task callbacker5(arg1)
       return arg1 * 3
@@ -135,7 +135,7 @@ describe 'Wait For Statement', ->
     z.should.equal 75
     n.should.equal 4
     done()
-  
+
   it 'should work inside of for parallel in loops', (done) ->
     task callbacker3(arg1)
       return arg1 * 2
@@ -144,11 +144,11 @@ describe 'Wait For Statement', ->
       wait for j from callbacker3 i
       output.push j
     expected = [2,4,6,8]
-      
+
     for o in output
       (o in expected).should.be.true
     done()
-  
+
   it 'should only call back once from for parallel loops', (done) -> # gh-63
     function callbacker99(next)
       setTimeout next, 0
@@ -174,7 +174,7 @@ describe 'Wait For Statement', ->
 
     output.should.eql expected
     done()
-  
+
   it 'should handle nested loops (1)', (done) ->
     task shrinker(i)
       return i - 9
@@ -194,7 +194,7 @@ describe 'Wait For Statement', ->
             sum += column
     sum.should.equal 90
     done()
-    
+
   it 'should handle nested loops (2)', (done) ->
     task shrinker(i)
       return i - 9
@@ -216,8 +216,8 @@ describe 'Wait For Statement', ->
             sum += 1
     sum.should.equal 90
     done()
-    
-    
+
+
   it 'should handle nested loops (3)', (done) ->
     task shrinker(i)
       return i - 9
@@ -245,7 +245,7 @@ describe 'Wait For Statement', ->
           sum += x
     sum.should.equal 45+3-1
     done()
-  
+
   it 'should support try/catch statements in callback loops', (done) ->
     task shrinker(i)
       return i - 9
@@ -268,7 +268,7 @@ describe 'Wait For Statement', ->
         sum += 1
     sum.should.equal 45 + 9 #because the inner loop is parallel, all 9 items will throw errors, it will not exit early
     done()
-  
+
 
   it 'should work inside of while loops', (done) ->
     task callbacker3(arg1)
@@ -283,7 +283,7 @@ describe 'Wait For Statement', ->
 
     output.should.eql expected
     done()
-    
+
   it 'should throw when called back with an error from a task', (done) ->
     task callbacker10(arg1)
       fail with "error!!!"
@@ -295,7 +295,7 @@ describe 'Wait For Statement', ->
       error_happened = yes
     error_happened.should.be.true
     done()
-  
+
   it 'should preserve try/catch blocks within callbacks', (done) ->
     task callbacker11(arg1)
       return arg1
@@ -313,20 +313,20 @@ describe 'Wait For Statement', ->
       catch e
         e.should.equal 'test2'
         caught.push 2
-      fail with 'test3'  
+      fail with 'test3'
     catch e
       e.should.equal 'test3'
       caught.push 3
     caught.should.eql [1,2,3]
     done()
-  
+
   it 'should work if the called task takes no arguments', (done) ->
     task callbacker4()
       return 5
     wait for x from callbacker4()
     x.should.equal 5
     done()
-    
+
   #gh-52
   it 'should support for of loops with callbacks (serial)', (done) ->
     task callbacker12(arg1)
@@ -339,7 +339,7 @@ describe 'Wait For Statement', ->
       s += x
     s.should.equal "this4is5a6test7"
     done()
-    
+
   #gh-52
   it 'should support for of loops with callbacks (parallel)', (done) ->
     task callbacker13(arg1)
@@ -354,7 +354,7 @@ describe 'Wait For Statement', ->
     t.should.equal 1+2+3+4
     obj2.should.eql {'this':4,'is':5,'a':6,'test':7}
     done()
-    
+
   it 'should accept tail conditionals', (done) ->
     task callbacker15 (arg1)
       return arg1 * 2

@@ -2,11 +2,11 @@ describe 'Assignment Statement', ->
   it 'should assign a value to an identifier', ->
     a = 1
     a.should.equal 1
-  
+
   it 'should allow access to the global namespace without leaking', ->
     n = process.title
     n.should.equal 'node'
-  
+
   it 'should allow assignment of functions to variables', ->
     f = (a,b) ->
       return a + b
@@ -14,7 +14,7 @@ describe 'Assignment Statement', ->
       return a * b
     f(2,3).should.equal 5
     g(5,10).should.equal 50
-  
+
   it 'should support compound assignment operators', ->
     i = 5
     i += 1
@@ -25,5 +25,5 @@ describe 'Assignment Statement', ->
     i.should.equal 12
     i /= 12
     i.should.equal 1
-  
+
 

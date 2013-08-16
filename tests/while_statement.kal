@@ -7,13 +7,13 @@ describe 'While Statement', ->
       last_i = i
       i += 1
     i.should.equal 10
-  
+
   it 'should not execute if the condition is already false', ->
     i = 75
     while i < 2
       require('should').fail('while loop executed when condition was false')
     i.should.equal 75
-  
+
   it 'should define and use the conditional in the appropriate scope', ->
     j = 1
     x = function ()

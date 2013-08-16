@@ -7,7 +7,7 @@ describe 'If Statement', ->
     if a is 3
       require('should').fail('running true block for false expression')
     x.should.equal 4
-  
+
   it 'should support all synonyms (when, unless, except when)', ->
     n = 5
     when n is 5
@@ -22,7 +22,7 @@ describe 'If Statement', ->
       n.should.equal 5
     except when n is 5
       require('should').fail('running true block for false expression')
-    
-    
-  
+
+
+
 

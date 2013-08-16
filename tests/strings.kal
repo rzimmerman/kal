@@ -22,5 +22,5 @@ describe 'Strings', ->
     z.should.equal '\\'
     if z isnt '\\'
       require('should').fail("couldn't parse string with slashes")
-    
-    
+
+

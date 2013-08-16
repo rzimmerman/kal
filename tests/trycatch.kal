@@ -13,7 +13,7 @@ describe 'Try/Catch/Throw Statements', ->
     (z exists).should.be.false
     x.should.equal 1
     y.should.equal 2
-    
+
   it 'should work without a catch block (just ignore errors)', ->
     try
       x = 1
@@ -23,7 +23,7 @@ describe 'Try/Catch/Throw Statements', ->
     (z exists).should.be.false
     x.should.equal 1
     y.should.equal 2
-    
+
   it 'should fail to compile if there are callbacks in the catch clause (not supported)', ->
     Kal = require '../compiled/kal'
     thrown = no
@@ -33,4 +33,4 @@ describe 'Try/Catch/Throw Statements', ->
       thrown = yes
       e.should.match /not supported/ig
     thrown.should.be.true
-    
+

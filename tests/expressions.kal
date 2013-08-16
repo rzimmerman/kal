@@ -6,13 +6,13 @@ describe 'Expression', ->
     x = 5
     x
     x.should.equal 5
-  
+
   it 'should allow unary and binary expressions', ->
     x = 1
     x.should.equal 1
     x = 5 - 2
     x.should.equal 3
-  
+
   it 'should support all arithmetic operators (+,-,*,/,^)', ->
     (2+3).should.equal 5
     (5*2.5).should.equal 12.5
@@ -20,42 +20,42 @@ describe 'Expression', ->
     (5/2).should.equal 2.5
     (3^3).should.equal 27
     (4^0.5).should.equal 2
-    
+
   it 'should support logical operators (and, or, xor, not, nor, is, isnt)', ->
     (yes and yes).should.be.true
     (yes and no).should.be.false
     (no and yes).should.be.false
     (no and no).should.be.false
-    
+
     (yes or yes).should.be.true
     (yes or no).should.be.true
     (no or yes).should.be.true
     (no or no).should.be.false
-    
+
     (yes xor yes).should.equal 0
     (yes xor no).should.equal 1
     (no xor yes).should.equal 1
     (no xor no).should.equal 0
-    
+
     (not yes).should.be.false
     (not no).should.be.true
-    
+
     (yes nor yes).should.be.false
     (yes nor no).should.be.false
     (no nor yes).should.be.false
     (no nor no).should.be.true
-    
+
     (2 is 2).should.be.true
     (3 is 1).should.be.false
     (3 is '3').should.be.false
     ('3' is '3').should.be.true
-    
+
     (2 isnt 2).should.be.false
     (3 isnt 1).should.be.true
     (3 isnt '3').should.be.true
     ('3' isnt '3').should.be.false
-    
-    
+
+
   it 'should support parenthetical expressions', ->
     x = 5 * (2 + 3)
     x.should.equal 25
@@ -63,44 +63,44 @@ describe 'Expression', ->
     z = (6)
     y.should.equal 145
     z.should.equal 6
-    
+
   it 'should support order of operations', ->
     x = 1 + 2 * 4 + 4 - 3 ^ 2 / 6
     x.should.equal 11.5
-    
+
   it 'should support variable access', ->
     x = 3
     y = 4
     z = 5
     (x^2 + y^2).should.equal z^2
-  
+
   it 'should support property access', ->
     w = {y:2,z:3}
     w.x = {a:5,b:6}
     w.x.c = function ()
       return {g:7,h:8}
     (w.x.a + w.x.b + w.y + w.z + w.x.c().g + w.x.c().h).should.equal 31
-    
+
   it 'should support the exisential operators', ->
     (x exists).should.be.false
     (x doesnt exist).should.be.true
     (x?).should.be.false
     (y exists).should.be.false
     (y doesnt exist).should.be.true
-    
+
     y = {a:1}
-    
+
     (y exists).should.be.true
     (y doesnt exist).should.be.false
     (y?).should.be.true
-    
+
     (y?.z exists).should.be.false
     y.z = 3
     (y?.z exists).should.be.true
     (y?.z).should.equal 3
     require('should').not.exist(y?.v)
     (y?.b?.d?.r?).should.be.false
-  
+
   it 'should support unary operators (new, not)', ->
     function test(arg1)
       me.p = arg1
@@ -108,11 +108,11 @@ describe 'Expression', ->
     a.should.eql {}
     b = new test 'tttt'
     b.p.should.equal 'tttt'
-    
+
     (not true).should.be.false
     (not false).should.be.true
     (not true is not true).should.be.true #order of operations
-    
+
   it 'should support array access', ->
     a = [1,'j',12,no,[2,'f']]
     a[0].should.equal 1
@@ -126,7 +126,7 @@ describe 'Expression', ->
     a?[4]?[0].should.equal 2
     require('should').not.exist(a?[6]?[3])
     require('should').not.exist(b?[6]?[3])
-    
+
   it 'should support negative unary expressions', -> #Issue 1
     x = -3
     y = 0
@@ -134,7 +134,7 @@ describe 'Expression', ->
     z = 4 + -3
     z.should.equal 1
     (-1).should.equal -(not false)
-  
+
   it 'should support comparison operators (<, >, is, isnt)', ->
     (3 is 3).should.be.true
     (3 is 2).should.be.false
@@ -146,7 +146,7 @@ describe 'Expression', ->
     (5 > 5).should.be.false
     (2 < 3).should.be.true
     (2 < 2).should.be.false
-    
+
   it 'should support comparison operators (<=, >=, ==, !=)', -> #Issue 7
     (2 <= 4).should.be.true
     (2 <= 2).should.be.true
@@ -158,7 +158,7 @@ describe 'Expression', ->
     (2 == 1).should.be.false
     (2 != 2).should.be.false
     (2 != 1).should.be.true
-  
+
   it 'should support list operators (in, not in)', ->
     a = ['a','b','c','1',2,3]
     (2 in a).should.be.true
@@ -166,11 +166,11 @@ describe 'Expression', ->
     (3 in a).should.be.true
     (7 in a).should.be.false
     (1 in a).should.be.false
-    
+
     #Issue 5
     (3 not in a).should.be.false
     (7 not in a).should.be.true
-    
+
   it 'should support map operators (of, not of)', ->
     b = {x:2,y:'bob',z:1}
     ('x' of b).should.be.true
@@ -179,14 +179,14 @@ describe 'Expression', ->
     ('x' not of b).should.be.false
     ('z' not of b).should.be.false
     ('a' not of b).should.be.true
-    
+
   it 'should support the use of reserved words as properties', -> #gh-26
     tobj = {}
     tobj['on'] = function (a)
       return 2 + a
     tobj['in'] = 3
-    
+
     tobj.in.should.equal 3
     x = tobj.on 5
     x.should.equal 7
-    
+

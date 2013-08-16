@@ -8,11 +8,11 @@ describe 'For Statement', ->
       i += 1
     i.should.equal 4
     out_s.should.equal 'thisisatest'
-  
+
   it 'should not execute if the iterable is empty', ->
     for x in []
       require('should').fail 'executed for loop on empty input'
-  
+
   it 'should define and use the conditional in the appropriate scope', ->
     j = 1
     x = function ()
@@ -24,7 +24,7 @@ describe 'For Statement', ->
     x().should.equal 4
     j.should.equal 6
     (k exists).should.equal.false
-  
+
   it 'should only evaluate the iterable once', ->
     n = [1,2,3,4]
     y = function ()
@@ -35,7 +35,7 @@ describe 'For Statement', ->
       i += 1
     i.should.equal 5
     x.should.equal 100
-    
+
   it 'should accept an expression as an iterable', ->
     s = "a,b,c,def"
     t = ','
@@ -43,7 +43,7 @@ describe 'For Statement', ->
     for x in s.split t
       y += x
     y.should.equal "abcdef"
-    
+
   it 'should support object property enumeration', ->
     i = 0
     iterable = {'this':1,'is':2,'a':3,'test':4}
@@ -53,4 +53,4 @@ describe 'For Statement', ->
       i += iterable[s]
     i.should.equal 1+2+3+4
     out_s.should.equal 'thisisatest'
-    
+

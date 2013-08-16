@@ -3,32 +3,32 @@ Kal = require '../compiled/kal'
 describe 'Other', ->
   it 'should be able to handle empty lines with arbitrary indentation', ->
     b = Kal.eval 'a = 4\n  \nb = 2\nif a is 2\n  b = 3\n\n  b = 4\n\r\v\t   \r\nb', {sandbox:yes,bare:yes}
-      
+
     b.should.equal 2
-    
+
   it 'should be able to handle trailing spaces on a line', ->
     a = Kal.eval 'a = 4  \nb = 2\t\r\na', {sandbox:yes,bare:yes}
     a.should.equal 4
-  
+
   it "should be able to handle autoparenthesis around list expressions", -> #gh-35
     a = [1,2,3,4]
     b = [x+1 for x in a]
     a.should.eql [1,2,3,4]
     b.should.eql [2,3,4,5]
-  
+
   it "should support coffee-style list definitions (no commas/flexible whitespace)", -> #gh-9
     a = [1, 2
          3
          4,
          5]
     a.should.eql [1,2,3,4,5]
-  
+
   #gh-46
   it "should support coffee-style object declarations", ->
     d = Kal.eval "d =\n  x:2\n  y:\n    a:1\n    b:\n      n:'hey',m:'you'\n  'z':[1\n    2\n    3]\nd", {sandbox:yes,bare:yes}
     expect = {x:2,y:{a:1,b:{n:'hey',m:'you'}},z:[1,2,3]}
     expect.should.eql d
-    
+
   #gh-47
   it 'should correctly support chained conditionals', ->
     t1 = {'callback':1,'is_else_if':yes,'isnt_else_if':no}
@@ -50,12 +50,12 @@ describe 'Other', ->
     rv.should.equal "aaateststuff"
     rv += a + a + t1.some_func() when (no)
     rv.should.equal "aaateststuff"
-  
+
   #gh-41
   it 'should be able to handle function calls at the end of a file', ->
     b = Kal.eval 'function test(a)\n  return a + 5\ntest 3', {sandbox:yes,bare:yes}
     b.should.equal 8
-    
+
   #gh-28
   it 'should correctly add parentheses to strings with embedded code', ->
     function tester(a,b)
@@ -63,8 +63,8 @@ describe 'Other', ->
     c = "test"
     r = tester "this is a #{c}", " of strings"
     r.should.equal "this is a test of strings"
-  
-  #gh-33  
+
+  #gh-33
   it 'should support the pass statement for blank statements', ->
     pass
     a = 1

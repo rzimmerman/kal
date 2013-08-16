@@ -8,7 +8,7 @@ describe 'When Expressions', ->
     require('should').not.exist(5 unless yes)
     (5 except when no).should.equal 5
     require('should').not.exist(5 except when yes)
-  
+
   it 'should allow a false clause using the otherwise or else keywords', ->
     (5 when yes otherwise 2).should.equal 5
     (5 when no otherwise 2).should.equal 2
@@ -26,7 +26,7 @@ describe 'When Expressions', ->
     (5 except when no otherwise 2).should.equal 5
     (5 except when yes else 2).should.equal 2
     (5 except when no else 2).should.equal 5
-    
+
   it 'should act as an if statement when used in an assignment statement', ->
     a = 6 when false
     (a exists).should.be.false
@@ -44,45 +44,45 @@ describe 'When Expressions', ->
     d.should.equal 6
     d = 8 except when true
     d.should.equal 6
-    
-    
+
+
   it 'should act as an if statement when used in a return statement', ->
     function t1(a)
       return 6 when a
       return 7 unless a
-      
+
     function t2(a)
       return 8 if a
       return 9 except when a
-      
+
     t1(yes).should.equal 6
     t1(no).should.equal 7
     t2(yes).should.equal 8
     t2(no).should.equal 9
-    
-    
+
+
   it 'should work with no-paren function calls when used as an if statement', -> #Issue 2
     a = 'abc'
     a = a.concat 's' if false
     a.should.equal 'abc'
     a = a.concat 'd' if true
     a.should.equal 'abcd'
-    
+
     a = 'abc'
     a = a.concat 's' when no
     a.should.equal 'abc'
     a = a.concat 'd' when yes
     a.should.equal 'abcd'
-    
+
     a = 'abc'
     a = a.concat 's' except when true
     a.should.equal 'abc'
     a = a.concat 'd' except when false
     a.should.equal 'abcd'
-    
+
     a = 'abc'
     a = a.concat 's' unless true
     a.should.equal 'abc'
     a = a.concat 'd' unless false
     a.should.equal 'abcd'
-    
+

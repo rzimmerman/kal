@@ -12,7 +12,7 @@ describe 'Else Statement', ->
       a.should.equal 4
       x = 5
     x.should.equal 5
-  
+
   it 'should support all synonyms (else, otherwise)', ->
     n = 5
     when n is 5
