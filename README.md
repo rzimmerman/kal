@@ -1,10 +1,10 @@
 # Kal
 
-Kal is a highly readable, easy-to-use language that compiles to JavaScript. It's designed to be asynchronous and can run both on [node.js](http://nodejs.org/) and in the browser. Kal makes asynchronous programming easy and clean by allowing functions to pause and wait for I/O, replacing the awkward callback syntax with a clean, simple syntax.
+Kal is a highly readable, easy-to-use language that compiles to JavaScript. It's designed to be asynchronous and can run both on [node.js](http://nodejs.org/) and in the browser. Kal makes asynchronous programming easy and clean by allowing functions to [pause and wait for I/O](#asynchronous-wait-for), replacing an awkward callback syntax with a clean, simple syntax.
 
 Kal is also _expressive_ and offers many useful synonyms and constructs to make code readable in almost plain English.
 
-**If you are familiar with JavaScript and/or CoffeeScript, please check out the [wait for](#Asynchronous Wait For) section for an idea of what makes Kal special.**
+**If you are familiar with JavaScript and/or CoffeeScript, please check out the [wait for](#asynchronous-wait-for) section for an idea of what makes Kal special.**
 
 ## Installation Using npm
 
@@ -15,6 +15,10 @@ sudo npm install -g kal
 ```
 
 `sudo` may not be required depending on how you installed `node`.
+
+## Syntax Highlighting
+
+A [TextMate bundle](https://github.com/rzimmerman/kal.tmbundle) for TextMate and Sublime Text is available with limited but very useful support for Kal's syntax.
 
 ## Installing from the Repository
 
