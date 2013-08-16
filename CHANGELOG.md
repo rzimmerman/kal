@@ -1,5 +1,11 @@
 #Change Log
 
+### [0.4.4](https://github.com/rzimmerman/kal/compare/r0.4.3...r0.4.4)
+* Fixed a bug with `try` blocks containing `wait for` statements that could throw unexpected errors when nested in certain ways
+* Improvements to the command-line tool
+* Added the ability to compile a whole directory and recursive directories to the command-line tool
+* Fixed some issues with the `in` and `instanceof` operators in the REPL
+
 ### [0.4.3](https://github.com/rzimmerman/kal/compare/r0.4.2...r0.4.3)
 * Fixed a bug with `for parallel` blocks that could cause them to return multiple times
 * Better syntax error reporting in `catch` blocks
