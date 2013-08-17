@@ -14,6 +14,12 @@
     <![endif]-->
 
     <title>Kal by rzimmerman</title>
+    <style>
+    .kw {color:#008;}
+    .kw2 {color:#800;}
+    .ide {color:#666;}
+    .def {color:#660;}
+    </style>
   </head>
 
   <body>
@@ -68,11 +74,11 @@
 
 <p>would be equivalent to this in Kal:</p>
 
-<pre lang="kal"><code>task getUserFriends = function (userName)
-  wait for user from db.users.findOne {name:userName}
-  wait for friends from db.friends.find {userId:user.id}
-  return friends
-</code></pre>
+<pre lang="kal"><span class="def">task</span> getUserFriends (userName)
+  <span class="kw2">wait for</span> user <span class="kw2">from</span> db.users.findOne {<span class="ide">name</span>:userName}
+  <span class="kw2">wait for</span> friends <span class="kw2">from</span> db.friends.find {<span class="ide">userId</span>:user.id}
+  <span class="kw">return</span> friends
+</pre>
 
 <p>This includes error handling via callbacks. Consider a more complicated example:</p>
 
@@ -110,16 +116,16 @@
 
 <p>Even using <a href="https://github.com/caolan/async">async</a>, it's lot. Here's the equivalent Kal:</p>
 
-<pre lang="kal"><code>task getUserFriends(userName)
-  wait for user from db.users.findOne {name:userName}
-  wait for friends from db.friends.find {userId:user.id}
-  if user.type is 'power user'
-    for parallel friend in friends
-      wait for friendsOfFriend from db.friends.find friend
-      for newFriend in friendsOfFriend
-        friends.push newFriend unless newFriend in friends
-  return friends
-</code></pre>
+<pre lang="kal"><span class="def">task</span> getUserFriends(userName)
+  <span class="kw2">wait for</span> user <span class="kw2">from</span> db.users.findOne {<span class="ide">name</span>:userName}
+  <span class="kw2">wait for</span> friends <span class="kw2">from</span> db.friends.find {<span class="ide">userId</span>:user.id}
+  <span class="kw">if</span> user.type <span class="kw">is</span> 'power user'
+    <span class="kw">for parallel</span> friend <span class="kw">in</span> friends
+      <span class="kw2">wait for</span> friendsOfFriend <span class="kw2">from</span> db.friends.find friend
+      <span class="kw">for</span> newFriend <span class="kw">in</span> friendsOfFriend
+        friends.push newFriend <span class="kw">unless</span> newFriend <span class="kw">in</span> friends
+  <span class="kw">return</span> friends
+</pre>
 
 <p>There are no additional libraries required and everything's a lot more ... vertical. Notice that the <code>wait for</code> statement works in loops, <code>if</code> statements, <code>try</code>/<code>catch</code> blocks, and all nested permutations. It's completely JavaScript compatible - <code>getUserFriends</code> would be called the same way and call back with the same results.</p>
 
