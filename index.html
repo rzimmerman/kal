@@ -106,7 +106,7 @@
         <span class="p">});</span>
     <span class="p">});</span>
 <span class="p">}</span>
-<span class="kd">var</span> <span class="nx">getFriendsById</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">userId</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
+<span class="kd">var</span> <span class="nx">getFriendsById</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">user.id</span><span class="p">,</span> <span class="nx">next</span><span class="p">)</span> <span class="p">{</span>
     <span class="nx">db</span><span class="p">.</span><span class="nx">friends</span><span class="p">.</span><span class="nx">find</span><span class="p">({</span><span class="nx">userId</span><span class="o">:</span><span class="nx">userId</span><span class="p">},</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">friends</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nx">err</span> <span class="o">!=</span> <span class="kc">null</span><span class="p">)</span> <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
         <span class="k">return</span> <span class="nx">next</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">friends</span><span class="p">);</span>
@@ -121,7 +121,7 @@
   <span class="kw2">wait for</span> friends <span class="kw2">from</span> db.friends.find {<span class="ide">userId</span>:user.id}
   <span class="kw">if</span> user.type <span class="kw">is</span> 'power user'
     <span class="kw">for parallel</span> friend <span class="kw">in</span> friends
-      <span class="kw2">wait for</span> friendsOfFriend <span class="kw2">from</span> db.friends.find friend
+      <span class="kw2">wait for</span> friendsOfFriend <span class="kw2">from</span> db.friends.find {<span class="ide">userId</span>:friend}
       <span class="kw">for</span> newFriend <span class="kw">in</span> friendsOfFriend
         friends.push newFriend <span class="kw">unless</span> newFriend <span class="kw">in</span> friends
   <span class="kw">return</span> friends
