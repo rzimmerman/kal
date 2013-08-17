@@ -45,7 +45,6 @@ describe 'When Expressions', ->
     d = 8 except when true
     d.should.equal 6
 
-
   it 'should act as an if statement when used in a return statement', ->
     function t1(a)
       return 6 when a
