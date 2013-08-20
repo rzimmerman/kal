@@ -209,7 +209,9 @@ class Expression inherits from ASTBase
     me.lock()
     if me.op?
       me.right = me.req Expression
-    me.conditional = me.opt WhenExpression
+    # don't parse tail conditionals after dedents. This typically is from
+    # an ImplicitMapExpression followed by an if statement (see gh-72)
+    me.conditional = me.opt WhenExpression unless me.ts.peek(-1).type is 'DEDENT'
 
 class UnaryExpression inherits from ASTBase
   method is_lvalue()

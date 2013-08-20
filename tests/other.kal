@@ -76,3 +76,13 @@ describe 'Other', ->
 
   it 'should alias print to console.log', ->
     print.should.equal console.log
+
+  it 'should handle if statements after object definitions', -> #gh-72
+    jen =
+      name: 'Jen'
+      age: 27
+      clearance: 'None'
+
+    if jen.age is 27
+      x = 'Jen is 27'
+    x.should.equal 'Jen is 27'
