@@ -347,7 +347,7 @@ for x in [1,2,3]
   print x
 ```
 
-Will print the numbers 1, 2, and 3. The value n the right of the `for ... in` expression is called the `iterant`. It must either be an array. Python-like iterable object support is coming soon.
+Will print the numbers 1, 2, and 3. The value n the right of the `for ... in` expression is called the `iterant`. Currently it must be an array. Python-like iterable object support is coming soon.
 
 `for` loops can also be used on objects:
 
