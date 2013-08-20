@@ -87,12 +87,12 @@ describe 'Wait For Statement', ->
         n = 0
         wait for y from callbacker4 y
         n = 0
-        y += 1 #28+1=29
+        y += 1 # 28+1=29
       n = 2
     else if x is 2
       n = 4
       wait for z from callbacker4 8
-    else #true
+    else # true
       n = 5
       if yes
         wait for p from callbacker4 1
@@ -118,7 +118,7 @@ describe 'Wait For Statement', ->
         n = 0
         y += 1
       n = 2
-    else if x is 2 #true
+    else if x is 2 # true
       n = 4
       if y isnt 3
         z = 10

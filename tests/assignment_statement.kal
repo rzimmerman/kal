@@ -23,7 +23,9 @@ describe 'Assignment Statement', ->
     i.should.equal 4
     i *= 3
     i.should.equal 12
-    i /= 12
+    i %= 7
+    i.should.equal 5
+    i /= 5
     i.should.equal 1
 
 
