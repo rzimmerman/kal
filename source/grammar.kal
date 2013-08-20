@@ -159,7 +159,7 @@ class MultipleReturnValues inherits from ASTBase
       else
         t = me.req_val 'from', ','
     me.ts.prev()
-    me.require ')' if left_paren
+    me.req_val ')' if left_paren
 
 class ExpressionStatement inherits from ASTBase
   method parse()

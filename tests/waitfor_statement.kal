@@ -404,3 +404,16 @@ it 'should work with other nested cases', (done) ->
   for series text in ['test.txt','test.dat','error']
     wait for n from tester99 text
   done()
+
+  it 'should accept mutliple return values', (done) ->
+    task boring(b)
+      return b, b+1, b+2
+    wait for x, y, z from boring(10)
+    x.should.equal 10
+    y.should.equal 11
+    z.should.equal 12
+    wait for (x, y, z) from boring(2)
+    x.should.equal 2
+    y.should.equal 3
+    z.should.equal 4
+    done()
