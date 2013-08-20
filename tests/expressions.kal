@@ -190,3 +190,11 @@ describe 'Expression', ->
     x = tobj.on 5
     x.should.equal 7
 
+  it 'should support the `but` operator', -> #gh-83
+    a = true
+    b = true
+    c = false
+    (a but b).should.be.true
+    (a but not c).should.be.true
+    (a but b but not c).should.be.true
+    (a but c).should.be.false
