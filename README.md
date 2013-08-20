@@ -2,7 +2,9 @@
 
 Kal is a highly readable, easy-to-use language that compiles to JavaScript. It's designed to be asynchronous and can run both on [node.js](http://nodejs.org/) and in the browser. Kal makes asynchronous programming easy and clean by allowing functions to [pause and wait for I/O](#asynchronous-wait-for), replacing an awkward callback syntax with a clean, simple syntax.
 
-Kal is also _expressive_ and offers many useful synonyms and constructs to make code readable in almost plain English.
+For an overview, see [the Github page](http://rzimmerman.github.io/kal/) or check out the [examples](https://github.com/rzimmerman/kal/tree/master/examples).
+
+Kal is _expressive_ and offers many useful synonyms and constructs to make code readable in almost plain English.
 
 Kal is designed with a unique philosophy:
 
