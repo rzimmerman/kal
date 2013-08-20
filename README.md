@@ -429,12 +429,12 @@ Listed below are Kal's operators and their other-language equivalents. Note that
 | `true`, `yes`, `on`        | `true`, `yes`, `on`  | `true`               | Boolean true                   |
 | `false`, `no`, `off`       | `false`, `no`, `off` | `false`              | Boolean false                  |
 | `and`, `but`               | `and`                | `&&`                 | Boolean and                    |
-| `or`                       | `or`                 | `||`                 | Boolean or                     |
+| `or`                       | `or`                 | <code>&#124;&#124;</code>       | Boolean or                     |
 | `nor`                      | none                 | none                 | Boolean or, inverted           |
 | `xor`, `bitwise xor`       | `^`                  | `^`                  | Bitwise xor                    |
 | `not`, `bitwise not`       | `~`                  | `~`                  | Bitwise not (invert)           |
 | `bitwise and`              | `&`                  | `&`                  | Bitwise and                    |
-| `bitwise or`               | `|`                  | `|`                  | Bitwise or                     |
+| `bitwise or`               | <code>&#124;</code>                  | <code>&#124;</code>                  | Bitwise or                     |
 | `^`                        | none                 | none                 | Exponent (`Math.pow`)          |
 | `exists`, `?`              | `?`                  | none                 | Existential check              |
 | `doesnt exist`             | none                 | none                 | Existential check (inverted)   |
