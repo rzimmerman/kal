@@ -431,8 +431,9 @@ Listed below are Kal's operators and their other-language equivalents. Note that
 | `and`, `but`               | `and`                | `&&`                 | Boolean and                    |
 | `or`                       | `or`                 | <code>&#124;&#124;</code>       | Boolean or                     |
 | `nor`                      | none                 | none                 | Boolean or, inverted           |
+| `not`                      | `not`, `!`           | `!`                  | Boolean not                    |
 | `xor`, `bitwise xor`       | `^`                  | `^`                  | Bitwise xor                    |
-| `not`, `bitwise not`       | `~`                  | `~`                  | Bitwise not (invert)           |
+| `bitwise not`              | `~`                  | `~`                  | Bitwise not (invert)           |
 | `bitwise and`              | `&`                  | `&`                  | Bitwise and                    |
 | `bitwise or`               | <code>&#124;</code>                  | <code>&#124;</code>                  | Bitwise or                     |
 | `^`                        | none                 | none                 | Exponent (`Math.pow`)          |
