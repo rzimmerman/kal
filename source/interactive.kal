@@ -15,6 +15,7 @@ inspect      = util.inspect
 vm           = require 'vm'
 Script       = vm.Script
 Module       = require 'module'
+KAL_KEYWORDS = require('./grammar').KEYWORDS
 
 # Config
 REPL_PROMPT = 'kal> '
@@ -68,8 +69,8 @@ function completeVariable (text)
   if free exists
     vars = Script.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
     keywords = []
-    for r in Kal.generator.keywords
-      kewords.push r when r.slice(0,2) isnt '__'
+    for r in KAL_KEYWORDS
+      keywords.push r when r.slice(0,2) isnt '__'
     candidates = vars
     for key in keywords
       candidates.push key when not (key in candidates)
