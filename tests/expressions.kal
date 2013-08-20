@@ -198,3 +198,15 @@ describe 'Expression', ->
     (a but not c).should.be.true
     (a but b but not c).should.be.true
     (a but c).should.be.false
+
+  it 'should support bitwise operators', -> #gh-71
+    a = 0x55
+    b = 0xaa
+    c = 0x01
+    d = 0x80
+    (a bitwise or b).should.equal 0xff
+    (a bitwise or d).should.equal 0xd5
+    (a bitwise and b).should.equal 0x00
+    (a bitwise and c).should.equal 0x01
+    (a bitwise xor c).should.equal 0x54
+    (bitwise not a).should.equal(-a - 1)

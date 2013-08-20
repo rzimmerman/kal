@@ -5,7 +5,7 @@ KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unles
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
             'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',
             'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series',
-            'pass']
+            'pass', 'bitwise']
 
 class Block inherits from ASTBase
   method parse()
@@ -177,7 +177,9 @@ class BlankStatement inherits from ASTBase
 class BinOp inherits from ASTBase
   method parse()
     me.invert = no
+    me.bitwise = me.opt_val 'bitwise'
     me.op = me.req 'IDENTIFIER', 'LITERAL'
+    me.lock() if me.bitwise and me.op.value isnt 'not'
     if me.op.type is 'LITERAL'
       me.error("unexpected operator #{this.op.value}") if me.op.value in [')',']','}',';',':',',']
       me.lock()
@@ -219,7 +221,10 @@ class UnaryExpression inherits from ASTBase
         return no
     return yes
   method parse()
+    me.bitwise     = me.opt_val 'bitwise'
     me.preop       = me.opt_val 'not', 'new', '-'
+    if me.bitwise and me.preop.value isnt 'not'
+      me.error "expected 'not' after 'bitwise' for a unary expression"
     me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, ImplicitMapExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
     #if a paren expression occurs immediately after the function block dedent, this would
     #normally be interpreted as a function call on the function expression. While this may

@@ -26,6 +26,10 @@ KEYWORD_TRANSLATE =
   'of':         'in'
   'EndOfList':  'undefined'
   'fail':       'throw'
+  'bitwise and':'&'
+  'bitwise or': '|'
+  'bitwise xor': '^'
+  'bitwise not': '~'
 
 load = function load (grammar)
   apply_generator_to_grammar.apply grammar
@@ -261,11 +265,13 @@ function apply_generator_to_grammar()
         closeout = "void 0"
         rv = "((#{existence_check}) ? #{rv} : #{closeout})"
 
-    if me.preop?.value is 'new'
-      rv = "#{KEYWORD_TRANSLATE[me.preop.value]} #{rv}"
-    else if me.preop?.value is 'not'
-      rv = "#{KEYWORD_TRANSLATE[me.preop.value]}(#{rv})"
-    else if me.preop?.value is '-'
+    preop_value = me.preop?.value
+    if preop_value is 'new'
+      rv = "#{KEYWORD_TRANSLATE[preop_value]} #{rv}"
+    else if preop_value is 'not'
+      preop_value = "bitwise not" if me.bitwise
+      rv = "#{KEYWORD_TRANSLATE[preop_value]}(#{rv})"
+    else if preop_value is '-'
       rv = "-#{rv}"
     return rv
 
@@ -320,7 +326,9 @@ function apply_generator_to_grammar()
     return me.token.text
 
   me.BinOp.prototype.js = ->
-    return KEYWORD_TRANSLATE[me.op.value] or me.op.value
+    op_value = me.op.value
+    op_value = "bitwise #{op_value}" if me.bitwise
+    return KEYWORD_TRANSLATE[op_value] or me.op.value
 
   me.IfStatement.prototype.js = ->
     me.original_callback = me.callback unless me.original_callback exists
