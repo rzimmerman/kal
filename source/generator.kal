@@ -178,7 +178,7 @@ function apply_generator_to_grammar()
 
   me.ReturnStatement.prototype.js = ->
     exprs_js = [expr.js() for expr in me.exprs]
-    exprs_js.unshift 'null' when me.parent_block.callback exists
+    exprs_js.unshift 'null' when scope['k$next'] exists
     arg_list = exprs_js.join(', ')
     if scope['k$next'] exists
       scope['k$rv'] = 'no closures'
