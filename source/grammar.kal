@@ -225,7 +225,7 @@ class UnaryExpression inherits from ASTBase
   method parse()
     me.bitwise     = me.opt_val 'bitwise'
     me.preop       = me.opt_val 'not', 'new', '-'
-    if me.bitwise and me.preop.value isnt 'not'
+    if me.bitwise and me.preop?.value isnt 'not'
       me.error "expected 'not' after 'bitwise' for a unary expression"
     me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, ImplicitMapExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
     #if a paren expression occurs immediately after the function block dedent, this would
