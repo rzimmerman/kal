@@ -1,5 +1,12 @@
 #Change Log
 
+### [0.4.6](https://github.com/rzimmerman/kal/compare/r0.4.5...r0.4.6)
+* Fixes to the `but` operator. It was failing to compile in certain cases, such as when combined with `not`.
+* Added support for bitwise operators (see the README for a full list).
+* Fixed an issue where you could not have an `if` statement directly after a multiline object definition.
+* Multiple return values from `wait for`s now actually work.
+* Fixed a (cosmetic) issue with JavaScript output for standard `return` statements.
+
 ### [0.4.5](https://github.com/rzimmerman/kal/compare/r0.4.4...r0.4.5)
 * Cleaned up the npm configuration for users building the repo manually (does not affect npm repository packages)
 * Fixed a bug with the command line tool where things like list comprehensions were not working when running a script directly with `kal`
