@@ -183,12 +183,12 @@ class BinOp inherits from ASTBase
     if me.op.type is 'LITERAL'
       me.error("unexpected operator #{this.op.value}") if me.op.value in [')',']','}',';',':',',']
       me.lock()
-      me.error("unexpected operator #{this.op.value}") unless me.op.value in ['+','-','*','%','/','>','<','^','<=','>=','==','!=']
+      me.error("unexpected operator #{this.op.value}") unless me.op.value in ['+','-','*','/','>','<','^','<=','>=','==','!=']
     else
       if me.op.value is 'not'
         me.op = me.req_val 'in', 'of'
         me.invert = yes
-      me.error("unexpected operator #{this.op.value}") unless me.op.value in ['and','but','or','xor','nor','in','is','isnt','instanceof','of']
+      me.error("unexpected operator #{this.op.value}") unless me.op.value in ['and','but','or','xor','nor','in','mod','is','isnt','instanceof','of']
 
 class Expression inherits from ASTBase
   method transform_when_statement()
