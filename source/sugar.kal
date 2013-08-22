@@ -4,7 +4,7 @@ KEYWORDS = grammar.KEYWORDS
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits',
                  'from','and','or','xor','in','when','instanceof','of','nor','if','unless',
                  'except','for','with','wait','task','fail','parallel','series','safe','but',
-                 'bitwise']
+                 'bitwise','mod']
 
 function translate_sugar (tokens, options, tokenizer)
   out_tokens = coffee_style_functions print_statement noparen_function_calls multiline_statements multiline_lists clean code_in_strings tokens, tokenizer
