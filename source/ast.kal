@@ -18,6 +18,7 @@ class ASTBase
     me.line = ts.line
     me.ast_parent = parent
     me.parse()
+    me.endline = ts.line
 
   #optionally match one of the classes or tokens in the list
   method opt()
