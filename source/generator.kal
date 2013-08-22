@@ -12,6 +12,7 @@ KEYWORD_TRANSLATE =
   'or':         '||'
   'xor':        '^'
   '^':          'pow'
+  'mod':        '%'
   'not':        '!'
   'new':        'new '
   'me':         'this'
