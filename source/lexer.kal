@@ -85,8 +85,7 @@ parse_token.WHITESPACE = (text) ->
   return ' '
 parse_token.COMMENT = (text) ->
   rv = text.trim()
-  rv = rv.slice(3,-3) when rv[1] is '#' otherwise rv.slice(1)
-  rv = rv.replace /^\s+/, ""
+  rv = rv.replace /^#*\s*|#*$/g, ""
   rv = rv.replace /\n[\f\r\t\v\u00A0\u2028\u2029 ]*#*[\f\r\t\v\u00A0\u2028\u2029 ]*/g, '\n * '
   return rv.replace(/(\/\*)|(\*\/)/g, '**')
 parse_token.LITERAL = (text) ->
