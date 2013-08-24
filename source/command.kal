@@ -1,7 +1,6 @@
 # External dependencies.
 fs             = require 'fs'
 path           = require 'path'
-optimist       = require 'optimist'
 Kal            = require './kal'
 
 function printLine(line)
@@ -13,25 +12,47 @@ function hidden(file)
   /^\.|~$/.test file
 
 function parseOptions()
-  BANNER = 'Usage: kal [options] SOURCE [-o OUTPUT_DIR]\n\n'
-  BANNER += 'If called without the -o option, `kal` will run SOURCE.\n'
-  BANNER += 'If called without any options, `kal` will start an interactive session.\n'
-  optimist = optimist.usage(BANNER)
-  optimist = optimist.options('help',{alias:'h',boolean:yes,description:'show the command line usage options'})
-  optimist = optimist.options('tokens',{alias:'t',boolean:yes,description:'print out the tokens that the lexer/sugarer produce'})
-  optimist = optimist.options('javascript',{alias:'j',boolean:yes,description:'print out the compiled javascript'})
-  optimist = optimist.options('bare',{alias:'b',boolean:yes,description:'don\'t wrap the output in a function'})
-  optimist = optimist.options('version',{alias:'v',boolean:yes,description:'display the version number'})
-  optimist = optimist.options('output',{alias:'o',description:'the output directory for the compiled source'})
-  optimist = optimist.options('minify',{boolean:yes,description:'minify the output (requires uglify-js)'})
-  return optimist.argv
+  options = {}
+  for arg in process.argv
+    if arg[0] is '-' and arg[1] isnt '-'
+      options.help       = yes if 'h' in arg
+      options.tokens     = yes if 't' in arg
+      options.javascript = yes if 'j' in arg
+      options.bare       = yes if 'b' in arg
+      options.version    = yes if 'v' in arg
+      options.minify     = yes if 'm' in arg
+    else if arg[0] is '-' and arg[1] is '-'
+      options.help       = yes if arg is '--help'
+      options.tokens     = yes if arg is '--tokens'
+      options.javascript = yes if arg is '--javascript'
+      options.bare       = yes if arg is '--bare'
+      options.version    = yes if arg is '--version'
+      options.minify     = yes if arg is '--minify'
+
+  if '-o' in process.argv
+    index = process.argv.indexOf '-o'
+  else if '--output' in process.argv
+    index = process.argv.indexOf '--output'
+
+  options.output = process.argv[index + 1] if index isnt -1
+
+  inputs = []
+  last_switch = null
+  for arg in process.argv.slice(2)
+    if '-' in arg or arg is options.output
+      options.help = yes if inputs.length isnt 0
+      inputs = []
+    else
+      inputs.push arg
+  options._ = inputs
+  return options
 
 existsSync = fs.existsSync or path.existsSync
 
 run = function run()
   options = parseOptions()
   return version() if options.version
-  return usage() if optimist.argv.help
+  return usage() if options.help
   if options.output exists and not existsSync(options.output)
     printWarn('output path does not exist!')
     return usage()
@@ -41,7 +62,7 @@ run = function run()
 
   compile_options = {}
   compile_options.show_tokens = options.tokens
-  compile_options.bare = no
+  compile_options.bare = options.bare
   compile_options.show_js = options.javascript
 
   if options.output exists
@@ -76,7 +97,7 @@ function compile_files(filenames, output_dir, options, minify)
       js_output = Kal.compile fs.readFileSync(filename), options
       if minify
         js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code
-      printLine js_output if options.javascript
+      printLine js_output if options.show_js
       js_filename = path.join(output_dir, path.basename(filename, '.kal')) + '.js'
       fs.writeFileSync js_filename, js_output
 
@@ -85,5 +106,18 @@ function version()
   process.exit(0)
 
 function usage()
-  optimist.showHelp()
+  print "Usage: kal [options] SOURCE [-o OUTPUT_DIR]"
+  print ""
+  print "If called without the -o option, `kal` will run SOURCE."
+  print "If called without any options, `kal` will start an interactive session."
+  print ""
+  print ""
+  print "Options:"
+  print "  --help, -h        show the command line usage options                  [boolean]"
+  print "  --tokens, -t      print out the tokens that the lexer/sugarer produce  [boolean]"
+  print "  --javascript, -j  print out the compiled javascript                    [boolean]"
+  print "  --bare, -b        don't wrap the output in a function                  [boolean]"
+  print "  --version, -v     display the version number                           [boolean]"
+  print "  --output, -o      the output directory for the compiled source"
+  print "  --minify          minify the output (requires uglify-js)               [boolean]"
   process.exit(2)

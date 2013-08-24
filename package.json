@@ -29,9 +29,7 @@
     "type": "git",
     "url": "git://github.com/rzimmerman/kal.git"
   },
-  "dependencies": {
-    "optimist": "0.3.5"
-  },
+  "dependencies": {},
   "devDependencies": {
     "mocha": "1.6.x",
     "should": "1.2.x",
