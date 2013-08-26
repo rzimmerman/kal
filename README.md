@@ -568,7 +568,7 @@ Note that:
 
 `wait for` can be used to call your own asynchronous tasks. It can also be used within `for` and `while` loops, `try` blocks, `if` statements, and **any nesting combination** you can think of. Really!
 
-```
+```kal
 fs = require 'fs'
 task readFileSafe(filename)
   if 'secret' in filename
@@ -586,6 +586,12 @@ for parallel filename in ['secret/data.txt', 'test.txt', 'test2.txt']
 print 'DONE!'
 ```
 
+`wait for` can also be used without arguments by omitting the `from` keyword
+
+```kal
+wait for my_task()
+```
+
 Some node.js API functions (like `http.get`) don't follow the normal convention of calling back with an error argument. For these functions you must use the `safe` prefix, otherwise it will throw an error:
 
 ```kal
@@ -598,4 +604,25 @@ print request.responseCode
 
 ```kal
 wait for a, b from my_task()
+```
+
+## Asynchronous Pause
+
+You can pause for a specified amount of time using the `pause for` keyword
+
+```kal
+print 'starting'
+pause for 1 second
+print 'done!'
+```
+
+`pause for` uses JavaScripts `setTimeout` function. Note that the argument is in seconds, not milliseconds like `setTimeout`.
+
+The `second` keyword is optional. `seconds` also works. Use your best judgement to keep your code readable.
+
+```kal
+pause for 2          # seconds is implied
+pause for 10 seconds # also valid
+milliseconds = 1293
+pause for milliseconds/1000 seconds # expressions are valid for the timeout
 ```
