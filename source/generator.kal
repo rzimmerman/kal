@@ -837,7 +837,7 @@ function apply_generator_to_grammar()
 
     if me.in_conditional or me.in_loop
       use_snippets['async'] = snippets['async']
-      rv += multi_indent "#{prefix}$kasync(#{me.parent_block.callback},this);\n", me.block.indent_level + try_count
+      rv += multi_indent "#{prefix}$kasync(#{me.parent_block.original_callback},this);\n", me.block.indent_level + try_count
     else if scope['k$next']
       rv += multi_indent "#{prefix}k$next ? k$next() : void 0;\n", me.block.indent_level + try_count
     rv += me.block.js_closeout()

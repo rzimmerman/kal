@@ -296,6 +296,30 @@ describe 'Wait For Statement', ->
     error_happened.should.be.true
     done()
 
+  it 'should handle consecutive try/catch blocks', (done) -> #gh-94
+      d = 0
+      task trytry(a,b,c)
+        d = a + b + c
+        return 0
+      function errorizor(next)
+        return next "ERR", 2
+      wait for r from trytry 1, 2, 3
+      d.should.equal 6
+      r.should.equal 0
+      error_happened = no
+      try
+        wait for v from errorizor()
+      catch e
+        error_happened = yes
+        e.should.equal "ERR"
+      error_happened.should.be.true
+      try
+        safe wait for err, v from errorizor()
+      catch e
+        require('should').fail 'did not expect an error'
+      err.should.equal "ERR"
+      done()
+
   it 'should preserve try/catch blocks within callbacks', (done) ->
     task callbacker11(arg1)
       return arg1
