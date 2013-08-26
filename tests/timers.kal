@@ -1,0 +1,26 @@
+describe 'Timer Functions', ->
+  it 'should provide an alias for setTimeout', (done) ->
+    t = new Date()
+    pause for 0.010
+    delta = new Date() - t
+    delta.should.be.within(8,12)
+    done()
+
+  it 'should allow the optional "second[s]" suffix', (done) ->
+    t = new Date()
+    pause for 0.006 second
+    delta = new Date() - t
+    delta.should.be.within(4,8)
+    t = new Date()
+    pause for 0.004 seconds
+    delta = new Date() - t
+    delta.should.be.within(2,6)
+    done()
+
+  it 'should allow expressions in the seconds clause', (done) ->
+    t = new Date()
+    a = 0.004
+    pause for a + a seconds
+    delta = new Date() - t
+    delta.should.be.within(6,10)
+    done()

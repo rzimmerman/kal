@@ -5,7 +5,7 @@ KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unles
             'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
             'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',
             'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series',
-            'pass', 'bitwise','mod']
+            'pass','bitwise','mod','pause']
 
 class Block inherits from ASTBase
   method parse()
@@ -38,7 +38,7 @@ class BlockWithoutIndent inherits from Block
 
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
 
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -141,6 +141,16 @@ class WaitForStatement inherits from ASTBase
     me.error("expected a function call after 'from'") unless last_accessor instanceof FunctionCall
     me.block = me.req BlockWithoutIndent
 
+class PauseForStatement inherits from WaitForStatement
+  method parse()
+    me.req_val 'pause'
+    me.lock()
+    me.req_val 'for'
+    me.tvalue = me.req Expression
+    me.opt_val 'second', 'seconds'
+    me.conditional = me.opt WhenExpression
+    me.block = me.req BlockWithoutIndent
+
 class MultipleReturnValues inherits from ASTBase
   method is_lvalue()
     for arg in me.arguments
@@ -212,6 +222,11 @@ class Expression inherits from ASTBase
     # don't parse tail conditionals after dedents. This typically is from
     # an ImplicitMapExpression followed by an if statement (see gh-72)
     me.conditional = me.opt WhenExpression unless me.ts.peek(-1).type is 'DEDENT'
+  method number_constant()
+    if me.op exists or me.conditional exists
+      return null
+    else
+      return me.left.number_constant()
 
 class UnaryExpression inherits from ASTBase
   method is_lvalue()
@@ -239,6 +254,14 @@ class UnaryExpression inherits from ASTBase
         me.accessors   = me.accessors.concat(me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck)
     else
       me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
+  method number_constant()
+    if me.bitwise exists or me.preop exists
+      return null
+    else if me.base instanceof NumberConstant
+      n = Number(me.base.token.text)
+      return null when isNaN(n) otherwise n
+    else
+      return null
 
 class ExisentialCheck inherits from ASTBase
   method parse()
@@ -443,7 +466,8 @@ Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfSta
          StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall,
          ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
          ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression,
-         ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, MultipleReturnValues]
+         ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, PauseForStatement,
+         MultipleReturnValues]
 
 exports.Grammar = {}
 for v in Nodes

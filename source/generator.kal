@@ -801,15 +801,27 @@ function apply_generator_to_grammar()
     throw new Error "wait fors not supported in catch blocks" when try_block_stack[0]?.in_catch
     prefix = "" if me.parent_block.bare otherwise "return "
     me.new_callback = create_callback()
-    me.rvalue.callback_args = me.lvalue
-    me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
-    rv = "#{prefix}#{me.rvalue.js()};\n"
+    if me.rvalue exists # this is a standard `wait for`
+      me.rvalue.callback_args = me.lvalue
+      me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
+      rv = "#{prefix}#{me.rvalue.js()};\n"
+    else # this is a pause for
+      # constant folding since we multiply the time value by 1000
+      number = me.tvalue.number_constant()
+      if number exists
+        tvalue_js = "#{number * 1000}"
+      else
+        tvalue_js = me.tvalue.js()
+        tvalue_js = "(#{me.tvalue.js()})*1000" unless me.tvalue.op doesnt exist
+      rv = "#{prefix}setTimeout(#{me.new_callback},#{tvalue_js});\n"
+
     if me.conditional exists
       rv = me.conditional.js(rv, no)
       rv += "#{prefix}#{me.new_callback}();\n"
+
     rv_block = ""
     arg_i = 0 when me.no_errors otherwise 1
-    for argument in me.lvalue.arguments
+    for argument in me.lvalue?.arguments or []
       rv_block += "#{argument.base.value} = arguments[#{arg_i}];\n"
       scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
       arg_i += 1
@@ -822,6 +834,7 @@ function apply_generator_to_grammar()
     rv += indent render_try_blocks()
     rv += multi_indent("if (arguments[0] != null) throw arguments[0];\n", try_count) except when me.no_errors
     rv += multi_indent rv_block, try_count
+
     if me.in_conditional or me.in_loop
       use_snippets['async'] = snippets['async']
       rv += multi_indent "#{prefix}$kasync(#{me.parent_block.callback},this);\n", me.block.indent_level + try_count
