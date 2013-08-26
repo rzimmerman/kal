@@ -185,7 +185,7 @@ repl.input.on 'keypress', (char, key) ->
   multilineMode = not multilineMode
   repl._line() if not multilineMode and backlog
   backlog = ''
-  newPrompt = REPL_PROMPT_MULTILINE when multilineMode othewise REPL_PROMPT
+  newPrompt = REPL_PROMPT_MULTILINE when multilineMode otherwise REPL_PROMPT
   repl.setPrompt newPrompt
   repl.prompt()
   repl.cursor = cursorPos
