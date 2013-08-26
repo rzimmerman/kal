@@ -38,7 +38,7 @@ class BlockWithoutIndent inherits from Block
 
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
 
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -129,16 +129,30 @@ class WaitForStatement inherits from ASTBase
   method parse()
     me.no_errors = me.opt_val 'safe'
     me.req_val 'wait'
-    me.lock()
     me.req_val 'for'
     me.lvalue   = me.req MultipleReturnValues
     me.lvalue.can_be_lvalue = yes
     me.req_val 'from'
+    me.lock()
     me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
     me.rvalue = me.req UnaryExpression
     me.conditional = me.opt WhenExpression
     last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
     me.error("expected a function call after 'from'") unless last_accessor instanceof FunctionCall
+    me.block = me.req BlockWithoutIndent
+
+
+class SimpleWaitForStatement inherits from WaitForStatement
+  method parse()
+    me.no_errors = me.opt_val 'safe'
+    me.req_val 'wait'
+    me.lock()
+    me.req_val 'for'
+    me.lvalue   = null
+    me.rvalue = me.req UnaryExpression
+    me.conditional = me.opt WhenExpression
+    last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
+    me.error("expected a function call after 'for'") unless last_accessor instanceof FunctionCall
     me.block = me.req BlockWithoutIndent
 
 class PauseForStatement inherits from WaitForStatement
@@ -466,8 +480,8 @@ Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfSta
          StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall,
          ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
          ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression,
-         ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, WaitForStatement, PauseForStatement,
-         MultipleReturnValues]
+         ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, SimpleWaitForStatement,
+         WaitForStatement, PauseForStatement, MultipleReturnValues]
 
 exports.Grammar = {}
 for v in Nodes

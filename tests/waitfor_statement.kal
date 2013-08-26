@@ -441,3 +441,30 @@ it 'should work with other nested cases', (done) ->
     y.should.equal 3
     z.should.equal 4
     done()
+
+  it 'should work without return values', (done) -> # gh-85
+    d = 0
+    task side_effect(a,b,c)
+      d = a + b + c
+    function errorizor(next)
+      next "ERR"
+    wait for side_effect 1, 2, 3
+    d.should.equal 6
+    error_happened = no
+    try
+      wait for errorizor()
+    catch e
+      error_happened = yes
+      e.should.equal "ERR"
+    error_happened.should.be.true
+    done()
+
+  it 'should support safe no-return syntax', (done) -> #gh-85
+    function errorizor(next)
+      next "ERR"
+    try
+      safe wait for errorizor()
+    catch e
+      print e
+      require('should').fail 'did not expect an error'
+    done()
