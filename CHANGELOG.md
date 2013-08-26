@@ -1,5 +1,15 @@
 #Change Log
 
+### [0.4.7](https://github.com/rzimmerman/kal/compare/r0.4.6...r0.4.7)
+* Added the `mod` (modulo) keyword
+* Removed all dependencies including uglify-js. `kal --minify` replaces `kal -f minify` and requires that you already have uglify installed.
+* Comments that start with `##` no longer get cut off
+* Output is beautified by default. The `concise` option no longer exists.
+* Added the `pause for` syntax
+* Bug fixes for consecutive `try` blocks with `wait for`s.
+* `wait for`s no longer need to have return values (e.g. `wait for task()` is now valid)
+* Fixed multi-line mode (Ctrl-V) in the REPL
+
 ### [0.4.6](https://github.com/rzimmerman/kal/compare/r0.4.5...r0.4.6)
 * Fixes to the `but` operator. It was failing to compile in certain cases, such as when combined with `not`.
 * Added support for bitwise operators (see the README for a full list).
