@@ -426,31 +426,32 @@ Conditionals in list comprehensions are coming soon.
 
 Listed below are Kal's operators and their other-language equivalents. Note that Kal has a lot of synonyms for some keywords, all of which compile to the same function.
 
-| Kal                        | CoffeeScript         | JavaScript           | Function                       |
-|:--------------------------:|:--------------------:|:--------------------:|--------------------------------|
-| `true`, `yes`, `on`        | `true`, `yes`, `on`  | `true`               | Boolean true                   |
-| `false`, `no`, `off`       | `false`, `no`, `off` | `false`              | Boolean false                  |
-| `and`, `but`               | `and`                | `&&`                 | Boolean and                    |
-| `or`                       | `or`                 | <code>&#124;&#124;</code>       | Boolean or                     |
-| `nor`                      | none                 | none                 | Boolean or, inverted           |
-| `not`                      | `not`, `!`           | `!`                  | Boolean not                    |
-| `xor`, `bitwise xor`       | `^`                  | `^`                  | Bitwise xor                    |
-| `bitwise not`              | `~`                  | `~`                  | Bitwise not (invert)           |
-| `bitwise and`              | `&`                  | `&`                  | Bitwise and                    |
-| `bitwise or`               | <code>&#124;</code>                  | <code>&#124;</code>                  | Bitwise or                     |
-| `^`                        | none                 | none                 | Exponent (`Math.pow`)          |
-| `exists`, `?`              | `?`                  | none                 | Existential check              |
-| `doesnt exist`             | none                 | none                 | Existential check (inverted)   |
-| `is`, `==`                 | `is`, `==`           | `===`                | Boolean equality               |
-| `isnt`, `!=`               | `isnt`, `==`         | `!==`                | Boolean inequality             |
-| `>`, `>=`, `<`, `<=`       | `>`, `>=`, `<`, `<=` | `>`, `>=`, `<`, `<=` | Boolean comparisons            |
-| `me`, `this`               | `@`, `this`          | `this`               | Current object                 |
-| `in`                       | `in`                 | none                 | Boolean search of array/string |
-| `of`                       | `of`                 | `in`                 | Boolean search of object       |
-| `nothing`, `empty`, `null` | `null`               | `null`               | Null value                     |
-| `undefined`                | `undefined`          | `undefined`          | no value                       |
-| `instanceof`               | `instanceof`         | `instanceof`         | inheritance check              |
-| `print`                    | `console.log`        | `console.log`        | alias for `console.log`        |
+| Kal                        | CoffeeScript            | JavaScript                | Function                       |
+|:--------------------------:|:-----------------------:|:-------------------------:|--------------------------------|
+| `true`, `yes`, `on`        | `true`, `yes`, `on`     | `true`                    | Boolean true                   |
+| `false`, `no`, `off`       | `false`, `no`, `off`    | `false`                   | Boolean false                  |
+| `and`, `but`               | `and`                   | `&&`                      | Boolean and                    |
+| `or`                       | `or`                    | <code>&#124;&#124;</code> | Boolean or                     |
+| `nor`                      | none                    | none                      | Boolean or, inverted           |
+| `not`                      | `not`, `!`              | `!`                       | Boolean not                    |
+| `xor`, `bitwise xor`       | `^`                     | `^`                       | Bitwise xor                    |
+| `bitwise not`              | `~`                     | `~`                       | Bitwise not (invert)           |
+| `bitwise and`              | `&`                     | `&`                       | Bitwise and                    |
+| `bitwise or`               | <code>&#124;</code>     | <code>&#124;</code>       | Bitwise or                     |
+| `+`, `-`, `*`, `/`, `mod`  | `+`, `-`, `*`, `/`, `%` | `+`, `-`, `*`, `/`, `%`   | Math operators                 |
+| `^`                        | none                    | none                      | Exponent (`Math.pow`)          |
+| `exists`, `?`              | `?`                     | none                      | Existential check              |
+| `doesnt exist`             | none                    | none                      | Existential check (inverted)   |
+| `is`, `==`                 | `is`, `==`              | `===`                     | Boolean equality               |
+| `isnt`, `!=`               | `isnt`, `==`            | `!==`                     | Boolean inequality             |
+| `>`, `>=`, `<`, `<=`       | `>`, `>=`, `<`, `<=`    | `>`, `>=`, `<`, `<=`      | Boolean comparisons            |
+| `me`, `this`               | `@`, `this`             | `this`                    | Current object                 |
+| `in`                       | `in`                    | none                      | Boolean search of array/string |
+| `of`                       | `of`                    | `in`                      | Boolean search of object       |
+| `nothing`, `empty`, `null` | `null`                  | `null`                    | Null value                     |
+| `undefined`                | `undefined`             | `undefined`               | no value                       |
+| `instanceof`               | `instanceof`            | `instanceof`              | inheritance check              |
+| `print`                    | `console.log`           | `console.log`             | alias for `console.log`        |
 
 ## Exisential Checks
 
