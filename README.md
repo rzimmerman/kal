@@ -112,7 +112,7 @@ require('./mykalfile'); //refers to mykalfile.kal
 
 In Kal, spaces for indentation are significant and tabs are not valid. Indents are required for function definitions and blocks of code inside of `if` statements, `try`/`catch` blocks, and loops.
 
-You should use two spaces to denote an indent. You can technically use any multiple of two spaces, but two is recommended stylistically. Any whitespace on blank lines is ignored. Semicolons at the end of statements are not required nor are they valid.
+You should use two spaces to denote an indent. You can technically use any multiple of two spaces, but two is recommended as a style guideline. Any whitespace on blank lines is ignored. Semicolons at the end of statements are not required nor are they valid.
 
 In general single statements cannot contain line breaks. Notable exceptions are list and object definitions. For example:
 
@@ -229,7 +229,7 @@ Will print `2` as expected. See the `wait for` section for more details on async
 
 ## Objects and Arrays
 
-Objects and arrays are defined similarly to JavaScript. Newlines **are** valid inside of an array or object definition and indentation is ignored. Commas are optional when followed by a newline. CoffeeScript style object definitions (no `{}`s) are only valid in assignments and must be preceded by a newline.
+Objects and arrays are defined similarly to JavaScript. Newlines **are** valid inside of an array or object definition and indentation is ignored. Commas are optional when followed by a newline. CoffeeScript-style object definitions (no `{}`s) are only valid in assignments and must be preceded by a newline.
 
 ```kal
 a = [1, 2, 3]
@@ -550,7 +550,7 @@ w = "This is a string with the number 3: #{1+1+1}"
 
 ## Regular Expressions
 
-Kal supports JavaScripts regex syntax, but not CoffeeScript style block regex syntax.
+Kal supports JavaScript's regex syntax, but not CoffeeScript style block regex syntax.
 
 ## Asynchronous Wait For
 
@@ -618,7 +618,7 @@ pause for 1 second
 print 'done!'
 ```
 
-`pause for` uses JavaScripts `setTimeout` function. Note that the argument is in seconds, not milliseconds like `setTimeout`.
+`pause for` uses JavaScript's `setTimeout` function. Note that the argument is in seconds, not milliseconds like `setTimeout`.
 
 The `second` keyword is optional. `seconds` also works. Use your best judgement to keep your code readable.
 
