@@ -46,11 +46,12 @@ Kal is written in Kal, so you need a prebuilt version of the compiler available 
 sudo npm install -g kal
 ```
 
-Then you can clone and build the repo:
+Then you can clone the repo, install the developer dependencies, and build the compiler:
 
 ```
 git clone https://github.com/rzimmerman/kal kal
 cd kal
+npm install
 npm run-script make
 ```
 
