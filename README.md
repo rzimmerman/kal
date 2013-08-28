@@ -28,6 +28,8 @@ sudo npm install -g kal
 
 A [TextMate bundle](https://github.com/rzimmerman/kal.tmbundle) for TextMate and Sublime Text is available with limited but very useful support for Kal's syntax.
 
+[Vim support](https://github.com/bcho/kal-vim) is also available thanks to @bcho.
+
 ## Help and Support
 
 Visit the [Google group](https://groups.google.com/forum/#!forum/kal-programming-language) to ask questions and interact.
