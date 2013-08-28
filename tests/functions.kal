@@ -15,3 +15,23 @@ describe 'Functions', ->
     h[0] 6
     h[1] /rox/
     calls.should.equal 5
+
+  it 'should allow default arguments', -> #gh-96
+    function default_args(x,y=2,z=3)
+      return x + y - z
+    default_args(1, 5, 2).should.equal 4
+    default_args(1, 5).should.equal 3
+    default_args(1).should.equal 0
+    isNaN(default_args()).should.be.true
+
+    class DefaultArgClass
+      method initialize(name="Bob")
+        me.name = name
+      method get_person(age,last_name="Jones")
+        return "#{me.name} #{last_name} #{age}"
+    bob = new DefaultArgClass()
+    joe = new DefaultArgClass("Joe")
+    bob.name.should.equal "Bob"
+    joe.name.should.equal "Joe"
+    bob.get_person(21).should.equal "Bob Jones 21"
+    joe.get_person(20,"Smith").should.equal "Joe Smith 20"

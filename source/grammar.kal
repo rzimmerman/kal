@@ -435,6 +435,8 @@ class FunctionDefArgument inherits from ASTBase
   method parse()
     me.name = me.req 'IDENTIFIER'
     me.lock()
+    if me.opt_val '='
+      me.default = me.req Expression
     if me.req_val(',',')').value is ')'
       me.ts.prev()
 
@@ -445,6 +447,9 @@ class FunctionExpression inherits from ASTBase
     me.name = me.opt 'IDENTIFIER'
     me.req_val '('
     me.arguments = me.opt_multi FunctionDefArgument
+    if me.specifier.value is 'task'
+      for argument in me.arguments
+        me.error("tasks do not support default arguments") if argument.default exists
     me.req_val ')'
     me.block = me.req Block
 

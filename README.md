@@ -178,6 +178,14 @@ my_function = (arg1, arg2) ->
 
 But is generally discouraged unless it significantly helps readability. It was originally included to ease porting of the Kal compiler from CoffeeScript to Kal. Coffee-style functions must contain a line break after the `->`. `=>` is not supported.
 
+Functions can have default arguments. These will be used if the specified argument is `null` or `undefined`:
+```kal
+function default_args(x,y=2)
+  return x + y
+
+print default_args(1) # prints 3
+```
+
 Functions are called using parentheses.
 
 ```kal

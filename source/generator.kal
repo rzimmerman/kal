@@ -620,7 +620,6 @@ function apply_generator_to_grammar()
     return "{#{rv}}"
 
   me.FunctionExpression.prototype.js = ->
-    me.args = []
     me.callback = 'k$next' when me.specifier.value is 'task'
     if class_defs.length > 0 and me.name exists #is a member function/method
       if me.specifier.value is 'method' and me.name.value is 'initialize'
@@ -635,8 +634,6 @@ function apply_generator_to_grammar()
     rv = "function "
     if me.name exists
       rv += me.name.value
-    for argument in me.arguments
-      me.args.push argument.name.value
     return rv + me.js_body()
 
   me.FunctionExpression.prototype.js_class_member   = ->
@@ -644,36 +641,39 @@ function apply_generator_to_grammar()
       rv = "#{class_def.name}.prototype.#{me.name.value} = function "
     else
       rv = "#{class_def.name}.#{me.name.value} = function "
-    for argument in me.arguments
-      me.args.push argument.name.value
     return rv + me.js_body()
 
   me.FunctionExpression.prototype.js_constructor = ->
     class_def.has_constructor = yes
     rv = "function #{class_def.name}"
     class_def.args = []
-    for argument in me.arguments
-      class_def.args.push argument.name.value
-    me.args = class_def.args
+    class_def.arguments = [argument for argument in me.arguments]
     rv += me.js_body class_def.args
-    class_def.args.push me.callback_arg when me.callback_arg exists
+    class_def.arguments.push me.callback when me.callback exists
     return rv
 
   me.FunctionExpression.prototype.js_body = ->
     rv = ""
     push_scope()
     scope['k$next'] = me.callback when me.callback exists
-    for arg_name in me.args
+    arg_names = [argument.name?.value or argument for argument in me.arguments]
+    for arg_name in arg_names
       scope[arg_name] = 'argument'
     block_code = me.block.js(yes) + me.block.js_closeout()
     if me.callback exists
-      me.args.push me.callback
+      arg_names.push me.callback
       block_code = "try {\n" + indent block_code
     rv += indent pop_scope(block_code, no)
     if me.callback exists
       rv += "  } catch (k$err) {if (k$next) {return k$next.apply(this,[k$err]);} else {throw k$err;}}\n"
       rv += "  return k$next ? k$next() : void 0;\n"
-    rv = "(#{me.args.join(', ')}) {\n" + rv + "}"
+
+    default_arg_js = ""
+    for argument in me.arguments
+      if argument.default exists
+        default_arg_js += "  if (#{argument.name.value} == null) #{argument.name.value} = #{argument.default.js()};\n"
+
+    rv = "(#{arg_names.join(', ')}) {\n#{default_arg_js}#{rv}}"
     return rv
 
   me.FunctionCall.prototype.js = (as_list) ->
