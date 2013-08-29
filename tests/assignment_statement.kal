@@ -28,4 +28,23 @@ describe 'Assignment Statement', ->
     i /= 2
     i.should.equal 1
 
-
+  it 'should not declare variables used in compound assignments', -> #gh-48
+    errors = 0
+    try
+      p += 1
+    catch e
+      errors += 1
+    try
+      p -= 1
+    catch e
+      errors += 1
+    try
+      p *= 1
+    catch e
+      errors += 1
+    try
+      p /= 1
+    catch e
+      errors += 1
+    errors.should.equal 4
+    (p exists).should.be.false

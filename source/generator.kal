@@ -253,7 +253,7 @@ function apply_generator_to_grammar()
       kw_translate = KEYWORD_TRANSLATE[base_val]
       rv += kw_translate or base_val
       if kw_translate doesnt exist
-        scope[base_val] = 'closures ok' unless scope[base_val] exists or (not me.is_lvalue()) or me.accessors.length > 0
+        scope[base_val] = 'closures ok' unless scope[base_val] exists or (not me.is_lvalue()) or me.accessors.length > 0 or me.compound_assign
     else
       rv += me.base.js()
 
@@ -326,6 +326,7 @@ function apply_generator_to_grammar()
     op = me.assignOp.value
     if op isnt '='
       op += '='
+      me.lvalue.compound_assign = yes
     rv = "#{me.lvalue.js()} #{op} #{me.rvalue.js()};\n"
     rv += '\n' if me.rvalue.left.base instanceof self.FunctionExpression
     rv = me.conditional.js(rv, no) if me.conditional exists
