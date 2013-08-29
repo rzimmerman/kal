@@ -816,7 +816,7 @@ function apply_generator_to_grammar()
         tvalue_js = "#{number * 1000}"
       else
         tvalue_js = me.tvalue.js()
-        tvalue_js = "(#{me.tvalue.js()})*1000" unless me.tvalue.op doesnt exist
+        tvalue_js = "(#{me.tvalue.js()})*1000"
       rv = "#{prefix}setTimeout(#{me.new_callback},#{tvalue_js});\n"
 
     if me.conditional exists
