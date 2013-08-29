@@ -655,26 +655,29 @@ function apply_generator_to_grammar()
 
   me.FunctionExpression.prototype.js_body = ->
     rv = ""
+    default_arg_js = ""
     push_scope()
-    scope['k$next'] = me.callback when me.callback exists
+    scope['k$next'] = 'no closures' when me.callback exists
     arg_names = [argument.name?.value or argument for argument in me.arguments]
     for arg_name in arg_names
       scope[arg_name] = 'argument'
     block_code = me.block.js(yes) + me.block.js_closeout()
+    for argument in me.arguments
+      if argument.default exists
+        default_arg_js += "if (#{argument.name.value} == null"
+        default_arg_js += " || #{argument.name.value} == k$next" if me.callback exists
+        default_arg_js += ") #{argument.name.value} = #{argument.default.js()};\n"
     if me.callback exists
-      arg_names.push me.callback
-      block_code = "try {\n" + indent block_code
+      use_snippets['get callback'] = snippets['get callback']
+      block_code = "var k$next = $kgetcb(arguments);\n#{default_arg_js}try {\n" + indent block_code
+    else
+      block_code = default_arg_js + block_code
     rv += indent pop_scope(block_code, no)
     if me.callback exists
       rv += "  } catch (k$err) {if (k$next) {return k$next.apply(this,[k$err]);} else {throw k$err;}}\n"
       rv += "  return k$next ? k$next() : void 0;\n"
 
-    default_arg_js = ""
-    for argument in me.arguments
-      if argument.default exists
-        default_arg_js += "  if (#{argument.name.value} == null) #{argument.name.value} = #{argument.default.js()};\n"
-
-    rv = "(#{arg_names.join(', ')}) {\n#{default_arg_js}#{rv}}"
+    rv = "(#{arg_names.join(', ')}) {\n#{rv}}"
     return rv
 
   me.FunctionCall.prototype.js = (as_list) ->
@@ -850,3 +853,4 @@ function apply_generator_to_grammar()
     'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'
     'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'
     'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'
+    'get callback': 'var $kgetcb = function (args) {return typeof args[args.length-1] == "function" ? args[args.length-1] : function () {}};'

@@ -35,3 +35,16 @@ describe 'Functions', ->
     joe.name.should.equal "Joe"
     bob.get_person(21).should.equal "Bob Jones 21"
     joe.get_person(20,"Smith").should.equal "Joe Smith 20"
+
+  it 'should allow default arguments for tasks', (done) -> #gh-96
+    task default_task(x,y=2,z=3)
+      return x + y - z
+    wait for a from default_task(1, 5, 2)
+    a.should.equal 4
+    wait for a from default_task(1, 5)
+    a.should.equal 3
+    wait for a from default_task(1)
+    a.should.equal 0
+    wait for a from default_task()
+    isNaN(a).should.be.true
+    done()
