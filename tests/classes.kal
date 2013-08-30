@@ -115,4 +115,21 @@ describe 'Classes and Inheritance', ->
     z.c.should.equal 12
     om.a.should.equal 99
 
+  it 'should support tasks', (done) -> #gh-98
+    class ZZZ
+      method initialize()
+        me.x = 1
+      task my_task(y,z)
+        return me.x + y + z
 
+    class ZZZ2 inherits from ZZZ
+      task task2()
+        wait for v from me.my_task(2,3)
+        return v
+
+    zz = new ZZZ2()
+    wait for a from zz.my_task(9,10)
+    a.should.equal 20
+    wait for b from zz.task2()
+    b.should.equal 6
+    done()

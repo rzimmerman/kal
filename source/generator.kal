@@ -638,7 +638,7 @@ function apply_generator_to_grammar()
     return rv + me.js_body()
 
   me.FunctionExpression.prototype.js_class_member   = ->
-    if me.specifier.value is 'method'
+    if me.specifier.value is 'method' or me.specifier.value is 'task'
       rv = "#{class_def.name}.prototype.#{me.name.value} = function "
     else
       rv = "#{class_def.name}.#{me.name.value} = function "
