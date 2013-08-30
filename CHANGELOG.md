@@ -1,5 +1,11 @@
 #Change Log
 
+### [0.4.8](https://github.com/rzimmerman/kal/compare/r0.4.7...r0.4.8)
+* Added support for default arguments in functions, methods, and tasks.
+* A compound assignment (like `+=`) no longer causes a variable to be declared. `a += 1` with no other definition of a will now throw an error, not return `NaN`.
+* Fixed bugs with `pause for` statements
+* Tasks now work as class members.
+
 ### [0.4.7](https://github.com/rzimmerman/kal/compare/r0.4.6...r0.4.7)
 * Added the `mod` (modulo) keyword
 * Removed all dependencies including uglify-js. `kal --minify` replaces `kal -f minify` and requires that you already have uglify installed.
