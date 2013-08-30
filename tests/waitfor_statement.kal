@@ -468,3 +468,17 @@ it 'should work with other nested cases', (done) ->
       print e
       require('should').fail 'did not expect an error'
     done()
+
+  it 'should preserve "this" across task calls', (done) ->
+    task this_thing()
+      pause for 0.001 seconds
+      return 5
+    class Tester
+      task test_thing()
+        me.x = 1
+        wait for thing from this_thing()
+        me.x.should.equal 1
+    a = new Tester()
+    wait for a.test_thing()
+    done()
+
