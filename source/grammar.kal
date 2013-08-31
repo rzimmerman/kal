@@ -391,7 +391,7 @@ class ObjectComprehension inherits from ASTBase
 
 class MapItem inherits from ASTBase
   method parse()
-    me.key = me.req Expression
+    me.key = me.req 'IDENTIFIER', 'STRING', 'NUMBER'
     me.req_val ':'
     me.lock()
     me.val = me.req Expression
@@ -401,7 +401,7 @@ class MapItem inherits from ASTBase
 
 class ImplicitMapItem inherits from MapItem
   method parse()
-    me.key = me.req Expression
+    me.key = me.req 'IDENTIFIER', 'STRING', 'NUMBER'
     me.req_val ':'
     me.lock()
     me.val = me.req Expression

@@ -618,7 +618,7 @@ function apply_generator_to_grammar()
     return rv
 
   me.MapItem.prototype.js = ->
-    return "#{me.key.js()}: #{me.val.js()}"
+    return "#{me.key.value}: #{me.val.js()}"
 
   me.MapExpression.prototype.js = ->
     rv = []
