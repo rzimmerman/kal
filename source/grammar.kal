@@ -38,7 +38,7 @@ class BlockWithoutIndent inherits from Block
 
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, DeclarationStatement, AssignmentStatement, ExpressionStatement
 
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -155,6 +155,22 @@ class SimpleWaitForStatement inherits from WaitForStatement
     me.error("expected a function call after 'for'") unless last_accessor instanceof FunctionCall
     me.block = me.req BlockWithoutIndent
 
+class WaitForExpression inherits from ASTBase
+  method parse()
+    me.no_errors = me.opt_val 'safe'
+    me.lock() if me.no_errors
+    explicit = me.opt_val 'wait'
+    me.lock() if me.explicit
+    me.req_val 'for' if explicit
+    me.lvalue = me.opt MultipleReturnValues
+    me.req_val 'from' if me.lvalue exists
+    me.rvalue = me.req UnaryExpression
+    me.lock()
+    me.conditional = me.opt WhenExpression
+    last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
+    me.error("expected a function call after 'for'") unless last_accessor instanceof FunctionCall
+    me.req 'NEWLINE'
+
 class PauseForStatement inherits from WaitForStatement
   method parse()
     me.req_val 'pause'
@@ -164,6 +180,18 @@ class PauseForStatement inherits from WaitForStatement
     me.opt_val 'second', 'seconds'
     me.conditional = me.opt WhenExpression
     me.block = me.req BlockWithoutIndent
+
+class RunInParallelBlock inherits from ASTBase
+  method parse()
+    me.req_val 'run'
+    me.opt_val 'in'
+    me.req_val 'parallel'
+    me.lock()
+    me.req 'NEWLINE'
+    me.req 'INDENT'
+    me.wait_fors = me.req_multi WaitForExpression
+    me.lock()
+    me.req 'DEDENT'
 
 class MultipleReturnValues inherits from ASTBase
   method is_lvalue()
@@ -483,7 +511,7 @@ Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfSta
          ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
          ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression,
          ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, SimpleWaitForStatement,
-         WaitForStatement, PauseForStatement, MultipleReturnValues]
+         WaitForStatement, PauseForStatement, MultipleReturnValues, RunInParallelBlock, WaitForExpression]
 
 exports.Grammar = {}
 for v in Nodes

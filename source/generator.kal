@@ -294,18 +294,20 @@ function apply_generator_to_grammar()
       rv = "-#{rv}"
     return rv
 
-  me.WhenExpression.prototype.js = (true_block_js, must_return_value) ->
+  me.WhenExpression.prototype.js = (true_block_js, must_return_value, false_js) ->
     conditional_js = me.condition.js()
     if me.specifier.value is 'unless' or me.specifier.value is 'except'
       conditional_js = "!(#{conditional_js})"
-    if me.false_expr exists
+    if me.false_expr exists and false_js doesnt exist
       return "(#{conditional_js}) ? #{true_block_js} : #{me.false_expr.js()}"
     else
       if must_return_value
         return "(#{conditional_js}) ? #{true_block_js} : void 0"
       else
-        return "if (#{conditional_js}) {\n#{indent(true_block_js)}}\n"
-    return rv
+        rv = "if (#{conditional_js}) {\n#{indent(true_block_js)}}"
+        rv += " else {\n#{false_js}}" if false_js exists
+        rv += "\n"
+        return rv
 
   me.ExisentialCheck.prototype.js = ->
     return ""
@@ -856,6 +858,53 @@ function apply_generator_to_grammar()
     else if scope['k$next']
       rv += multi_indent "#{prefix}k$next ? k$next() : void 0;\n", me.block.indent_level + try_count
     rv += me.block.js_closeout()
+    return rv
+
+  me.WaitForExpression.prototype.js = ->
+    rv_block = ""
+    me.new_callback = create_callback()
+    arg_i = 0 when me.no_errors otherwise 1
+    for argument in me.lvalue?.arguments or []
+      rv_block += "#{argument.base.value} = arguments[#{arg_i}];\n"
+      scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
+      arg_i += 1
+    me.rvalue.callback_args = me.lvalue
+    me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
+    rv = "#{me.rvalue.js()};\n"
+    if me.conditional exists
+      rv = me.conditional.js(rv, no, "$kasync(#{me.callback},#{kthis()});\n")
+    rv += "function #{me.new_callback}() {\n"
+    unless me.no_errors
+      rv += "  if (arguments[0] != null) {\n"
+      rv += "    #{me.error_holder}[#{me.error_index}] = arguments[0];\n"
+      rv += "    return #{me.callback}();\n"
+      rv += "  }\n"
+    rv += indent rv_block
+    rv += "  #{me.callback}();\n"
+    rv += "}\n"
+    return rv
+
+  me.RunInParallelBlock.prototype.js = ->
+    me.callback = create_callback()
+    loop_counter = "klc$#{for_depth}"
+    loop_errors = "kle$#{for_depth}"
+    for_depth += 1
+    scope[loop_counter] = 'no closures'
+    scope[loop_errors] = 'no closures'
+    rv = "#{loop_counter} = #{me.wait_fors.length};\n#{loop_errors} = [];\n"
+    wf_index = 0
+    for wait_for in me.wait_fors
+      wait_for.callback = me.callback
+      wait_for.parent_block = me.parent_block
+      wait_for.error_holder = loop_errors
+      wait_for.error_index = wf_index
+      rv += "#{wait_for.js()}"
+      wf_index += 1
+    rv += "function #{me.callback}() {\n"
+    rv += "  if (--#{loop_counter}) return;\n"
+    rv += indent render_try_blocks()
+    rv += multi_indent "  for (var #{loop_errors}i = 0; #{loop_errors}i < #{wf_index}; #{loop_errors}i++) { if (#{loop_errors}[#{loop_errors}i]) throw #{loop_errors}; }\n", try_block_stack.length
+    me.parent_block.closeout_callback = me.original_callback
     return rv
 
   snippets =
