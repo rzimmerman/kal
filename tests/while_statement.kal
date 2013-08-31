@@ -26,3 +26,12 @@ describe 'While Statement', ->
     x().should.equal 4
     j.should.equal 6
     (k exists).should.equal.false
+
+  it 'should support the "until" syntax', -> #gh-97
+    i = 1
+    last_i = 0
+    until i is 10
+      i.should.equal last_i + 1
+      last_i = i
+      i += 1
+    i.should.equal 10

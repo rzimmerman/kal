@@ -509,7 +509,10 @@ function apply_generator_to_grammar()
   me.WhileStatement.prototype.js = ->
     me.block.in_loop = yes
     me.block.in_conditional = me.in_conditional
-    rv = "while (#{me.expr.js()}) {\n"
+    if me.specifier.value is 'until'
+      rv = "while (!(#{me.expr.js()})) {\n"
+    else
+      rv = "while (#{me.expr.js()}) {\n"
     rv += indent(me.block.js() + me.block.js_closeout())
     rv += "}\n"
     if me.callback isnt current_callback
