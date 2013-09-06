@@ -46,7 +46,7 @@ class Lexer
         me.comments.push comment_token
       else
         unless type is 'NEWLINE' and me.tokens[me.tokens.length - 1]?.type is 'NEWLINE'
-          me.tokens.push {text:text, line:me.line, value:val, type:type}
+          me.tokens.push {text:text, line:me.line, value:val, type:type, soft: last_token_type is 'WHITESPACE'}
       index += text.length
       me.line += text.match(/\n/g)?.length or 0
       last_token_type = type

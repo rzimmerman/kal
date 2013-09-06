@@ -74,9 +74,12 @@ function noparen_function_calls (tokens)
     last_token_isnt_reserved = not (last_token?.value in KEYWORDS) or tokens[i-2]?.value is '.'
     last_token_callable = (last_token?.type is 'IDENTIFIER' and last_token_isnt_reserved) or last_token?.value is ']'
     token_isnt_reserved = not (token.value in NOPAREN_WORDS)
-    this_token_not_operator = ((token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'] or token.value is '{' or (token.value is '[' and last_token?.trailed_by_white)) and token_isnt_reserved)
-    paren_from_expanded_string = (token.value is '(' and token.soft)
-    if last_token_callable and (this_token_not_operator or paren_from_expanded_string)
+    non_literal = (token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'])
+    callable_literal = (token.value is '{' or (token.value is '[' and last_token?.trailed_by_white) or (token.value is '-' and tokens[i+1]?.value is '>'))
+    this_token_not_operator = ((non_literal or callable_literal) and token_isnt_reserved)
+    declaring_a_function = tokens[i-2]?.value in ['function','task','method','class'] and last_token?.type is 'IDENTIFIER'
+    soft_paren = (token.value is '(' and token.soft but not declaring_a_function)
+    if last_token_callable and (this_token_not_operator or soft_paren)
       triggers.push 'NEWLINE'
       out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
       closures.push ')'

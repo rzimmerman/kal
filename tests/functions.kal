@@ -48,3 +48,13 @@ describe 'Functions', ->
     wait for a from default_task()
     isNaN(a).should.be.true
     done()
+
+  it 'should support coffee style functions as arguments without extra parens', -> #gh-38
+    function x(f)
+      return f()
+    r = x () ->
+      return 2
+    r.should.equal 2
+    r = x ->
+      return 3
+    r.should.equal 3
