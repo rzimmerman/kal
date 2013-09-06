@@ -549,13 +549,24 @@ catch
 
 Strings can either be double-quoted (`"`) or single quoted (`'`). Backslashes can be used to escape quotes within strings if necessary.
 
-Double-quoted strings can contain interpolated values using `#{...}` blocks.
-
 ```kal
 x = 'this is a "string" with quotes in it'
 y = "so is 'this'"
 z = 'this one is, \'too\' but I\'m not proud of it'
-w = "This is a string with the number 3: #{1+1+1}"
+```
+
+## String Interpolation
+
+Double-quoted strings can contain interpolated values using `#{...}` blocks. These blocks can contain any valid Kal expression (including variables and function calls). This is the recommended way to do string concatenation as it is usually more readable.
+
+```kal
+print "This is a string with the number 3: #{1+1+1}"
+"This is a string with the number 3: 3"
+
+a = cow
+n = moo
+print "The #{a} says #{n}, #{n}, #{n}!"
+"The cow says, moo, moo, moo!"
 ```
 
 ## Regular Expressions
