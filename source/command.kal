@@ -39,7 +39,7 @@ function parseOptions()
   inputs = []
   last_switch = null
   for arg in process.argv.slice(2)
-    if '-' in arg or arg is options.output
+    if arg[0] is '-' or arg is options.output
       options.help = yes if inputs.length isnt 0
       inputs = []
     else
