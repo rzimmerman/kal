@@ -531,7 +531,9 @@ function apply_generator_to_grammar()
     rv += "return #{while_wrapper}();\n"
     rv += "function #{while_wrapper}() {\n"
     rv += render_try_blocks()
-    rv += "  var k$lcb = function () {if (#{me.expr.js()}) return $kasync(#{while_wrapper},#{kthis()}); else return $kasync(#{me.callback},#{kthis()});};\n"
+    expr_js = me.expr.js()
+    expr_js = "!(#{expr_js})" when me.specifier.value is 'until'
+    rv += "  var k$lcb = function () {if (#{expr_js}) return $kasync(#{while_wrapper},#{kthis()}); else return $kasync(#{me.callback},#{kthis()});};\n"
     rv += indent(me.block.js() + me.block.js_closeout())
     rv += indent(render_catch_blocks())
     rv += "}\n"
