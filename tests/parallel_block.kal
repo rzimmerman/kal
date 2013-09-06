@@ -78,7 +78,7 @@ describe 'Parallel Block', ->
   it 'should consider the `wait for` prefix optional', (done) ->
     x = 0
     task c1()
-      x = 1
+      x += 1
       return 1
     task c2()
       return 2, 5
@@ -88,7 +88,8 @@ describe 'Parallel Block', ->
       c1()
       wait for y, yy from c2()
       z, zz from c3()
-    x.should.equal 1
+      safe wait for c1()
+    x.should.equal 2
     y.should.equal 2
     yy.should.equal 5
     z.should.equal 3
