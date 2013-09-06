@@ -86,3 +86,25 @@ describe 'Other', ->
     if jen.age is 27
       x = 'Jen is 27'
     x.should.equal 'Jen is 27'
+
+  it 'should handle functions as members of map definitions', -> #gh-80
+    obj =
+      name: 'object'
+      fun: function ()
+        return 2
+      other: 3
+    obj.fun().should.equal 2
+    obj.name.should.equal 'object'
+    obj.other.should.equal 3
+    obj =
+      fun: function ()
+        return 5
+    obj.fun().should.equal 5
+    obj =
+      name: 'object 3'
+      fun: ->
+        return 99
+      other: 3
+    obj.fun().should.equal 99
+    obj.name.should.equal 'object 3'
+    obj.other.should.equal 3

@@ -433,7 +433,7 @@ class ImplicitMapItem inherits from MapItem
     me.req_val ':'
     me.lock()
     me.val = me.req Expression
-    unless me.val.left?.base instanceof ImplicitMapExpression
+    unless me.val.left?.base instanceof ImplicitMapExpression or me.val.left?.base instanceof FunctionExpression
       me.end_token = me.opt_multi 'NEWLINE'
       me.end_token = me.req_val ',' when me.end_token.length is 0
 
