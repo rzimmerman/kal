@@ -254,6 +254,18 @@ d =
     d:3
 ```
 
+Function definitions are only valid in CoffeeScript-style object definitions at this time.
+
+```kal
+d =
+  a:1, b:2
+  c:
+    d: function ()
+      return 2
+    e: ->
+      return 3
+```
+
 Objects work like JavaScript objects (because they are JavaScript objects), so you can access members either using array subscripts or `.` notation
 
 ```kal
@@ -393,7 +405,14 @@ while x < 5
   print x
 ```
 
-prints the numbers 1 through 5.
+prints the numbers 1 through 5. `until` provides a similar function.
+
+```kal
+x = 0
+until x is 5
+  x += 1
+  print x
+```
 
 ## Comprehensions
 
@@ -457,7 +476,7 @@ Listed below are Kal's operators and their other-language equivalents. Note that
 | `isnt`, `!=`               | `isnt`, `==`            | `!==`                     | Boolean inequality             |
 | `>`, `>=`, `<`, `<=`       | `>`, `>=`, `<`, `<=`    | `>`, `>=`, `<`, `<=`      | Boolean comparisons            |
 | `me`, `this`               | `@`, `this`             | `this`                    | Current object                 |
-| `in`                       | `in`                    | none                      | Boolean search of array/string |
+| `in`, `not in`             | `in`, `not in`          | none                      | Boolean search of array/string |
 | `of`                       | `of`                    | `in`                      | Boolean search of object       |
 | `nothing`, `empty`, `null` | `null`                  | `null`                    | Null value                     |
 | `undefined`                | `undefined`             | `undefined`               | no value                       |
@@ -648,4 +667,29 @@ pause for 2          # seconds is implied
 pause for 10 seconds # also valid
 milliseconds = 1293
 pause for milliseconds/1000 seconds # expressions are valid for the timeout
+```
+
+## Parallel Tasks
+
+You can kick off tasks in parallel with the `run in parallel` block
+
+```kal
+run in parallel
+  task1()
+  wait for task2 a, b, c
+  wait for x from task3()
+  safe wait for y, z from task4()
+print 'all tasks finished'
+```
+
+Code after the `run in parallel` block will not run until all tasks have completed. If any errors are thrown by one or more tasks, an array of errors will be thrown after all tasks in the block complete (or fail). Array elements are in the order that the tasks were specified. If no error was thrown by a task, its error element will be `undefined` (`doesnt exist` will be true). `safe` waits will not check for errors.
+
+```kal
+try
+  run in parallel
+    task_that_fails()
+    task_that_succeeds()
+catch errors
+  print errors[0] # prints the error thrown by task_that_fails
+  print errors[1] exists # prints false
 ```

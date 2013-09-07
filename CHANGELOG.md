@@ -1,5 +1,15 @@
 #Change Log
 
+### [0.4.9](https://github.com/rzimmerman/kal/compare/r0.4.8...r0.4.9)
+* `this`/`me` is now preserved between `wait for` calls
+* Added `until` loops (equivalent to `while not`)
+* Using anything other than a literal for an object key is now a compile time error (it used to just produce bad JavaScript).
+* The command line utility now accepts hyphenated file names (bug fix).
+* Added the `run in parallel` block feature for kicking off parallel tasks.
+* You can now define a function in an object definition.
+* CoffeeScript-style functions can now be the first argument to a function call without extra parentheses.
+* Fixed issues with the `^` operator.
+
 ### [0.4.8](https://github.com/rzimmerman/kal/compare/r0.4.7...r0.4.8)
 * Added support for default arguments in functions, methods, and tasks.
 * A compound assignment (like `+=`) no longer causes a variable to be declared. `a += 1` with no other definition of a will now throw an error, not return `NaN`.
