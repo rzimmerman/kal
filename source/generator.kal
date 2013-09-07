@@ -223,9 +223,10 @@ function apply_generator_to_grammar()
   me.Expression.prototype.js = (oop_reverse) ->
     rv = ''
     if oop_reverse
-      left_code = ''
+      left_code = oop_reverse #some ops may fill this in with a string
     else
       left_code = me.left.js()
+
     if not me.op?
       rv += left_code
     else
@@ -236,11 +237,17 @@ function apply_generator_to_grammar()
           for subscope in scopes
             subscope['$kindexof'] = 'closure'
           scope['$kindexof'] = 'closure'
-        rv += "($kindexof.call(#{me.right.left.js()}, #{left_code}) >= 0) #{me.right.js(true)}"
+        old_right = me.right
+        new_right = me.right.left
+        new_left = "($kindexof.call(#{new_right.js()}, #{left_code}) >= 0)"
+        rv += old_right.js(new_left)
       else if opjs is 'nor'
         rv += "!(#{left_code} || #{me.right.js()})"
       else if opjs is 'pow'
-        rv += "Math.pow(#{left_code}, #{me.right.left.js()}) #{me.right.js(true)}"
+        old_right = me.right
+        new_right = me.right.left
+        new_left = "Math.pow(#{left_code}, #{new_right.js()})"
+        rv += old_right.js(new_left)
       else
         rv += "#{left_code} #{opjs} #{me.right.js()}"
     if me.op?.invert

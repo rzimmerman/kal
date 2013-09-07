@@ -210,3 +210,13 @@ describe 'Expression', ->
     (a bitwise and c).should.equal 0x01
     (a bitwise xor c).should.equal 0x54
     (bitwise not a).should.equal(-a - 1)
+
+  it 'should support chaining exponents', -> #gh-82
+    x = 2 ^ 3 ^ 4
+    x.should.equal Math.pow(Math.pow(2,3),4)
+    y = 2 ^ 4 * 3 ^ 4
+    y.should.equal Math.pow(2,4) * Math.pow(3,4)
+    z = 2 ^ 4 ^ 5 * 3 ^ 4
+    z.should.equal Math.pow(Math.pow(2,4),5) * Math.pow(3,4)
+    a = 2 ^ -2 + -3 ^ 3
+    a.should.equal Math.pow(2, -2) + Math.pow(-3, 3)
