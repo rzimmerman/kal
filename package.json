@@ -23,7 +23,7 @@
 	"bootstrap": "npm run-script make && scripts/kal --minify -o compiled/ source/*.kal && npm test",
   "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
   },
-  "homepage":     "https://github.com/rzimmerman/kal",
+  "homepage":     "http://rzimmerman.github.io/kal",
   "bugs":         "https://github.com/rzimmerman/kal/issues",
   "repository":   {
     "type": "git",
