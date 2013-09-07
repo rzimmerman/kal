@@ -31,7 +31,7 @@ var recompile = function (run) {
   var out_js;
   try {
     // try to compile
-    out_js = kal.compile(in_kal, {bare:false}).replace(/^\s+|\s+$/g, ''); //trim the string
+    out_js = kal.compile(in_kal, {bare:true}).replace(/^\s+|\s+$/g, ''); //trim the string
     document.getElementById('js_results').innerText = out_js;
     // if successfuly clear the error field
     document.getElementById('error_text').innerText = '';
