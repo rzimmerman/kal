@@ -38,7 +38,7 @@ class BlockWithoutIndent inherits from Block
 
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, DeclarationStatement, AssignmentStatement, ExpressionStatement
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, AssignmentStatement, ExpressionStatement
 
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -107,10 +107,6 @@ class ForStatement inherits from ASTBase
     me.type = me.req_val 'in', 'of'
     me.iterable = me.req Expression
     me.loop_block = me.req Block
-
-class DeclarationStatement inherits from ASTBase
-  method tmp() #until the spec is changed to allow empty definitions
-    return
 
 class AssignmentStatement inherits from ASTBase
   method parse()
@@ -505,7 +501,7 @@ class SuperStatement inherits from ASTBase
     me.accessor = me.opt FunctionCall
 
 Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement,
-         WhileStatement, ForStatement, DeclarationStatement, AssignmentStatement, ExpressionStatement,
+         WhileStatement, ForStatement, AssignmentStatement, ExpressionStatement,
          BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant,
          StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall,
          ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
