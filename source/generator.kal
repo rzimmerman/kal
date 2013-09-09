@@ -198,7 +198,8 @@ function apply_generator_to_grammar()
     arg_list = exprs_js.join(', ')
     if scope['k$next'] exists
       scope['k$rv'] = 'no closures'
-      rv = "return k$rv = [#{arg_list}], k$next.apply(#{kthis()}, k$rv);"
+      use_snippets['async'] = snippets['async']
+      rv = "return k$rv = [#{arg_list}], k$async(k$next, #{kthis()}, k$rv);"
       rv = me.conditional.js(rv, no) when me.conditional exists
       rv += "\n"
       return rv
@@ -470,20 +471,20 @@ function apply_generator_to_grammar()
         rv += "  for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
       else
         rv += "  for (#{iterator} in #{terminator}) {\n"
-      rv += "    (function (#{me.iterant.value}) {\n"
-      rv += multi_indent(render_try_blocks(), 3)
       rv += "      #{loop_counter}++;\n"
+      rv += "      k$async(function (#{me.iterant.value}) {\n"
+      rv += multi_indent(render_try_blocks(), 3)
       rv += multi_indent(me.loop_block.js() + me.loop_block.js_closeout(), 3)
       rv += multi_indent(render_catch_blocks(), 3)
       if me.type.value is 'in'
-        rv += "    })(#{terminator}[#{iterator}]);\n"
+        rv += "    },#{kthis()},[#{terminator}[#{iterator}]]);\n"
       else
-        rv += "    })(#{iterator});\n"
+        rv += "    },#{kthis()},[#{iterator}]);\n"
       rv += "  }\n"
       use_snippets['async'] = snippets['async']
-      rv += "  return k$async(#{loop_callback},#{kthis()});\n"
+      rv += "  return #{loop_callback}.apply(#{kthis()});\n"
       rv += "  function #{loop_callback}() {\n"
-      rv += "    if (--#{loop_counter} == 0) return #{me.callback}();\n"
+      rv += "    if (--#{loop_counter} == 0) return k$async(#{me.callback},#{kthis()});\n"
       rv += "  }\n"
       rv += "})(1);\n"
       rv += "return;\n"
@@ -503,11 +504,11 @@ function apply_generator_to_grammar()
         scope[iterator] = 'no closures'
         rv += "#{terminator} = [];\n"
         rv += "for (#{iterator} in #{me.iterable.js()}) {if ((#{me.iterable.js()}).hasOwnProperty(#{iterator})) {#{terminator}.push(#{iterator})};}\n"
-        rv += "return k$async(#{loop_counter},#{kthis()},[0,#{terminator},#{terminator}[0]]);\n"
+        rv += "return #{loop_counter}.apply(#{kthis()},[0,#{terminator},#{terminator}[0]]);\n"
       rv += "function #{loop_counter}(k$i,k$obj,#{me.iterant.value}) {\n"
       rv += render_try_blocks()
       rv += "  k$i++;\n"
-      rv += "  var k$lcb = function () {if (k$i < k$obj.length) return #{loop_counter}.apply(#{kthis()},[k$i,k$obj,k$obj[k$i]]); else return #{me.callback}.apply(#{kthis()});};\n"
+      rv += "  var k$lcb = function () {if (k$i < k$obj.length) return #{loop_counter}.apply(#{kthis()},[k$i,k$obj,k$obj[k$i]]); else return k$async(#{me.callback},#{kthis()});};\n"
       rv += indent(me.loop_block.js() + me.loop_block.js_closeout())
       rv += indent render_catch_blocks()
       rv += "}\n"
@@ -544,7 +545,7 @@ function apply_generator_to_grammar()
     rv += render_try_blocks()
     expr_js = me.expr.js()
     expr_js = "!(#{expr_js})" when me.specifier.value is 'until'
-    rv += "  var k$lcb = function () {if (#{expr_js}) return k$async(#{while_wrapper},#{kthis()}); else return k$async(#{me.callback},#{kthis()});};\n"
+    rv += "  var k$lcb = function () {if (#{expr_js}) return #{while_wrapper}.apply(#{kthis()}); else return k$async(#{me.callback},#{kthis()});};\n"
     rv += indent(me.block.js() + me.block.js_closeout())
     rv += indent(render_catch_blocks())
     rv += "}\n"
@@ -693,14 +694,15 @@ function apply_generator_to_grammar()
         default_arg_js += " || #{argument.name.value} == k$next" if me.callback exists
         default_arg_js += ") #{argument.name.value} = #{argument.default.js()};\n"
     if me.callback exists
+      use_snippets['async'] = snippets['async']
       use_snippets['get callback'] = snippets['get callback']
       block_code = "var k$next = k$getcb(arguments);\nk$this = this;\n#{default_arg_js}try {\n" + indent block_code
     else
       block_code = default_arg_js + block_code
     rv += indent pop_scope(block_code, no)
     if me.callback exists
-      rv += "  } catch (k$err) {if (k$next) {return k$next.apply(k$this,[k$err]);} else {throw k$err;}}\n"
-      rv += "  return k$next ? k$next() : void 0;\n"
+      rv += "  } catch (k$err) {if (k$next) {return k$async(k$next,k$this,[k$err]);} else {throw k$err;}}\n"
+      rv += "  return k$next ? k$async(k$next,k$this) : void 0;\n"
 
     rv = "(#{arg_names.join(', ')}) {\n#{rv}}"
     return rv
@@ -809,9 +811,11 @@ function apply_generator_to_grammar()
       rv += " catch (k$e) {"
       rv += '\n' if parfor_cb exists or me.closeout_callback exists
     if parfor_cb exists
-      rv += indent "return #{parfor_cb}();\n"
+      use_snippets['async'] = snippets['async']
+      rv += indent "return k$async(#{parfor_cb},#{kthis()});\n"
     else if me.closeout_callback exists
-      rv += indent "return #{me.closeout_callback}();\n"
+      use_snippets['async'] = snippets['async']
+      rv += indent "return k$async(#{me.closeout_callback},#{kthis()});\n"
     rv += '}\n'
     try_block_stack[0].in_catch = no when try_block_stack[0] exists
     return rv
@@ -868,7 +872,8 @@ function apply_generator_to_grammar()
       use_snippets['async'] = snippets['async']
       rv += multi_indent "#{prefix}k$async(#{me.parent_block.original_callback},#{kthis()});\n", me.block.indent_level + try_count
     else if scope['k$next']
-      rv += multi_indent "#{prefix}k$next ? k$next() : void 0;\n", me.block.indent_level + try_count
+      use_snippets['async'] = snippets['async']
+      rv += multi_indent "#{prefix}k$next ? k$async(k$next,#{kthis()}) : void 0;\n", me.block.indent_level + try_count
     rv += me.block.js_closeout()
     return rv
 
@@ -886,13 +891,14 @@ function apply_generator_to_grammar()
     if me.conditional exists
       rv = me.conditional.js(rv, no, "k$async(#{me.callback},#{kthis()});\n")
     rv += "function #{me.new_callback}() {\n"
+    use_snippets['async'] = snippets['async']
     unless me.no_errors
       rv += "  if (arguments[0] != null) {\n"
       rv += "    #{me.error_holder}[#{me.error_index}] = arguments[0];\n"
-      rv += "    return #{me.callback}();\n"
+      rv += "    return k$async(#{me.callback},#{kthis()});\n"
       rv += "  }\n"
     rv += indent rv_block
-    rv += "  #{me.callback}();\n"
+    rv += "  k$async(#{me.callback},#{kthis});\n"
     rv += "}\n"
     return rv
 
