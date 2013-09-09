@@ -1,5 +1,6 @@
 grammar  = require './grammar'
-KEYWORDS = grammar.KEYWORDS
+KEYWORDS  = grammar.KEYWORDS
+RVALUE_OK = grammar.RVALUE_OK
 
 NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits',
                  'from','and','or','xor','in','when','instanceof','of','nor','if','unless',
@@ -71,7 +72,7 @@ function noparen_function_calls (tokens)
   i = 0
   while i < tokens.length
     token = tokens[i]
-    last_token_isnt_reserved = not (last_token?.value in KEYWORDS) or tokens[i-2]?.value is '.'
+    last_token_isnt_reserved = not (last_token?.value in KEYWORDS) or tokens[i-2]?.value is '.' or (last_token?.value in RVALUE_OK)
     last_token_callable = (last_token?.type is 'IDENTIFIER' and last_token_isnt_reserved) or last_token?.value is ']'
     token_isnt_reserved = not (token.value in NOPAREN_WORDS)
     non_literal = (token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'])

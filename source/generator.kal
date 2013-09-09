@@ -31,6 +31,7 @@ KEYWORD_TRANSLATE =
   'bitwise or': '|'
   'bitwise xor': '^'
   'bitwise not': '~'
+  'typeof':     'typeof'
 
 load = function load (grammar)
   apply_generator_to_grammar.apply grammar
@@ -292,7 +293,7 @@ function apply_generator_to_grammar()
         rv = "((#{existence_check}) ? #{rv} : #{closeout})"
 
     preop_value = me.preop?.value
-    if preop_value is 'new'
+    if preop_value is 'new' or preop_value is 'typeof'
       rv = "#{KEYWORD_TRANSLATE[preop_value]} #{rv}"
     else if preop_value is 'not'
       preop_value = "bitwise not" if me.bitwise
@@ -433,6 +434,7 @@ function apply_generator_to_grammar()
     terminator = "kobj$#{for_depth}"
     loop_counter = "klc$#{for_depth}"
     for_depth += 1
+    scope[me.iterant.value] = 'closures ok' unless scope[me.iterant.value] exists
     loop_block_js = me.loop_block.js() + me.loop_block.js_closeout()
     if me.callback isnt current_callback #something in this loop uses callbacks
       return me.js_callbacks iterator, terminator, loop_counter
@@ -442,11 +444,11 @@ function apply_generator_to_grammar()
       if me.type.value is 'in'
         rv += "#{terminator} = #{me.iterable.js()};\n"
         rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
-        rv += "  #{me.iterant.js()} = #{terminator}[#{iterator}];\n"
+        rv += "  #{me.iterant.value} = #{terminator}[#{iterator}];\n"
       else
         rv += "#{terminator} = #{me.iterable.js()};\n"
-        rv += "for (#{me.iterant.js()} in #{terminator}) {\n"
-        rv += "  if (!#{terminator}.hasOwnProperty(#{me.iterant.js()})) {continue;}\n"
+        rv += "for (#{me.iterant.value} in #{terminator}) {\n"
+        rv += "  if (!#{terminator}.hasOwnProperty(#{me.iterant.value})) {continue;}\n"
       rv += indent loop_block_js
       rv += "}\n"
     return rv
@@ -468,7 +470,7 @@ function apply_generator_to_grammar()
         rv += "  for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
       else
         rv += "  for (#{iterator} in #{terminator}) {\n"
-      rv += "    (function (#{me.iterant.js()}) {\n"
+      rv += "    (function (#{me.iterant.value}) {\n"
       rv += multi_indent(render_try_blocks(), 3)
       rv += "      #{loop_counter}++;\n"
       rv += multi_indent(me.loop_block.js() + me.loop_block.js_closeout(), 3)
@@ -502,7 +504,7 @@ function apply_generator_to_grammar()
         rv += "#{terminator} = [];\n"
         rv += "for (#{iterator} in #{me.iterable.js()}) {if ((#{me.iterable.js()}).hasOwnProperty(#{iterator})) {#{terminator}.push(#{iterator})};}\n"
         rv += "return k$async(#{loop_counter},#{kthis()},[0,#{terminator},#{terminator}[0]]);\n"
-      rv += "function #{loop_counter}(k$i,k$obj,#{me.iterant.js()}) {\n"
+      rv += "function #{loop_counter}(k$i,k$obj,#{me.iterant.value}) {\n"
       rv += render_try_blocks()
       rv += "  k$i++;\n"
       rv += "  var k$lcb = function () {if (k$i < k$obj.length) return #{loop_counter}.apply(#{kthis()},[k$i,k$obj,k$obj[k$i]]); else return #{me.callback}.apply(#{kthis()});};\n"
@@ -550,6 +552,9 @@ function apply_generator_to_grammar()
     rv += indent render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
     return rv
+
+  me.LoopControlStatement.prototype.js = ->
+    return "#{me.control.value};\n"
 
   me.Block.prototype.js = ->
     me.callback = current_callback unless me.callback exists

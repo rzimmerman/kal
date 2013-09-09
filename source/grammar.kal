@@ -1,11 +1,37 @@
 ast = require './ast'
 ASTBase = ast.ASTBase
 
-KEYWORDS = ['true','false','yes','no','on','off','function','return','if','unless','except','when','otherwise',
-            'and','or','but','xor','not','new','while','for','else','method','class','exists','doesnt','exist',
-            'is','isnt','inherits','from','nothing','empty','null','break','try','catch','throw','raise',
-            'arguments','of','in','nor','instanceof','property','value','with','from','task','fail','parallel','series',
-            'pass','bitwise','mod','pause','until']
+# words that are reserved in Kal and cannot be used for identifiers
+KAL_RESERVED = ['true','false','yes','no','on','off','function','method',
+               'task','return','if','else','unless','except','when',
+               'otherwise','and','or','but','xor','not','nor','bitwise',
+               'mod','new','while','until','for','class','exists','doesnt',
+               'exist','is','isnt','inherits','from','nothing','empty','null',
+               'break','continue','try','catch','throw','raise','fail',
+               'with','arguments','of','in','instanceof','property','value',
+               'parallel','series','pass','pause','until','me','this','typeof']
+
+# words that are resevred in Kal but can be used as rvalues
+KAL_RVALUE_OK = ['true','false','yes','no','on','off','me','this','super',
+                 'arguments']
+
+# JavaScript reserved words
+# Note `label` is not included because it can be used as an identifier
+# `undefined`, while technically assignable, is included to avoid confusion
+JS_RESERVED =  ['break','case','catch','continue','debugger','default',
+                'delete','do','else','finally','for','function','if','in',
+                'instanceof','new','return','switch','this','throw','try',
+                'typeof','var','void','while','with','class','enum','export',
+                'extends','import','super','implements','interface','let',
+                'package','private','protected','public','static','yield'
+                'null','true','false','undefined','const']
+
+# JavaScript words that are reserved but usable as rvalues
+# In the future `super` may get added to this list depending on the spec
+JS_RVALUE_OK =  ['this','null','true','false','undefined']
+
+KEYWORDS  = KAL_RESERVED.concat  JS_RESERVED
+RVALUE_OK = KAL_RVALUE_OK.concat JS_RVALUE_OK
 
 class Block inherits from ASTBase
   method parse()
@@ -38,7 +64,11 @@ class BlockWithoutIndent inherits from Block
 
 class Statement inherits from ASTBase
   method parse()
-    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, AssignmentStatement, ExpressionStatement
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, AssignmentStatement, ExpressionStatement
+
+class LoopControlStatement inherits from ASTBase
+  method parse()
+    me.control = me.req_val 'break', 'continue'
 
 class ThrowStatement inherits from ASTBase
   method parse()
@@ -82,7 +112,6 @@ class IfStatement inherits from ASTBase
         if new_else.conditional doesnt exist
           keep_going = no
 
-
 class ElseStatement inherits from ASTBase
   method parse()
     me.req_val 'else', 'otherwise'
@@ -103,7 +132,7 @@ class ForStatement inherits from ASTBase
     me.req_val 'for'
     me.lock()
     me.execution_style = me.opt_val 'parallel', 'series'
-    me.iterant = me.req UnaryExpression
+    me.iterant = me.req Variable
     me.type = me.req_val 'in', 'of'
     me.iterable = me.req Expression
     me.loop_block = me.req Block
@@ -136,7 +165,6 @@ class WaitForStatement inherits from ASTBase
     last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
     me.error("expected a function call after 'from'") unless last_accessor instanceof FunctionCall
     me.block = me.req BlockWithoutIndent
-
 
 class SimpleWaitForStatement inherits from WaitForStatement
   method parse()
@@ -222,6 +250,13 @@ class BlankStatement inherits from ASTBase
     else
       me.req 'NEWLINE'
 
+class Variable inherits from ASTBase
+  method parse()
+    me.identifier = me.req 'IDENTIFIER'
+    me.lock()
+    me.value = me.identifier.value
+    me.error "'#{me.value}' is reserved and can't be used as a name" when me.value in KEYWORDS
+
 class BinOp inherits from ASTBase
   method parse()
     me.invert = no
@@ -270,14 +305,18 @@ class UnaryExpression inherits from ASTBase
   method is_lvalue()
     return no if me.can_be_lvalue is false
     return no if me.base.constructor in [NumberConstant, StringConstant, RegexConstant]
-    return no if me.base.value in KEYWORDS
+    # allow things like `me.a = 1` but not `me = 1`
+    if me.accessors.length > 0
+      return no if (me.base.value in KEYWORDS) but not (me.base.value in RVALUE_OK)
+    else
+      return no if me.base.value in KEYWORDS
     for accessor in me.accessors
       if (accessor instanceof FunctionCall)
         return no
     return yes
   method parse()
     me.bitwise     = me.opt_val 'bitwise'
-    me.preop       = me.opt_val 'not', 'new', '-'
+    me.preop       = me.opt_val 'not', 'new', '-', 'typeof'
     if me.bitwise and me.preop?.value isnt 'not'
       me.error "expected 'not' after 'bitwise' for a unary expression"
     me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, ImplicitMapExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
@@ -292,6 +331,11 @@ class UnaryExpression inherits from ASTBase
         me.accessors   = me.accessors.concat(me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck)
     else
       me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
+    me.lock()
+    #check for keyword use as an identifier
+    if me.base.value exists and (me.base.value in KEYWORDS) but not (me.base.value in RVALUE_OK)
+      me.error "'#{me.base.value}' is a reserved word and can't be used as a name"
+
   method number_constant()
     if me.bitwise exists or me.preop exists
       return null
@@ -392,7 +436,7 @@ class ListComprehension inherits from ASTBase
     me.iter_expr = me.req Expression
     me.req_val 'for'
     me.lock()
-    me.iterant = me.req 'IDENTIFIER'
+    me.iterant = me.req Variable
     me.req_val 'in'
     me.iterable = me.req Expression
 
@@ -403,12 +447,12 @@ class ObjectComprehension inherits from ASTBase
     me.req_val 'property'
     me.lock()
     if me.opt_val 'value'
-      me.value_iterant = me.req 'IDENTIFIER'
+      me.value_iterant = me.req Variable
     else
-      me.property_iterant = me.req 'IDENTIFIER'
+      me.property_iterant = me.req Variable
       if me.opt_val 'with'
         me.req_val 'value'
-        me.value_iterant = me.req 'IDENTIFIER'
+        me.value_iterant = me.req Variable
     me.req_val 'in'
     me.iterable = me.req Expression
 
@@ -457,7 +501,7 @@ class Ellipsis inherits from ASTBase
 
 class FunctionDefArgument inherits from ASTBase
   method parse()
-    me.name = me.req 'IDENTIFIER'
+    me.name = me.req Variable
     me.lock()
     if me.opt_val '='
       me.default = me.req Expression
@@ -468,7 +512,7 @@ class FunctionExpression inherits from ASTBase
   method parse()
     me.specifier = me.req_val 'function', 'method', 'task'
     me.lock()
-    me.name = me.opt 'IDENTIFIER'
+    me.name = me.opt Variable
     me.req_val '('
     me.arguments = me.opt_multi FunctionDefArgument
     me.req_val ')'
@@ -481,7 +525,7 @@ class ClassDefinition inherits from ASTBase
     me.name = me.opt 'IDENTIFIER'
     if me.opt_val('inherits')
       me.req_val 'from'
-      me.parent = me.req 'IDENTIFIER'
+      me.parent = me.req Variable
     me.block = me.req Block
 
 class TryCatch inherits from ASTBase
@@ -501,16 +545,18 @@ class SuperStatement inherits from ASTBase
     me.accessor = me.opt FunctionCall
 
 Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement, ElseStatement,
-         WhileStatement, ForStatement, AssignmentStatement, ExpressionStatement,
+         WhileStatement, ForStatement, AssignmentStatement, ExpressionStatement, LoopControlStatement,
          BlankStatement, BinOp, Expression, UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant,
          StringConstant, RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument, FunctionCall,
          ParenExpression, ListExpression, ListComprehension, ObjectComprehension, MapItem, MapExpression,
          ImplicitMapItem, ImplicitMapExpression, Ellipsis, FunctionDefArgument, FunctionExpression,
          ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent, SimpleWaitForStatement,
-         WaitForStatement, PauseForStatement, MultipleReturnValues, RunInParallelBlock, WaitForExpression]
+         WaitForStatement, PauseForStatement, MultipleReturnValues, RunInParallelBlock, WaitForExpression,
+         Variable]
 
 exports.Grammar = {}
 for v in Nodes
   exports.Grammar[v.name] = v
 exports.GrammarRoot = exports.Grammar.File
-exports.KEYWORDS = KEYWORDS
+exports.KEYWORDS    = KEYWORDS
+exports.RVALUE_OK   = RVALUE_OK

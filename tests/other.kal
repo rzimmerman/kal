@@ -108,3 +108,23 @@ describe 'Other', ->
     obj.fun().should.equal 99
     obj.name.should.equal 'object 3'
     obj.other.should.equal 3
+
+  it 'should not allow keywords as identifiers', -> #gh-36
+    a = ->
+      Kal.compile "undefined = 2\n", {sandbox:yes,bare:yes}
+    b = ->
+      Kal.compile "x = [a for if in x]\n", {sandbox:yes,bare:yes}
+    c = ->
+      Kal.compile "function true()\n  return 2\n", {sandbox:yes,bare:yes}
+    d = ->
+      Kal.compile "this = 1\n", {sandbox:yes,bare:yes}
+    e = ->
+      Kal.compile "this.p = 2\n", {sandbox:yes,bare:yes}
+    f = ->
+      Kal.compile "x = [1]\nfor this in x\n  y = 1\n", {sandbox:yes,bare:yes}
+    a.should.throw()
+    b.should.throw()
+    c.should.throw()
+    d.should.throw()
+    e.should.not.throw()
+    f.should.throw()
