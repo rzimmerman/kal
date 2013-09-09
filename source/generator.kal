@@ -235,11 +235,11 @@ function apply_generator_to_grammar()
         unless use_snippets['in']?
           use_snippets['in'] = snippets['in']
           for subscope in scopes
-            subscope['$kindexof'] = 'closure'
-          scope['$kindexof'] = 'closure'
+            subscope['k$indexof'] = 'closure'
+          scope['k$indexof'] = 'closure'
         old_right = me.right
         new_right = me.right.left
-        new_left = "($kindexof.call(#{new_right.js()}, #{left_code}) >= 0)"
+        new_left = "(k$indexof.call(#{new_right.js()}, #{left_code}) >= 0)"
         rv += old_right.js(new_left)
       else if opjs is 'nor'
         rv += "!(#{left_code} || #{me.right.js()})"
@@ -413,7 +413,7 @@ function apply_generator_to_grammar()
     for else_clause in me.elses
       else_js += else_clause.block_js_header + else_clause.block_js + indent(else_clause.block.js_closeout()) + '}'
     use_snippets['async'] = snippets['async']
-    callback_js = "return $kasync(#{me.callback},#{kthis()});\n"
+    callback_js = "return k$async(#{me.callback},#{kthis()});\n"
     callback_js += "function #{me.callback}() {\n"
     callback_js += indent render_try_blocks()
     me.parent_block.closeout_callback = me.original_callback
@@ -479,7 +479,7 @@ function apply_generator_to_grammar()
         rv += "    })(#{iterator});\n"
       rv += "  }\n"
       use_snippets['async'] = snippets['async']
-      rv += "  return $kasync(#{loop_callback},#{kthis()});\n"
+      rv += "  return k$async(#{loop_callback},#{kthis()});\n"
       rv += "  function #{loop_callback}() {\n"
       rv += "    if (--#{loop_counter} == 0) return #{me.callback}();\n"
       rv += "  }\n"
@@ -495,13 +495,13 @@ function apply_generator_to_grammar()
       me.loop_block.original_callback = "k$lcb"
       use_snippets['async'] = snippets['async']
       if me.type.value is 'in'
-        rv += "return $kasync(#{loop_counter},#{kthis()},[0,#{me.iterable.js()},#{me.iterable.js()}[0]]);\n"
+        rv += "return k$async(#{loop_counter},#{kthis()},[0,#{me.iterable.js()},#{me.iterable.js()}[0]]);\n"
       else
         scope[terminator] = 'no closures'
         scope[iterator] = 'no closures'
         rv += "#{terminator} = [];\n"
         rv += "for (#{iterator} in #{me.iterable.js()}) {if ((#{me.iterable.js()}).hasOwnProperty(#{iterator})) {#{terminator}.push(#{iterator})};}\n"
-        rv += "return $kasync(#{loop_counter},#{kthis()},[0,#{terminator},#{terminator}[0]]);\n"
+        rv += "return k$async(#{loop_counter},#{kthis()},[0,#{terminator},#{terminator}[0]]);\n"
       rv += "function #{loop_counter}(k$i,k$obj,#{me.iterant.js()}) {\n"
       rv += render_try_blocks()
       rv += "  k$i++;\n"
@@ -542,7 +542,7 @@ function apply_generator_to_grammar()
     rv += render_try_blocks()
     expr_js = me.expr.js()
     expr_js = "!(#{expr_js})" when me.specifier.value is 'until'
-    rv += "  var k$lcb = function () {if (#{expr_js}) return $kasync(#{while_wrapper},#{kthis()}); else return $kasync(#{me.callback},#{kthis()});};\n"
+    rv += "  var k$lcb = function () {if (#{expr_js}) return k$async(#{while_wrapper},#{kthis()}); else return k$async(#{me.callback},#{kthis()});};\n"
     rv += indent(me.block.js() + me.block.js_closeout())
     rv += indent(render_catch_blocks())
     rv += "}\n"
@@ -583,7 +583,7 @@ function apply_generator_to_grammar()
     rv = ""
     if me.closeout_callback exists and me.callbacks.length isnt 0 and (me.in_conditional or me.in_loop)
       use_snippets['async'] = snippets['async']
-      rv += multi_indent "return $kasync(#{me.closeout_callback},#{kthis()});\n", me.indent_level
+      rv += multi_indent "return k$async(#{me.closeout_callback},#{kthis()});\n", me.indent_level
     for callback in me.callbacks
       rv += multi_indent render_catch_blocks(), me.indent_level
       rv += multi_indent "}\n", me.indent_level - 1
@@ -613,7 +613,7 @@ function apply_generator_to_grammar()
   me.ListComprehension.prototype.js = ->
     use_snippets['array list comprehension'] = snippets['array list comprehension']
     scope[me.iterant.value] = 'closures ok'
-    rv = "$kcomprl(#{me.iterable.js()},function ($ki) {#{me.iterant.value} = $ki; return #{me.iter_expr.js()};})"
+    rv = "k$comprl(#{me.iterable.js()},function (k$i) {#{me.iterant.value} = k$i; return #{me.iter_expr.js()};})"
     return rv
 
   me.ObjectComprehension.prototype.js = ->
@@ -621,11 +621,11 @@ function apply_generator_to_grammar()
     rv = ""
     if me.property_iterant exists
       scope[me.property_iterant.value] = 'closures ok'
-      rv += "#{me.property_iterant.value} = $kp;"
+      rv += "#{me.property_iterant.value} = k$p;"
     if me.value_iterant exists
       scope[me.value_iterant.value] = 'closures ok'
-      rv += "#{me.value_iterant.value} = $kv;"
-    rv = "$kcompro(#{me.iterable.js()},function ($kp,$kv) {#{rv}; return #{me.iter_expr.js()};})"
+      rv += "#{me.value_iterant.value} = k$v;"
+    rv = "k$compro(#{me.iterable.js()},function (k$p,k$v) {#{rv}; return #{me.iter_expr.js()};})"
     return rv
 
   me.MapItem.prototype.js = ->
@@ -689,7 +689,7 @@ function apply_generator_to_grammar()
         default_arg_js += ") #{argument.name.value} = #{argument.default.js()};\n"
     if me.callback exists
       use_snippets['get callback'] = snippets['get callback']
-      block_code = "var k$next = $kgetcb(arguments);\nk$this = this;\n#{default_arg_js}try {\n" + indent block_code
+      block_code = "var k$next = k$getcb(arguments);\nk$this = this;\n#{default_arg_js}try {\n" + indent block_code
     else
       block_code = default_arg_js + block_code
     rv += indent pop_scope(block_code, no)
@@ -861,7 +861,7 @@ function apply_generator_to_grammar()
 
     if me.in_conditional or me.in_loop
       use_snippets['async'] = snippets['async']
-      rv += multi_indent "#{prefix}$kasync(#{me.parent_block.original_callback},#{kthis()});\n", me.block.indent_level + try_count
+      rv += multi_indent "#{prefix}k$async(#{me.parent_block.original_callback},#{kthis()});\n", me.block.indent_level + try_count
     else if scope['k$next']
       rv += multi_indent "#{prefix}k$next ? k$next() : void 0;\n", me.block.indent_level + try_count
     rv += me.block.js_closeout()
@@ -879,7 +879,7 @@ function apply_generator_to_grammar()
     me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
     rv = "#{me.rvalue.js()};\n"
     if me.conditional exists
-      rv = me.conditional.js(rv, no, "$kasync(#{me.callback},#{kthis()});\n")
+      rv = me.conditional.js(rv, no, "k$async(#{me.callback},#{kthis()});\n")
     rv += "function #{me.new_callback}() {\n"
     unless me.no_errors
       rv += "  if (arguments[0] != null) {\n"
@@ -915,9 +915,9 @@ function apply_generator_to_grammar()
     return rv
 
   snippets =
-    'in': 'var $kindexof = [].indexOf || function (item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
+    'in': 'var k$indexof = [].indexOf || function (item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
     'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function (child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'
-    'array list comprehension':'var $kcomprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'
-    'object list comprehension':'var $kcompro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'
-    'async': 'var $kasync = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'
-    'get callback': 'var $kgetcb = function (args) {return typeof args[args.length-1] == "function" ? args[args.length-1] : function () {}};'
+    'array list comprehension':'var k$comprl = function (iterable,func) {var o = []; if (iterable instanceof Array) {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof(iterable.next) == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'
+    'object list comprehension':'var k$compro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'
+    'async': 'var k$async = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'
+    'get callback': 'var k$getcb = function (args) {return typeof args[args.length-1] == "function" ? args[args.length-1] : function () {}};'
