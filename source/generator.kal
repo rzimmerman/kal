@@ -14,7 +14,7 @@ KEYWORD_TRANSLATE =
   '^':          'pow'
   'mod':        '%'
   'not':        '!'
-  'new':        'new '
+  'new':        'new'
   'me':         'this'
   'this':       'this'
   'null':       'null'
