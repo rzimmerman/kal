@@ -13,7 +13,7 @@ KAL_RESERVED = ['true','false','yes','no','on','off','function','method',
 
 # words that are resevred in Kal but can be used as rvalues
 KAL_RVALUE_OK = ['true','false','yes','no','on','off','me','this','super',
-                 'arguments']
+                 'arguments','none','nothing']
 
 # JavaScript reserved words
 # Note `label` is not included because it can be used as an identifier

@@ -128,3 +128,15 @@ describe 'Other', ->
     d.should.throw()
     e.should.not.throw()
     f.should.throw()
+
+  it 'should allow `none` and `nothing` as values', -> #gh-106
+    x = none
+    y = nothing
+    z = null
+    (x exists).should.be.false
+    (y exists).should.be.false
+    (z exists).should.be.false
+    (x is null).should.be.true
+    (y is null).should.be.true
+    (z is null).should.be.true
+
