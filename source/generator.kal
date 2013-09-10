@@ -898,7 +898,7 @@ function apply_generator_to_grammar()
       rv += "    return k$async(#{me.callback},#{kthis()});\n"
       rv += "  }\n"
     rv += indent rv_block
-    rv += "  k$async(#{me.callback},#{kthis});\n"
+    rv += "  k$async(#{me.callback},#{kthis()});\n"
     rv += "}\n"
     return rv
 
