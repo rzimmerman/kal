@@ -49,18 +49,18 @@ task parallel_demo()
 
   # The `parallel` keyword is only meaningful here because the loop contains
   # a `wait for` statement (meaning callbacks are used)
+  timer = new Date
   for parallel url in urls
-    timer = new Date
 
     # we use the `safe` keyword because get is a "nonstandard" task
     # that does not call back with an error argument
     safe wait for response from http.get url
 
     delay = new Date() - timer
-    total_time += delay
 
     print "GET #{url} - #{response.statusCode} - #{response.connection.bytesRead} bytes - #{delay}ms"
 
+  total_time = new Date() - timer
   # because we are in a task rather than a function, this actually exectutes a callback
   return total_time
 
@@ -73,3 +73,4 @@ print ''
 print 'Parallel Requests...'
 wait for time2 from parallel_demo()
 print "Total duration #{time2}ms"
+process.exit()
