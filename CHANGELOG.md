@@ -1,5 +1,10 @@
 #Change Log
 
+### [0.5.0](https://github.com/rzimmerman/kal/compare/r0.4.9...r0.5.0)
+* Some cleanup to internal variable names and spacing in generated JavaScript.
+* Compile-time checks for JavaScript/Kal keywords being used as identifiers.
+* Async callbacks after `wait for`s are now consistent about running on the next process tick. The initial call runs synchronously.
+
 ### [0.4.9](https://github.com/rzimmerman/kal/compare/r0.4.8...r0.4.9)
 * `this`/`me` is now preserved between `wait for` calls
 * Added `until` loops (equivalent to `while not`)
