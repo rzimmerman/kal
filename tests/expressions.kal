@@ -225,3 +225,19 @@ describe 'Expression', ->
     x = 0x55
     (x bitwise left 1).should.equal 0xaa
     (x bitwise right 1).should.equal 0x2a
+
+  it 'should support `not in` syntax', -> #gh-107
+    x = [1, 2, 3, 4]
+    (5 not in x).should.be.true
+    (2 not in x).should.be.false
+    (1 in x but 7 not in x).should.be.true
+    if 5 > 3 and 10 not in x
+      s = yes
+    else
+      s = no
+    s.should.be.true
+    if 3 > 6 or 10 not in x
+      s = yes
+    else
+      s = no
+    s.should.be.true
