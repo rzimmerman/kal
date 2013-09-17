@@ -11,7 +11,7 @@ KAL_RESERVED = ['true','false','yes','no','on','off','function','method',
                'with','arguments','of','in','instanceof','property','value',
                'parallel','series','pass','pause','until','me','this','typeof']
 
-# words that are resevred in Kal but can be used as rvalues
+# words that are reserved in Kal but can be used as rvalues
 KAL_RVALUE_OK = ['true','false','yes','no','on','off','me','this','super',
                  'arguments','none','nothing']
 
