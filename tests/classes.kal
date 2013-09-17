@@ -133,3 +133,27 @@ describe 'Classes and Inheritance', ->
     wait for b from zz.task2()
     b.should.equal 6
     done()
+
+  it 'should support late binding', (done) -> #gh-104
+    class YYY
+      method initialize()
+        me.x = 1
+      method thing()
+        return me.x
+
+    class YYY2 inherits from YYY
+      method initialize()
+        me.x = 2
+
+    method p(a) of YYY
+      me.x = a
+
+    a = new YYY()
+    b = new YYY2()
+    a.thing().should.equal 1
+    b.thing().should.equal 2
+    a.p(7)
+    b.p(8)
+    a.thing().should.equal 7
+    b.thing().should.equal 8
+    done()

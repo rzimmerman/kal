@@ -648,7 +648,16 @@ function apply_generator_to_grammar()
 
   me.FunctionExpression.prototype.js = ->
     me.callback = 'k$next' when me.specifier.value is 'task'
-    if class_defs.length > 0 and me.name exists #is a member function/method
+    if me.name exists and me.bind_to exists # a late binding to a class
+      if me.specifier.value is 'method' and me.name.value is 'initialize'
+        throw new Error "late binding for constructors is not supported"
+      else
+        push_class()
+        class_def = {name: me.bind_to.js(), code: '', args: [], has_constructor: no}
+        rv = me.js_class_member()
+        pop_class()
+        return rv
+    else if class_defs.length > 0 and me.name exists #is a member function/method
       if me.specifier.value is 'method' and me.name.value is 'initialize'
         class_def.code += me.js_constructor()
         return ""

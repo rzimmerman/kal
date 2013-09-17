@@ -519,6 +519,10 @@ class FunctionExpression inherits from ASTBase
     me.req_val '('
     me.arguments = me.opt_multi FunctionDefArgument
     me.req_val ')'
+    me.late_bind = me.opt_val 'of'
+    if me.late_bind
+      me.lock()
+      me.bind_to = me.req UnaryExpression
     me.block = me.req Block
 
 class ClassDefinition inherits from ASTBase
