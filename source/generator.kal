@@ -27,11 +27,13 @@ KEYWORD_TRANSLATE =
   'of':         'in'
   'EndOfList':  'undefined'
   'fail':       'throw'
-  'bitwise and':'&'
-  'bitwise or': '|'
-  'bitwise xor': '^'
-  'bitwise not': '~'
-  'typeof':     'typeof'
+  'bitwise and':   '&'
+  'bitwise or':    '|'
+  'bitwise xor':   '^'
+  'bitwise not':   '~'
+  'typeof':        'typeof'
+  'bitwise left':  '<<'
+  'bitwise right': '>>'
 
 load = function load (grammar)
   apply_generator_to_grammar.apply grammar

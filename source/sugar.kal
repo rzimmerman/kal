@@ -80,7 +80,8 @@ function noparen_function_calls (tokens)
     this_token_not_operator = ((non_literal or callable_literal) and token_isnt_reserved)
     declaring_a_function = tokens[i-2]?.value in ['function','task','method','class'] and last_token?.type is 'IDENTIFIER'
     soft_paren = (token.value is '(' and token.soft but not declaring_a_function)
-    if last_token_callable and (this_token_not_operator or soft_paren)
+    bitwise_shift = (last_token?.value in ['left','right']) and tokens[i-2]?.value is 'bitwise'
+    if last_token_callable and (this_token_not_operator or soft_paren) but not bitwise_shift
       triggers.push 'NEWLINE'
       out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
       closures.push ')'
