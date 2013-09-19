@@ -1,0 +1,17 @@
+Literate Kal Tests
+------------------
+
+These test cases check the compiler's support for Literate Kal files.
+
+    Kal = require '../compiled/kal'
+
+This feature was originally introduced in [gh-110](https://github.com/rzimmerman/kal/issues/110).
+
+    describe 'Literate Kal', -> # gh-110
+
+Basic support is tested by attempting to evaluate a short script that assigns the result of `5 + 5` to a variable `x` and checking the result. The code line is surrounded by Markdown. Failure to parse will throw an error and fail the test case.
+
+      it 'should be supported', ->
+        literate_code = "This is a Literate Kal file.\n\n    x = 5 + 5\n\nThis is more comment text."
+        result = Kal.eval literate_code, {sandbox:yes, bare:yes, literate:yes}
+        result.should.equal 10
