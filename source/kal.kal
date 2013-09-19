@@ -2,6 +2,7 @@ sugar     = require './sugar'
 lexer     = require './lexer'
 parser    = require './parser'
 generator = require './generator'
+literate  = require './literate'
 
 exports.VERSION = '0.5.1'
 
@@ -14,6 +15,7 @@ function compile(code, options)
     options = {bare:no}
 
   try
+    code = literate.translate code when options.literate
     token_rv = lexer.tokenize code
     raw_tokens = token_rv[0]
     comments   = token_rv[1]
@@ -27,9 +29,13 @@ function compile(code, options)
 exports.compile = compile
 
 if require.extensions
-  require.extensions['.kal'] = (module, filename) ->
-    content = compile(require('fs').readFileSync(filename, 'utf8'),{filename:filename})
+  extension = (module, filename) ->
+    is_literate = require('path').extname(filename) in ['.litkal', '.md']
+    content = compile(require('fs').readFileSync(filename, 'utf8'),{filename:filename, literate:is_literate})
     module._compile(content, filename)
+  require.extensions['.kal']    = extension
+  require.extensions['.litkal'] = extension
+  require.extensions['.md']     = extension except when require.extensions['.md'] exists
 
 exports.eval = (code, options) ->
   options = {} if options doesnt exist

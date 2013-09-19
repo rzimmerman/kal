@@ -1,0 +1,12 @@
+function translate(literate_code)
+  regular_kal_lines = []
+  for line in literate_code.split '\n'
+    if line.match(/^   /) # code
+      regular_kal_lines.push line.slice 4
+      last_line_was_comment = no
+    else # not code
+      # prepend with a line comment and remove block comments
+      regular_kal_lines.push '# ' + line.replace(/([^#]|^)###(?=[^#]|$)/g, '$1####')
+  return regular_kal_lines.join '\n'
+
+exports.translate = translate

@@ -137,9 +137,12 @@ function apply_generator_to_grammar()
   function kthis()
     return ("k$this" when scope['k$this'] exists otherwise "this")
 
+  literate = no
+
   self = me
 
   me.File.prototype.js = (options) ->
+    literate = options.literate
     scopes = []
     scope = {}
     try_block_stack = []
@@ -178,6 +181,7 @@ function apply_generator_to_grammar()
     while comments[0] exists and comments[0].line < me.statement.line
       comment = comments.shift()
       comment_prefix += "/* #{comment.value} */"
+    comment_prefix = comment_prefix.replace /\*\/\/\*/g, '\n  ' when literate
     rv = me.statement.js()
     rv = rv.replace /\n/, comment_postfix unless comment_postfix is ''
     if rv[0] is '\n' and comment_prefix isnt ""

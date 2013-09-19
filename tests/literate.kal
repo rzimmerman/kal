@@ -1,0 +1,7 @@
+Kal = require '../compiled/kal'
+
+describe 'Literate Kal', -> # gh-110
+  it 'should be supported', ->
+    literate_code = "This is a Literate Kal file.\n\n    x = 5 + 5\n\nThis is more comment text."
+    result = Kal.eval literate_code, {sandbox:yes, bare:yes, literate:yes}
+    result.should.equal 10

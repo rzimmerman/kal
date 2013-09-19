@@ -80,6 +80,7 @@ run = function run()
       compile_files options._, options.output, compile_options, options.minify
   else
     for filename in options._
+      compile_options.literate = path.extname(filename) in ['.litkal', '.md']
       Kal.eval fs.readFileSync(filename), compile_options
 exports.run = run
 
@@ -91,9 +92,10 @@ function compile_files(filenames, output_dir, options, minify)
       fs.mkdirSync new_outdir, stat.mode
       subfiles = [path.join(filename, child) for child in fs.readdirSync(filename)]
       compile_files subfiles, new_outdir, options, minify
-    else if path.extname(filename) is '.kal'
+    else if path.extname(filename) in ['.kal', '.litkal', '.md']
       options.filename = filename
-      options.module_name = path.basename(filename, '.kal')
+      options.module_name = path.basename(filename, path.extname(filename))
+      options.literate = path.extname(filename) in ['.litkal', '.md']
       js_output = Kal.compile fs.readFileSync(filename), options
       if minify
         js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code

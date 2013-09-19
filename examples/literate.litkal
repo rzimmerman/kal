@@ -1,0 +1,27 @@
+Literate Kal
+============
+
+This is an example of a **Literate Kal** file. It's the same as a markdown file, except embedded code blocks are actually compiled.
+
+    print "This is actually compiled"
+    lang = "Kal"
+    print "Literate #{lang}"
+
+Code blocks can be seperated by documentation.
+
+    print 'Still running...'
+
+Try it out! Remember that when compiled, any markdown content just turns into comments. So
+
+    if 3 > 2
+
+Only one these will still run:
+
+      print 'Condition true.'
+
+Even though they are separated into blocks
+
+    else
+      print 'Condition false!'
+
+Have fun.
