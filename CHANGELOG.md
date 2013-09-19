@@ -1,5 +1,12 @@
 #Change Log
 
+### [0.5.1](https://github.com/rzimmerman/kal/compare/r0.5.0...r0.5.1)
+* Fixed bugs in `run in parallel` blocks
+* `none` and `nothing` keywords now working as aliases for `null`
+* Added `bitwise left` (`<<`) and `bitwise right` (`>>`) shift operators.
+* Added support for late binding of methods to classes.
+* Fixed issues with Unicode support for international characters
+
 ### [0.5.0](https://github.com/rzimmerman/kal/compare/r0.4.9...r0.5.0)
 * Some cleanup to internal variable names and spacing in generated JavaScript.
 * Compile-time checks for JavaScript/Kal keywords being used as identifiers.

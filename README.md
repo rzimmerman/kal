@@ -468,6 +468,8 @@ Listed below are Kal's operators and their other-language equivalents. Note that
 | `bitwise not`              | `~`                     | `~`                       | Bitwise not (invert)           |
 | `bitwise and`              | `&`                     | `&`                       | Bitwise and                    |
 | `bitwise or`               | <code>&#124;</code>     | <code>&#124;</code>       | Bitwise or                     |
+| `bitwise left`             | `<<`                    | `<<`                      | Bitwise shift left             |
+| `bitwise right`            | `>>`                    | `>>`                      | Bitwise shift right            |
 | `+`, `-`, `*`, `/`, `mod`  | `+`, `-`, `*`, `/`, `%` | `+`, `-`, `*`, `/`, `%`   | Math operators                 |
 | `^`                        | none                    | none                      | Exponent (`Math.pow`)          |
 | `exists`, `?`              | `?`                     | none                      | Existential check              |
@@ -538,6 +540,28 @@ sue.printName() # prints 'Frumpy Sue'
 print(sue instanceof Person) # prints true
 print(sue instanceof FrumpyPerson) # prints true
 print(jen instanceof FrumpyPerson) # prints false
+```
+
+You can add or alter a method or task to a class after it is defined (or from another file) using late binding using the `of` keyword.
+
+```kal
+class MyClass
+  method my_method(v)
+    me.v = v
+
+x = new MyClass()
+x.my_method(10)
+print x.v # prints 10
+
+method my_method(v) of MyClass
+  me.v = v + 1
+
+method my_other_method() of MyClass
+  print me.v
+
+x = new MyClass()
+x.my_method 10
+x.my_other_method() # prints 11
 ```
 
 ## Try/Catch
