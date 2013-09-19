@@ -19,9 +19,9 @@
     "kal":     "./scripts/kal"
   },
   "scripts": {
-	"make": "mkdir -p compiled && kal -o compiled/ source/*.kal",
-	"bootstrap": "npm run-script make && scripts/kal --minify -o compiled/ source/*.kal && npm test",
-  "test": "node_modules/mocha/bin/mocha -r should -R spec tests/*.kal --compilers kal:compiled/kal"
+	"make": "mkdir -p compiled && kal -o compiled/ source/*",
+	"bootstrap": "npm run-script make && scripts/kal --minify -o compiled/ source/* && npm test",
+  "test": "node_modules/mocha/bin/mocha -r should -R spec tests/* --compilers kal:compiled/kal"
   },
   "homepage":     "http://rzimmerman.github.io/kal",
   "bugs":         "https://github.com/rzimmerman/kal/issues",
