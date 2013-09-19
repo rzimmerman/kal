@@ -8,7 +8,7 @@ exports.VERSION = '0.5.0'
 function compile(code, options)
   # protect against issues with international characters
   # when code is passed in as a buffer (see gh-108)
-  code = code.toString()
+  code = code.toString().trim()
 
   if options doesnt exist
     options = {bare:no}
