@@ -140,3 +140,14 @@ describe 'Other', ->
     (y is null).should.be.true
     (z is null).should.be.true
 
+  it 'should handle international characters', -> #gh-108
+    #not an exhaustive test, but fixes this particular issue
+    publisher = /出版社：(.*)/
+    ("出版社：ish".match(publisher) exists).should.be.true
+    a = ->
+      c = "publisher = /出版社：(.*)/"
+      Kal.eval c, {sandbox:yes,bare:yes}
+      Kal.compile c, {sandbox:yes,bare:yes}
+      Kal.compile Buffer(c), {sandbox:yes,bare:yes}
+    a.should.not.throw()
+ 
