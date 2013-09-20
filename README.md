@@ -110,6 +110,10 @@ require('kal');
 require('./mykalfile'); //refers to mykalfile.kal
 ```
 
+## Literate Kal
+
+Literate Kal offer an exciting way to write well-documented, readable code. The idea is based on [Literate CoffeeScript](http://coffeescript.org/#literate). The compiler will treat any file with a `.litkal` or `.md` extension as a [Markdown](http://daringfireball.net/projects/markdown/) document. Code blocks, denoted by four spaces of indentation, are treated as Kal code while anything that is not indented is treated as a comment. See [this example](https://github.com/rzimmerman/kal/blob/master/examples/literate.litkal) of a Literate Kal file. New in 0.5.2.
+
 ## Whitespace and Indentation
 
 In Kal, spaces for indentation are significant and tabs are not valid. Indents are required for function definitions and blocks of code inside of `if` statements, `try`/`catch` blocks, and loops.
