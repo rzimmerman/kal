@@ -19,7 +19,7 @@
     "kal":     "./scripts/kal"
   },
   "scripts": {
-	"make": "mkdir -p compiled && kal -o compiled/ source/*",
+	"make": "mkdir -p compiled && rm -f compiled/* && kal -o compiled/ source/*",
 	"bootstrap": "npm run-script make && scripts/kal --minify -o compiled/ source/* && npm test",
   "test": "node_modules/mocha/bin/mocha -r should -R spec tests/* --compilers kal:compiled/kal"
   },
