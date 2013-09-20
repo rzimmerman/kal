@@ -94,13 +94,14 @@ function compile_files(filenames, output_dir, options, minify)
       compile_files subfiles, new_outdir, options, minify
     else if path.extname(filename) in ['.kal', '.litkal', '.md']
       options.filename = filename
-      options.module_name = path.basename(filename, path.extname(filename))
-      options.literate = path.extname(filename) in ['.litkal', '.md']
+      extension = path.extname(filename)
+      options.module_name = path.basename(filename, extension)
+      options.literate = extension in ['.litkal', '.md']
       js_output = Kal.compile fs.readFileSync(filename), options
       if minify
         js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code
       printLine js_output if options.show_js
-      js_filename = path.join(output_dir, path.basename(filename, '.kal')) + '.js'
+      js_filename = path.join(output_dir, path.basename(filename, extension)) + '.js'
       fs.writeFileSync js_filename, js_output
 
 function version()
