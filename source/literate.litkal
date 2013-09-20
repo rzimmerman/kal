@@ -8,15 +8,19 @@ This file translates Literate Kal files to regular Kal files for the compiler. L
 This function reads the Literate code line by line, building a new array of non-Literate (illiterate?) code.
 
       regular_kal_lines = []
+      last_line = ''
+      in_code_block = no
       for line in literate_code.split '\n'
 
-If the line starts with four spaces, we keep the line but remove the spaces. If the line does not start with four spaces, we prepend a `# ` comment marker to make it a comment. We also need to replace any occurrances of `###` to avoid creating/destroying block comments.
+If the line starts with four spaces and the previous line was blank or code, we keep the line but remove the spaces. Otherwise, we prepend a `# ` comment marker to make it a comment.
 
-        if line.match(/^   /) # code
+        if line.match(/^   /) and (last_line is '' or in_code_block)
+          in_code_block = yes
           regular_kal_lines.push line.slice 4
         else
-          # prepend with a line comment and remove block comments
-          regular_kal_lines.push '# ' + line.replace(/([^#]|^)###(?=[^#]|$)/g, '$1####')
+          in_code_block = no
+          regular_kal_lines.push '# ' + line
+        last_line = line
 
 The translated code is standard Kal.
 

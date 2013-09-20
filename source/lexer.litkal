@@ -157,7 +157,7 @@ For non-comment tokens, we generally just add the token to `me.tokens`. We will 
 The `soft` attribute indicates that the token was separated from the previous token by whitespace. This is used by the `sugar` module in some cases to determine whether this is a function call or not. For example `my_function () ->` could mean `my_function()(->)` or `my_function(->)`. Marking whether or not there was whitespace allows us to translate `my_function () ->` differently from `my_function() ->`.
 
           else
-            if type isnt 'NEWLINE' and me.tokens[me.tokens.length - 1]?.type isnt 'NEWLINE'
+            unless type is 'NEWLINE' and me.tokens[me.tokens.length - 1]?.type is 'NEWLINE'
               me.tokens.push {text:text, line:me.line, value:val, type:type, soft: last_token_type is 'WHITESPACE'}
 
 Update our current index and the line number we are looking at. Line numbers are used for source maps and error messages.
