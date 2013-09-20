@@ -1,0 +1,302 @@
+Kal Interactive Shell
+---------------------
+
+The interactive shell is a read-evaluate-print loop (REPL) that compiles one line to Javascript and executes it, displaying the result to the user.
+
+Most of this was lovingly stolen from [CoffeeScript](http://coffeescript.org/documentation/docs/repl.html).
+
+The REPL starts by opening up `stdin` and `stdout`.
+
+    stdin = process.openStdin()
+    stdout = process.stdout
+
+The Kal compiler and the built-in node utilities are also used, including `util.inspect` for displaying pretty values of objects. Kal keywords are used to help autocomplete.
+
+    Kal          = require './kal'
+    readline     = require 'readline'
+    util         = require 'util'
+    inspect      = util.inspect
+    vm           = require 'vm'
+    Script       = vm.Script
+    Module       = require 'module'
+    KAL_KEYWORDS = require('./grammar').KEYWORDS
+
+
+The prompt is five characters (with a space) and defaults to `kal> `. We tried to enable color output if the OS/shell supports it. We don't bother on Windows since it won't work with normal escape codes anyway.
+
+    REPL_PROMPT = 'kal> '
+    REPL_PROMPT_MULTILINE = '---> '
+    REPL_PROMPT_CONTINUATION = '...> '
+    enableColors = no
+    unless process.platform is 'win32'
+      enableColors = not process.env.NODE_DISABLE_COLORS
+
+
+The error function will print the stack trace if it is available.
+
+    function error(err)
+      stdout.write err.stack or err.toString()
+      stdout.write '\n'
+
+Autocompletion
+==============
+
+These regexes match complete-able bits of text.
+
+    ACCESSOR  = /\s*([\w\.]+)(?:\.(\w*))$/
+    SIMPLEVAR = /(\w+)$/i
+
+The `autocomplete` function returns a list of completions, and the completed text.
+
+    function autocomplete (text)
+      return completeAttribute(text) or completeVariable(text) or [[], text]
+
+`completeAttribute` attempts to autocomplete a chained dotted attribute: `one.two.three`.
+
+    function completeAttribute(text)
+      match = text.match ACCESSOR
+      if match
+        all = match[0]
+        obj = match[1]
+        prefix = match[2]
+
+If the object doesn't exist (or running it causes an error), we abort autocomplete.
+
+        try
+          obj = Script.runInThisContext obj
+        catch e
+          return
+        return when obj doesnt exist
+
+Otherwise we get property names and return them as a list, avoiding duplicates.
+
+        obj = Object(obj)
+        candidates = Object.getOwnPropertyNames obj
+        obj = Object.getPrototypeOf obj
+        while obj
+          for key in Object.getOwnPropertyNames(obj)
+            candidates.push key unless key in candidates
+          obj = Object.getPrototypeOf obj
+        completions = getCompletions prefix, candidates
+        return [completions, prefix]
+
+`completeVariable` attempts to autocomplete an in-scope free variable like `one`.
+
+    function completeVariable (text)
+      free = text.match(SIMPLEVAR)?[1]
+      free = "" if text is ""
+
+Get a list of variables by running `getOwnPropertyNames` on `this`.
+
+      if free exists
+        vars = Script.runInThisContext 'Object.getOwnPropertyNames(Object(this))'
+        keywords = []
+
+Include keywords as possible matches unless they start with `__`.
+
+        for r in KAL_KEYWORDS
+          keywords.push r when r.slice(0,2) isnt '__'
+        candidates = vars
+        for key in keywords
+          candidates.push key when not (key in candidates)
+        completions = getCompletions free, candidates
+        return [completions, free]
+
+`getCompletions` returns elements of candidates for which `prefix` is a prefix.
+
+    function getCompletions(prefix, candidates)
+      rv = []
+      for el in candidates
+        rv.push el when 0 is el.indexOf prefix
+      return rv
+
+Exceptions
+==========
+
+Make sure that uncaught exceptions don't kill the REPL.
+
+    process.on('uncaughtException', error)
+
+Running the REPL
+================
+
+The current backlog of multi-line code.
+
+    backlog = ''
+
+The current sandbox. We run in the current scope because certain globals (like Array) are not identical in a sandbox. For example, [1,2] instanceof Array would be false in a sandbox.
+
+    sandbox = global
+
+The main REPL function, **run**, is called every time a line of code is entered. We attempt to evaluate the command. If there's an exception, we print it out instead of exiting.
+
+    function run(buffer)
+
+Remove single-line comments
+
+      buffer = buffer.replace /(^|[\r\n]+)(\s*)##?(?:[^#\r\n][^\r\n]*|)($|[\r\n])/, "$1$2$3"
+
+Remove trailing newlines.
+
+      buffer = buffer.replace /[\r\n]+$/, ""
+
+If we are in multiline mode, just add text to the backlog.
+
+      if multilineMode
+        backlog += "#{buffer}\n"
+        repl.setPrompt REPL_PROMPT_CONTINUATION
+        repl.prompt()
+        return
+
+If there was nothing entered, don't bother to evaluate it - just print a new prompt.
+
+      if buffer.toString().trim() is "" and backlog is ""
+        repl.prompt()
+        return
+
+Otherwise, update the backlog.
+
+      backlog += buffer
+      code = backlog
+
+Check for a line continuation character and give another prompt line if one was found.
+
+      if code[code.length - 1] is '\\'
+        backlog = "#{backlog.slice(0,-1)}\n"
+        repl.setPrompt REPL_PROMPT_CONTINUATION
+        repl.prompt()
+        return
+
+If we made it this far, we are ready to execute `code`. Reset the prompt and backlog then make the sandbox.
+
+      repl.setPrompt REPL_PROMPT
+      backlog = ""
+
+We keep the same sandbox between runs, so only create it if it doesn't exist.
+
+      sandbox = Kal.makeSandbox() unless sandbox exists
+
+Run the code and print the output (using `util.inspect`) or error trace.
+
+      try
+        _ = global._
+        returnValue = Kal.eval(code, {filename: 'repl', modulename: 'repl', bare:yes, sandbox:sandbox})
+        if returnValue is undefined
+          global._ = _
+        repl.output.write "#{inspect(returnValue, no, 2, enableColors)}\n"
+      catch err
+        error err
+      repl.prompt()
+
+Set up `stdin`.
+
+    if stdin.readable and stdin.isRaw
+
+Handle piped input.
+
+      pipedInput = ''
+      repl = {}
+      repl.prompt = ->
+        stdout.write me._prompt
+      repl.setPrompt = (p) ->
+        me._prompt = p
+      repl.input = stdin
+      repl.output = stdout
+      repl.on = ->
+        return
+
+      stdin.on 'data', (chunk) ->
+        pipedInput += chunk
+        nlre = /\n/
+        return unless nlre.test pipedInput
+        lines = pipedInput.split "\n"
+        pipedInput = lines[lines.length - 1]
+        for line in lines.slice(1,-1)
+          if line
+            stdout.write "#{line}\n"
+            run line, sandbox
+        return
+
+      stdin.on 'end', ->
+        for line in pipedInput.trim().split("\n")
+          if line
+            stdout.write "#{line}\n"
+            run line, sandbox
+        stdout.write "\n"
+        process.exit(0)
+
+    else
+
+Handle user input using autocomplete and a read buffer.
+
+      if readline.createInterface.length < 3
+        repl = readline.createInterface stdin, autocomplete
+        stdin.on 'data', (buffer) ->
+          repl.write buffer
+      else
+        repl = readline.createInterface stdin, stdout, autocomplete
+
+Default multiline mode to off.
+
+    multilineMode = off
+
+Handle the multi-line mode key switch (Ctrl-V).
+
+    repl.input.on 'keypress', (char, key) ->
+      return unless key and key.ctrl and not key.meta and not key.shift and key.name is 'v'
+      cursorPos = repl.cursor
+      repl.output.cursorTo 0
+      repl.output.clearLine 1
+      multilineMode = not multilineMode
+      repl._line() if not multilineMode and backlog
+      backlog = ''
+
+Switch the prompt and reset the cursor to the next line.
+
+      newPrompt = REPL_PROMPT_MULTILINE when multilineMode otherwise REPL_PROMPT
+      repl.setPrompt newPrompt
+      repl.prompt()
+      repl.cursor = cursorPos
+      repl.output.cursorTo newPrompt.length + (repl.cursor)
+
+Handle Ctrl-d press at end of last line in multiline mode
+
+    repl.input.on 'keypress', (char, key) ->
+      return unless multilineMode and repl.line
+      return unless key and key.ctrl and not key.meta and not key.shift and key.name is 'd'
+      multilineMode = off
+      repl._line()
+
+Watch for Ctrl-C and handle it gracefully if we are in the midle of a multiline entry.
+
+    repl.on 'attemptClose', ->
+      if multilineMode
+        multilineMode = off
+        repl.output.cursorTo 0
+        repl.output.clearLine 1
+        repl._onLine repl.line
+        return
+      if backlog or repl.line
+        backlog = ''
+        repl.historyIndex = -1
+        repl.setPrompt REPL_PROMPT
+        repl.output.write '\n(^C again to quit)'
+        repl.line = ''
+        repl._line (repl.line)
+      else
+        repl.close()
+
+Cleanup on close.
+
+    repl.on 'close', ->
+      repl.output.write '\n'
+      repl.input.destroy()
+
+Run `run` when a line is entered.
+
+    repl.on 'line', run
+
+Start with the default prompt and go.
+
+    repl.setPrompt REPL_PROMPT
+    repl.prompt()

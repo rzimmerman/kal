@@ -1,0 +1,202 @@
+The Kal Compiler
+----------------
+
+Kal is a highly readable, easy-to-use language that compiles to JavaScript. It's designed to be asynchronous and can run both on [node.js](http://nodejs.org) and in the browser. Kal makes asynchronous programming easy and clean by allowing functions to pause and wait for I/O, replacing an awkward callback syntax with a clean, simple syntax.
+
+The Kal compiler is written in Literate Kal. As a result, a "binary" (JavaScript) version is required to compile this source. You can obtain the latest precompiled package from npm using `npm install -g kal` (may require `sudo` depending on your setup). Once you have Kal installed globally, you can use the following scripts:
+
+* `npm run-script make` - This will compile the `sources` directory (this source) into the `compiled` directory.
+* `npm test` - Run the test suite against the `compiled` directory. You must run `npm install` for this repository to install the developer dependencies first.
+* `npm run-script bootstrap` - Build `sources` using the globally installed Kal compiler, then rebuild `sources` using the compiled version of itself. This also runs tests. This script is used to verify the compiler before deployment to npm.
+
+Structure
+=========
+
+The compiler uses several stages to compile Kal code.
+
+For Literate Kal files (like this one), the `literate` module strips out the leading spaces from code blocks and turns Markdown syntax (like this line) into comments.
+
+    literate  = require './literate'
+
+The first stage is the lexer, which turns the raw string output into an array of tokens of various types (such as `IDENTIFIER`, `STRING`, and `NUMBER`).
+
+    lexer     = require './lexer'
+
+The "sugar" stage handles syntactic sugar. This includes features that would be difficult to handle in the full parsing stage, such as function calls without parentheses, multiline lists, and CoffeeScript style function definitions. The result is a modified array of tokens that can be read by the parser.
+
+    sugar     = require './sugar'
+
+The parser stage is uses a recursive descent parser to step through the token array and create a tree of objects representing the structure of the code (an Abstract Syntax Tree).
+
+    parser    = require './parser'
+
+The generator stage turns the syntax tree into JavaScript by traversing the tree depth-first, asking each node to produce the JavaScript code that corresponds to its function. This adds methods to the classes in the parser for JavaScript generation.
+
+    generator = require './generator'
+
+This file maintains the version reported by `kal -v`. Unfortunately, this is not the same as the version listed in `package.json`, which is used to set the version reported by npm. Both this line and the `package.json` file need to be updated before an npm release.
+
+    exports.VERSION = '0.5.3'
+
+Compilation
+===========
+
+The compile function takes a `code` parameter that can be a string or buffer. This is the raw Kal (or Literate Kal) code. It also takes an `options` object which _may_ contain the following properties (all optional):
+
+* `bare` - if true, the resulting JavaScript will not be wrapped in a function wrapper. Top-level variables will leak to the global scope. The default is false (code is wrapped in a function).
+* `literate` - compile as a Literate Kal file. The default is false (regular Kal).
+* `show_tokens` - if true, the resulting token array is printed to `stdout`. This is useful for debugging the compiler. The default is false.
+
+Other members of `options` are ignored.
+
+This function returns a string containing the compiled JavaScript including proper spacing and indentation.
+
+
+    function compile(code, options)
+
+If code is passed as a buffer, there can be issues with Unicode characters (gh-108). As a result we convert it explicitly to a string and remove any trailing whitespace or newlines.
+
+      code = code.toString().trim()
+
+Files are wrapped in a function to prevent leakage to the global scope by default.
+
+      options = {bare:no} when options doesnt exist
+
+Run through the Literate module (if necessary), then tokenize with the lexer. The lexer returns tokens and comments seperately. The token array is then run through the `sugar` module to handle hard-to-parse features.
+
+      try
+        code = literate.translate code when options.literate
+        token_rv = lexer.tokenize code
+        raw_tokens = token_rv[0]
+        comments   = token_rv[1]
+        tokens = sugar.translate_sugar raw_tokens, options, lexer.tokenize
+
+We call the `js` method to recursively generate JavaScript from the tree, then return the value.
+
+        root_node = parser.parse tokens, comments, options
+        return root_node.js options
+
+We want to throw a string here, otherwise the user won't see a useful error message at the terminal (just an error class name).
+
+      catch compile_error
+        throw compile_error.message or compile_error
+
+    exports.compile = compile
+
+Running Scripts (Eval)
+======================
+
+The `eval` function (called `kal_eval` locally to avoid conflicting with JavaScript's built-in `eval`) compiles a string of Kal code and runs it in the specified environment. All options in the `options` argument are passed through to `compile`. The `options` argument can contain the following other (optional) settings:
+
+* `show_js` - print the output JavaScript of `compile` to the console. Useful for debugging the compiler. The default is false.
+* `sandbox` - if true, the code will be run in a separate (sandbox) environment with its own set of globals. If false or missing, the code will be run in the `global` context. Alternatively, you can specify an object that represents the global context in which the script should run.
+* `modulename` - Passed to `makeSandbox`. If specified, the name of the module used when running the script. Default is `eval`.
+* `filename` - Passed to `makeSandbox`. If specified, the name of the file used when running the script. Default is `eval`.
+
+Code passed to this function is run immediately.
+
+    function kal_eval(code, options)
+
+Compile the code object.
+
+      options = {} if options doesnt exist
+      js = compile code, options
+
+Show the output JavaScript if the user asked us to. This is really just for compiler debugging.
+
+      print js when options.show_js
+
+Node's `vm` module is used to run the script in a specified global context. This is the same technique CoffeeScript (and node) use to run scripts.
+
+      vm   = require 'vm'
+
+If the a sandbox option was specified, either use the specified object as the sandbox or create a new one based on the current globals if the parameter is just `true`. Otherwise, just use the current global context.
+
+      if options.sandbox
+        sandbox = exports.makeSandbox(options) if options.sandbox is yes otherwise options.sandbox
+      else
+        sandbox = global
+
+If the sandbox context is the `global` object, run the script in this context. Otherwise, run it with the sandbox.
+
+      if sandbox is global
+        return vm.runInThisContext js
+      else
+        return vm.runInContext js, sandbox
+
+Export as just `eval`.
+
+    exports.eval = kal_eval
+
+Sandboxes
+=========
+
+This function creates a sandbox with the specified options based on the current `global` object. It initializes the sandbox with the necessary require hooks and path variables. The `sandbox` argument can be a script context object (from the `vm` module), or just an object with global variables for a new context. If an object is passed through, this function will create the script context object automatically. This function uses the following (optional) values from the `options` argument:
+
+* `modulename` - If specified, the name of the module used when running the script. Default is `eval`.
+* `filename` - If specified, the name of the file used when running the script. Default is `eval`.
+
+This function returns a `vm` script context object suitable for use with `vm.runInContext`.
+
+    function makeSandbox(sandbox, options)
+      vm   = require 'vm'
+      path = require 'path'
+
+Create a sandbox (`vm` script context object) based on the global environment if one is not specified. Otherwise, check if the specified sandbox is already a script context object. If not, we create a script context object based for it.
+
+      if sandbox doesnt exist
+        sandbox = vm.createContext(global)
+      else if not (sandbox instanceof vm.Script.createContext().constructor) but sandbox isnt global
+        new_sandbox = vm.createContext(global)
+        for k of sandbox
+          new_sandbox[k] = sandbox[k]
+        sandbox = new_sandbox
+
+Set the `__filename` and `__dirname` that the script will see at run-time. We also set up the `module` and `require` objects to mimic what the script would see if it was run with `node` from the command line.
+
+      sandbox.__filename = options?.filename or 'eval'
+      sandbox.__dirname  = path.dirname sandbox.__filename
+      Module = require 'module'
+      _module  = new Module(options?.modulename or 'eval')
+      sandbox.module  = _module
+      _require = (path) ->
+        return Module._load path, _module, true
+      sandbox.require = _require
+      _module.filename = sandbox.__filename
+      for r in Object.getOwnPropertyNames(require)
+        if r isnt 'paths'
+          _require[r] = require[r]
+
+This is the same hack node and coffee currently uses for their own REPL.
+
+      _module.paths = Module._nodeModulePaths process.cwd()
+      _require.paths = _module.paths
+      _require.resolve = (request) ->
+        return Module._resolveFilename request, _module
+      return sandbox
+
+    exports.makeSandbox = makeSandbox
+
+Require Extentions
+==================
+
+This segment adds extensions to node's `require` function for Kal and Literate Kal files so that you can just `require` a Kal file without having to compile it first (assuming your script has already run `require 'kal'`).
+
+    if require.extensions
+      extension = (module, filename) ->
+
+Check if this is a Literate Kal file.
+
+        is_literate = require('path').extname(filename) in ['.litkal', '.md']
+
+Read the file, then compile using the `compile` function above. Then use node's built-in compile function to compile the JavaScript.
+
+        content = compile(require('fs').readFileSync(filename, 'utf8'),{filename:filename, literate:is_literate})
+        module._compile(content, filename)
+
+Add the extension for all appropriate file types. Don't overwrite `.md` in case CoffeeScript or something else is already using it.
+
+      require.extensions['.kal']    = extension
+      require.extensions['.litkal'] = extension
+      require.extensions['.md']     = extension except when require.extensions['.md'] exists
+

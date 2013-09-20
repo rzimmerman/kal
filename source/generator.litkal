@@ -1,0 +1,1804 @@
+Kal Generator
+-------------
+
+The `generator` module extends parser abstract syntax tree classes. It provides methods for generating JavaScript code for each node by traversing the tree. The compiler calls the `.js()` method of the root object to return the compiled JavaScript for the tree.
+
+We extend the grammar classes, so this module needs to be loaded **after** the `grammar` module.
+
+    Grammar = require('./grammar').Grammar
+
+Keyword Mapping
+===============
+
+Many keywords can be easily mapped one-to-one with their JavaScript equivalents.
+
+    KEYWORD_TRANSLATE =
+      'yes':        'true'
+      'on':         'true'
+      'no':         'false'
+      'off':        'false'
+      'is':         '==='
+      'isnt':       '!=='
+      '==':         '==='
+      '!=':         '!=='
+      'and':        '&&'
+      'but':        '&&'
+      'or':         '||'
+      'xor':        '^'
+      '^':          'pow'
+      'mod':        '%'
+      'not':        '!'
+      'new':        'new'
+      'me':         'this'
+      'this':       'this'
+      'null':       'null'
+      'nothing':    'null'
+      'none':       'null'
+      'break':      'break'
+      'throw':      'throw'
+      'raise':      'throw'
+      'instanceof': 'instanceof'
+      'of':         'in'
+      'EndOfList':  'undefined'
+      'fail':       'throw'
+      'bitwise and':   '&'
+      'bitwise or':    '|'
+      'bitwise xor':   '^'
+      'bitwise not':   '~'
+      'typeof':        'typeof'
+      'bitwise left':  '<<'
+      'bitwise right': '>>'
+
+Globals
+=======
+
+These globals are reset each time a `File` object's `js` method is called.
+
+Scope is tracked using a mapping from variable names to scope qualifier strings. Qualifier strings include:
+
+* `closures ok` - A "normal" variable that will not be redefined if used in a child scope. Instead its closure will be used. This lets the compiler know this variable is new and needs a `var` definition in this scope.
+* `closure` - A "normal" that was used in a parent scope and was passed through as a closure. This lets the compiler know this variable is already defined and it does not need a `var` definition in this scope.
+* `no closures` - This variable is valid in the current scope and should be redefined if used in child scopes. This is used for iterator variables, temporary variables for return values, and callback function variables.
+* `argument` - This is for function arguments. Arguments _are_ passed through to child scopes but _do not_ get `var` definitions in the local scope.
+* `function` - Function definitions _are_ passed through to child scopes but _do not_ need `var` definitions in the local scope.
+* `class definition` - Class definitions _are_ passed through to child scopes but _do not_ need `var` definitions in the local scope.
+
+`scopes` represents the current scope stack.
+
+    scopes = []
+    scope = {}
+
+Try blocks are maintained in a stack for asynchronous error handler generation.
+
+    try_block_stack = []
+    try_block_stacks = []
+
+`parfor_cb` and it's stack are used to store the callback for any parallel `for` loops currently being generated.
+
+    parfor_cb = null
+    parfor_cb_stack = []
+
+The `current_callback` is the function to call upon exiting the current asynchronous block. For example, `if` statements with async members must call this function at all exit paths to make sure that code following the `if` block is executed. For example, in:
+
+<pre>
+if flag
+  wait for x from y()
+else
+  x = 2
+</pre>
+
+The `if` block will need to wrap `print x` in a callback function. Every branch of the `if` statement needs to execute this callback somehow, even if it's just as a function call (like for the `else` block).
+
+Callbacks get unique names throughout the file.
+
+    callback_counter = 0
+    current_callback = "k$cb0"
+    current_callbacks = []
+
+The `comments` stream stores the comments from the original code that have not been inserted into the JavaScript output yet.
+
+    comments = []
+
+The current class being defined is tracked in a stack (classes can technically be definined inside other class definitions). The `class_def` object stores the class name and code that occurs directly in the definition that gets thrown in the constructor later.
+
+    class_defs = []
+    class_def = {}
+
+The literate flag is set for Literate Kal files. It is used to determine how comments, or in this case inline documentation lines, are formatted in the JavaScript output.
+
+    literate = no
+
+Counters used to generate unique iterator variables for loops.
+
+    for_count = 1
+    while_count = 1
+
+Snippets are useful chunks of JavaScript that are only included in the output when they are actually used.
+
+    use_snippets = {}
+
+Utility Functions
+=================
+
+These functions indent a block of JavaScript to make it pretty.
+
+Indent JavaScript with two spaces:
+
+    function indent(code)
+      if code isnt ''
+        return '  ' + code.replace(/\n(?![\r\n]|$)/g, '\n  ')
+      else
+        return code
+
+Indent JavaScript with `level * 2` spaces.
+
+    function multi_indent(code, level)
+      if code isnt '' and level > 0
+        new_str = Array(level*2+1).join(' ')
+        return new_str + code.replace(/\n(?![\r\n]|$)/g, '\n' + new_str)
+      else
+        return code
+
+Return a new unique callback function name.
+
+    function create_callback()
+      callback_counter += 1
+      current_callback = "k$cb#{callback_counter}"
+      return current_callback
+
+Define a new class and push the current one to the stack.
+
+    function push_class()
+      class_defs.push class_def
+      class_def = {name: '', code: '',args: [],has_constructor: no}
+
+Finish a class definition and pop the stack.
+
+    function pop_class()
+      class_def = class_defs.pop()
+      return class_def
+
+`push_scope` is used to start a new function definition.
+
+    function push_scope()
+      scopes.push scope
+
+It also creates a new context for `try` blocks.
+
+      try_block_stacks.push try_block_stack
+      try_block_stack = []
+
+Closeout callbacks are also saved for when we pop the scope.
+
+      parfor_cb_stack.push parfor_cb
+      parfor_cb = null
+      current_callbacks.push current_callback
+
+We copy in variables to the new scope as long as they are not marked `"no closures"`. We mark all of these as `"closure"` variables in the new scope so that they don't get a `var` definition inside the new scope.
+
+      new_scope = {}
+      for k of scope
+        v = scope[k]
+        if v is 'no closures'
+          pass
+        else if v is 'closures ok' or v is 'argument' or v is 'function'
+          new_scope[k] = 'closure'
+        else if v is 'closure'
+          new_scope[k] = 'closure'
+      scope = new_scope
+
+`pop_scope` finishes out a function definition. It prepends the `code` argument with `var` definitions for variables that need them. If `wrap` is true, it will also wrap the code in a function to prevent leaks to the global scope.
+
+    function pop_scope(code, wrap)
+      rv = ""
+
+`var_names` is a list of variables that need to be declared in this scope. We don't redeclare closures, function arguments, functions, or classes.
+
+      var_names = []
+      for var_name of scope
+        if not (scope[var_name] in ['closure', 'argument', 'function', 'class definition']) and var_name isnt 'k$next'
+          var_names.push(var_name)
+
+Wrap the function in a `(function () {...})()` wrapper if requested.
+
+      if wrap
+        rv += '(function () {\n'
+
+If we have variables to declare, add a `var` statement for JavaScript.
+
+      if var_names.length > 0
+        code = 'var ' + var_names.join(', ') + ';\n' + code
+
+Indent if we are in the wrapper.
+
+      rv += indent(code) if wrap otherwise code
+
+Close out the wrapper if present.
+
+      if wrap
+        rv += "})()"
+
+Actually pop the scope (if we aren't at the top level), `try` context, and callback pointers.
+
+      scope = scopes.pop() except when scopes is []
+      try_block_stack = try_block_stacks.pop()
+      current_callback = current_callbacks.pop()
+      parfor_cb = parfor_cb_stack.pop()
+      return rv
+
+`check_existence_wrapper` wraps a variable access with a check to make sure it actually exists before accessing it. This is used with the `?`, `doesnt exist`, and `exists` operators.
+
+    function check_existence_wrapper(code, undefined_unary, invert)
+
+An "undefined unary" (`undefined_unary` is true) refers to a simple variable access to an undeclared variable, for example `x = a` where `a` is not defined in the current scope. This case requres we check if the variable exists before checking if it is null/undefined. Comparing directly to `null` would fail if the variable wasn't defined, so we do a `typeof ... === 'undefined'` check first for this special case.
+
+`invert` indicates we should do a boolean invert of the check (check that it doesn't exist). The output code looks cleaner if we handle this seperately rather than using a `!`.
+
+      if undefined_unary
+        rv = "(typeof #{code} === 'undefined' || #{code} === null)" when invert otherwise "(typeof #{code} !== 'undefined' && #{code} !== null)"
+      else
+        rv = "#{code} == null" when invert otherwise "#{code} != null"
+      return rv
+
+`kthis()` returns the current useable value for `me`. If we are in a callback or a task, this value gets stored in a `k$this` closure. Otherwise we just use `this`.
+
+    function kthis()
+      return ("k$this" when scope['k$this'] exists otherwise "this")
+
+`render_try_blocks` will apply the current stack of `try` blocks. This is used when defining a new callback in order to carry error handling code through to the callback function.
+
+    function render_try_blocks()
+      rv = ""
+      indent_level = 0
+      for try_block in try_block_stack
+        rv += multi_indent(try_block.js_wrapper_try(), indent_level)
+        indent_level += 1
+      return rv
+
+`render_catch_blocks` will apply the current stack of `catch` blocks. This is used when defining a new callback in order to carry error handling code through to the callback function.
+
+    function render_catch_blocks()
+      rv = ""
+      indent_level = try_block_stack.length - 1
+      for try_block in try_block_stack
+        rv += multi_indent(try_block.js_wrapper_catch(), indent_level)
+        indent_level -= 1
+      return rv
+
+JavaScript Generator Functions
+==============================
+
+### File ###
+
+`File` objects take an options argument (optional), that may contain the following entries:
+
+* `literate` - `true` if this file is Literate Kal. It changes the output style of the comments to look better for literate files.
+* `bare` - if `true`, the output of this `File` will not get wrapped in a `function` wrapper and any module-level variables will leak to the global scope.
+
+This method also resets all the globals in this module.
+
+    method js(options) of Grammar.File
+
+Global loop counters, flags, and stacks are reset here in case we are compiling multiple files.
+
+      for_count = 1
+      while_count = 1
+      literate = options.literate
+      scopes = []
+      scope = {}
+      try_block_stack = []
+      try_block_stacks = []
+      parfor_cb = null
+      parfor_cb_stack = []
+      callback_counter = 0
+      current_callback = 'k$cb0'
+      current_callbacks = []
+      class_defs = []
+      class_def = {name: '',code: '',args: [],has_constructor: no}
+      use_snippets = {}
+      me.callback = current_callback
+      me.bare = options.bare
+
+We consume the comments array later, so we make a copy in case the compiler needs it (not currently an issue).
+
+      comments = [comment for comment in me.ts.comments]
+
+We use the `Block` object's JavaScript generator for this node's statements since this class acts like a block. `super` isn't supported as an expression yet, so this should wind up being something like `code = super()`.
+
+      code = Grammar.Block.prototype.js.apply me
+
+We prepend any Kal JavaScript "snippets". Snippets are useful pieces of code that only get included if used, such as code for the `in` operator.
+
+      snip = []
+      for key of use_snippets
+        snip.push use_snippets[key]
+      snip = snip.join '\n'
+      rv = [snip, code].join '\n'
+
+Close out any last callback (if present).
+
+      rv += "}" when current_callback isnt 'k$cb0'
+
+Close out the scope and wrap with a function if necessary.
+
+      return pop_scope(rv, not options.bare)
+
+### Statement ###
+
+`Statement` objects call their child node's `js` method and apply any comment tokens that apply to this segment of code.
+
+    method js() of Grammar.Statement
+
+Pass all flags about our current state through to the child statement node.
+
+      me.statement.in_conditional = me.in_conditional
+      me.statement.in_loop = me.in_loop
+      me.statement.parent_block = me.parent_block
+      me.statement.callback = me.callback
+      me.statement.original_callback = me.original_callback
+
+Check for "postfix" comments. These are comments that occur at the end of the line, such as `a = 1 #comment`. We want to try to add these at the end of the current JavaScript line.
+
+      comment_postfix = ""
+      if comments[0] exists and comments[0].line is me.statement.line and comments[0].post_fix
+        comment = comments.shift()
+        comment_postfix = " /* #{comment.value} */\n"
+      comment_prefix = ""
+
+Check for "prefix" comments. These are comments that occur on their own line before the current line of code. There may be more than one, so we try to lump them all together into a big comment and prepend it.
+
+      while comments[0] exists and comments[0].line < me.statement.line
+        comment = comments.shift()
+        comment_prefix += "/* #{comment.value} */"
+      comment_prefix = comment_prefix.replace /\*\/\/\*/g, '\n  ' when literate
+      rv = me.statement.js()
+      rv = rv.replace /\n/, comment_postfix unless comment_postfix is ''
+
+Add in newlines to make things look nice. Try not to add extra newlines.
+
+      if rv[0] is '\n' and comment_prefix isnt ""
+        rv = '\n' + comment_prefix + rv
+      else if comment_prefix isnt ""
+        rv = comment_prefix + '\n' + rv
+      return rv
+
+### ThrowStatement ###
+
+`ThrowStatement`s are context-dependent. They require different code for asynchronous and synchronous blocks.
+
+    method js() of Grammar.ThrowStatement
+
+If there is no local `try` block and we are in an asynchronous place, we call back with an error. Otherwise, we use a normal `throw`.
+
+      if try_block_stack.length is 0 but scope['k$next'] exists
+        rv = "return k$next.apply(#{kthis()}, [#{me.expr.js()}]);\n"
+      else
+        rv = "throw #{me.expr.js()};\n"
+
+Tail conditionals work with `throw` statements, so we apply one if specified.
+
+      rv = me.conditional.js(rv, no) if me.conditional?
+      return rv
+
+`ThrowStatement`s are context-dependent. They require different code for asynchronous and synchronous blocks.
+
+### ReturnStatement ###
+
+    method js() of Grammar.ReturnStatement
+
+Since return statements can have multiple return values, we generate JavaScript for each expression.
+
+      exprs_js = [expr.js() for expr in me.exprs]
+
+In asynchronous contexts, we need to prepend an error argument, in this case `null` since we are not throwing an error.
+
+      exprs_js.unshift 'null' when scope['k$next'] exists
+      arg_list = exprs_js.join(', ')
+
+In asynchronous contexts, we assign the return value array to a temporary variable and execute the callback.
+
+      if scope['k$next'] exists
+        scope['k$rv'] = 'no closures'
+        use_snippets['async'] = snippets['async']
+        rv = "return k$rv = [#{arg_list}], k$async(k$next, #{kthis()}, k$rv);"
+
+We also wrap this in a conditional if specified.
+
+        rv = me.conditional.js(rv, no) when me.conditional exists
+        rv += "\n"
+        return rv
+      else
+
+In a synchronous context, this turns into a simple `return` statement. If there are multiple return values, we return them as an array.
+
+        rv = "return"
+        if me.exprs.length is 1
+          rv += " " + arg_list
+        else if me.exprs.length > 1
+          rv += "[#{arg_list}]"
+        rv += ";\n"
+        rv = me.conditional.js(rv, no) when me.conditional exists
+        return rv
+
+### ExpressionStatement ###
+
+`ExpressionStatement`s are simply expressions wrapped as a statement, so we just return the child expression's JavaScript.
+
+    method js() of Grammar.ExpressionStatement
+      rv = me.expr.js()
+
+We add newlines to make it look nice. Function definitions fall under this class, so we add extra newlines in that instance.
+
+      if rv is ""
+        return ""
+      else if me.expr.left.base instanceof Grammar.FunctionExpression
+        return '\n' + rv + '\n\n'
+      else
+        return rv + ';\n'
+
+### Expression ###
+
+`Expression`s are not context-dependent with respect to asynchronous or synchronous blocks. By default, the parser just creates a tree with only one long branch when expressions are chained together. For example, `1 + 2 + 3`, turns into:
+
+<pre>
+>   +
+>  / \
+> 1   +
+>    / \
+>   2   3
+</pre>
+
+Which is normally fine because JavaScript has the same order of operations. However, certain operators in Kal don't match up one-for-one and need to have their precedence altered. The `in` and `^` operators are the only operators impacted at this time. For example, with `3 in a and 4 in b` gets parsed as:
+
+<pre>
+>   in*
+>  /  \
+> 3   and**
+>     / \
+>    a+  in
+>       / \
+>      4   b
+</pre>
+
+Because `in` gets turned into `k$indexof` function calls, we would get `k$indexof(3, a && k$kindexof(4,b))`, which is clearly wrong. We need to convert the tree to:
+
+<pre>
+>     and**
+>    /    \
+>   in*   in
+>  / \    / \
+> 3   a+ 4   b
+</pre>
+
+If `oop_reverse` is specified, the current node (`*`) makes itself the left branch of it's own right branch (`**`). It then replaces it's own right branch with the old right branch's left branch (`+`).
+
+    method js(oop_reverse) of Grammar.Expression
+      rv = ''
+
+When `oop_reverse` is specified, my `left` object has already been compiled to a string and passed in with `oop_reverse`.
+
+      if oop_reverse
+        left_code = oop_reverse
+      else
+        left_code = me.left.js()
+
+If this is not a binary expression, we just use the JavaScript from the left operand.
+
+      if me.op doesnt exist
+        rv += left_code
+      else
+
+Otherwise compile the operator.
+
+        opjs = me.op.js()
+
+The `in` operator gets replaced with a call to the `k$indexof` function. We mark the snipped as used and declare it in all scopes as a closure. I'm pretty sure these steps are redundant (other than the `use_snippets` step).
+
+        if opjs is 'in' and me.op.op.value isnt 'of'
+          unless use_snippets['in'] exists
+            use_snippets['in'] = snippets['in']
+            for subscope in scopes
+              subscope['k$indexof'] = 'closure'
+            scope['k$indexof'] = 'closure'
+
+Do the order of operations reverse described above.
+
+          old_right = me.right
+          new_right = me.right.left
+          new_left = "(k$indexof.call(#{new_right.js()}, #{left_code}) >= 0)"
+          rv += old_right.js(new_left)
+
+Nor gets a special case since we need to wrap the whole thing in a `!`.
+
+        else if opjs is 'nor'
+          rv += "!(#{left_code} || #{me.right.js()})"
+
+`pow` (`^`) needs to have it's order of operations reversed.
+
+        else if opjs is 'pow'
+          old_right = me.right
+          new_right = me.right.left
+          new_left = "Math.pow(#{left_code}, #{new_right.js()})"
+          rv += old_right.js(new_left)
+
+Otherwise, just generate code and let JavaScript handle order of operations.
+
+        else
+          rv += "#{left_code} #{opjs} #{me.right.js()}"
+
+For inverted expressions (those preceeded with a `not`), wrap it with a `!`.
+
+      rv = "!(#{rv})" if me.op?.invert
+
+Apply tail conditionals when appropriate.
+
+      rv = me.conditional.js(rv, yes) if me.conditional exists
+      return rv
+
+### UnaryExpression ###
+
+Unary expressions are not context-dependent for asynchronous or synchronous contexts. These represent a single variable or constant, possibly with a chain of property access, array access, exisential, and/or function call operators.
+
+    method js() of Grammar.UnaryExpression
+      rv = ''
+
+For identifiers, we attempt to tranlate the value if it is a keyword. For example, `yes` becomes `true`. If it's not a keyword, we just use it as-is.
+
+      if me.base.type is 'IDENTIFIER'
+        base_val = me.base.value
+        kw_translate = KEYWORD_TRANSLATE[base_val]
+
+`this` is a special case because we might be in a callback. `kthis` will give us the right value to use.
+
+        kw_translate = kthis() when kw_translate is 'this'
+        rv += kw_translate or base_val
+
+If it wasn't a keyword, we declare the variable in this scope if it has not been declared and is being used here as an l-value. We don't do this if we are doing a compound assignment or if this unary has accessors (for example, `x.a = 1` does not declare `x`).
+
+        if kw_translate doesnt exist and scope[base_val] doesnt exist and me.is_lvalue() and me.accessors.length is 0 but not me.compound_assign
+          scope[base_val] = 'closures ok'
+
+For constants we just pass the value through.
+
+      else
+        rv += me.base.js()
+
+We do a check here to see if this is an "undefined unary". An undefined unary is a simple variable access to an undeclared variable. When used with exisential operators, undefined unary's require a check if the variable exists before checking if it is `null` or `undefined` (`x == null` throws an error if `x` has never been defined).
+
+      undefined_unary = (me.base.type is 'IDENTIFIER' and scope[base_val] doesnt exist and kw_translate doesnt exist)
+
+We need to build up a list of exisential qualifiers for each accessor. For example `x.a?.b` needs an exisential check wrapper for access to the `b` property. If there is no exisential for an accessor, it just returns an empty string.
+
+      existence_qualifiers = []
+      last_accessor = me.accessors[me.accessors.length-1]
+      for accessor in me.accessors
+        existence_qualifiers.push accessor.js_existence rv, undefined_unary, last_accessor.invert
+
+Append the accessor (property access, function calls, array access, and/or exisentials) JavaScript.
+
+        rv += accessor.js()
+
+Only the first access in a chain can be an undefined unary. `x?.a?.b` does not require that we check if `a` is defined before comparing it to `null`.
+
+        undefined_unary = no
+
+Make a list of exisential checks, filtering out the empty ones. This will eventually be a list comprehension once they support conditionals.
+
+      existence_check = []
+      for eq in existence_qualifiers
+        if eq isnt ""
+          existence_check.push eq
+
+We join together all existence checks and wrap the current JavaScript with the check if necessary.
+
+      existence_check = existence_check.join(' && ')
+      if existence_check isnt ""
+        if last_accessor instanceof Grammar.ExisentialCheck
+          rv = "(#{existence_check})"
+        else
+          closeout = "void 0"
+          rv = "((#{existence_check}) ? #{rv} : #{closeout})"
+
+Lastly, prefix operators are prepended to the output code. These include `new`, `typeof`, `-`, `not`, and `bitwise not`.
+
+      preop_value = me.preop?.value
+      if preop_value is 'new' or preop_value is 'typeof'
+        rv = "#{KEYWORD_TRANSLATE[preop_value]} #{rv}"
+      else if preop_value is 'not'
+        preop_value = "bitwise not" if me.bitwise
+        rv = "#{KEYWORD_TRANSLATE[preop_value]}(#{rv})"
+      else if preop_value is '-'
+        rv = "-#{rv}"
+      return rv
+
+### WhenExpression ###
+
+`WhenExpression`s are tail conditionals. When calling this method, we pass in the JavaScript that returns the "true" value (`true_block_js`).
+
+We also pass in the JavaScript that returns the "false" value (`false_js`) if there is any, for example when we do `1 if x otherwise 2`. `must_return_value` is set to true if this expression needs to have a return value and can't be turned into an `if` statement, for example in assignment (`x = 1 if x else 2`), the right-hand side needs to return a value and can't be turned into an `if` statement.
+
+    method js(true_block_js, must_return_value, false_js) of Grammar.WhenExpression
+
+Compile the conditional expression.
+
+      conditional_js = me.condition.js()
+
+Invert if necessary based on the specifier.
+
+      if me.specifier.value is 'unless' or me.specifier.value is 'except'
+        conditional_js = "!(#{conditional_js})"
+
+If we have a false branch parsed as part of this expression, we return a ternary with the compiled version of that expression.
+
+      if me.false_expr exists and false_js doesnt exist
+        return "(#{conditional_js}) ? #{true_block_js} : #{me.false_expr.js()}"
+      else
+
+If we need a return value, we use a ternary that returns undefined for false.
+
+        if must_return_value
+          return "(#{conditional_js}) ? #{true_block_js} : void 0"
+
+Otherwise this becomes an if statement for things like `return x if x exists`.
+
+        else
+          rv = "if (#{conditional_js}) {\n#{indent(true_block_js)}}"
+          rv += " else {\n#{false_js}}" if false_js exists
+          rv += "\n"
+          return rv
+
+### ExisentialCheck ###
+
+An existential check is used to check if a variable is non-null and defined. The `js` method is never called because these are only parsed as accessors for `UnaryExpression`s. `UnaryExpression` calls `js_existence`.
+
+    method js() of Grammar.ExisentialCheck
+      return ""
+
+In this case we just use the `check_existence_wrapper` utility.
+
+    method js_existence(accessor, undefined_unary, invert) of Grammar.ExisentialCheck
+      return check_existence_wrapper(accessor, undefined_unary, invert)
+
+### PropertyAccess ###
+
+For property access we just defer to JavaScript's built in `.` operator.
+
+    method js() of Grammar.PropertyAccess
+      if me.expr.type is 'IDENTIFIER'
+        rv = me.expr.value
+      else
+        rv = me.expr.js()
+      rv = ".#{rv}"
+      return rv
+
+If this access has an exisential qualifier (`a?.b`), we generate a wrapper.
+
+    method js_existence(accessor, undefined_unary, invert) of Grammar.PropertyAccess
+      if me.exisential
+        return check_existence_wrapper(accessor, undefined_unary, invert)
+      else
+        return ''
+
+### AssignmentStatement ###
+
+Assignment statements are not context dependent. Asynchronous assignments are done using `wait for`s.
+
+    method js() of Grammar.AssignmentStatement
+
+We need to set the `compound_assign` flag on our l-value if we are using a compound assignment like `+=`. This tells the l-value not to automatically declare itself. We do this because the l-value is accessed before assignment, so we want the JavaScript to throw an error if it hasn't been defined yet. For `=`, we do want the l-value to get declared if necessary.
+
+      op = me.assignOp.value
+      if op isnt '='
+        op += '='
+        me.lvalue.compound_assign = yes
+      rv = "#{me.lvalue.js()} #{op} #{me.rvalue.js()};\n"
+
+For prettyness, we add an extra newline after anonymous function definitions.
+
+      rv += '\n' if me.rvalue.left.base instanceof Grammar.FunctionExpression
+
+The statement is wrapped with its tail conditional if there is one.
+
+      rv = me.conditional.js(rv, no) if me.conditional exists
+      return rv
+
+### NumberConstant ###
+
+We actually use the raw token text here rather than the numeric value. JavaScript and Kal number syntax are identical, so no trascompiling is necessary. It also makes the JavaScript output more readable if we avoid converting things, especially for hex values.
+
+    method js() of Grammar.NumberConstant
+      return me.token.text
+
+### StringConstant ###
+
+We pass through the string value (the part between quotes) here.
+
+    method js() of Grammar.StringConstant
+      return me.token.value
+
+### RegexConstant ###
+
+Just let JavaScript handle the regex syntax.
+
+    method js() of Grammar.RegexConstant
+      return me.token.text
+
+### BinOp ###
+
+Operators are compiled using the `KEYWORD_TRANSLATE` mapping.
+
+    method js() of Grammar.BinOp
+      op_value = me.op.value
+      op_value = "bitwise #{op_value}" if me.bitwise
+      return KEYWORD_TRANSLATE[op_value] or me.op.value
+
+### IfStatement ###
+
+`IfStatement`s are context dependent. When the `js` method is called, we actually don't know if there will be asynchronous code inside the `if`/`else` blocks. We first try generating JavaScript assuming this is pure synchronous code using `js_no_callbacks`. If we detect asynchronous calls after code generation, we throw away those results and generate asynchronous code using `js_callbacks`.
+
+    method js() of Grammar.IfStatement
+
+We record the original callback function name for two reasons. First, we want to be able to check if any new callbacks get generated when we generate our code blocks. This would indicate asynchronous code in the blocks. Second, all branches need to execute a callback to the original_callback once they are finished.
+
+`me.original_callback` can be set for us by a parent block if we previously hit asynchronous code.
+
+      me.original_callback = me.callback unless me.original_callback exists
+
+We store the `cb_counter` so that we can reset it if we decide to regenerate JavaScript.
+
+      cb_counter = callback_counter
+
+`conditional_js` stores the generated JavaScript for the conditional expression in the `if` statement.
+
+      conditional_js = me.conditional.js()
+      if me.condition.value is 'unless' or me.condition.value is 'except'
+        conditional_js = "!(#{conditional_js})"
+      rv = "if (#{conditional_js}) {\n"
+
+We need to set the `in_conditional` flag (which propagates down) so that any child blocks know to call back to the `original_callback` when they complete. We pass the similar `in_loop` flag down.
+
+      me.block.in_conditional = yes
+      me.block.in_loop = me.in_loop
+      for else_clause in me.elses
+        else_clause.block.in_conditional = yes
+        else_clause.block.in_loop = me.in_loop
+
+Try to make synchronous code.
+
+      inner_js = me.js_no_callbacks()
+
+If there were asynchronous statements, try again with asynchronous code. We don't bother in `else if`s because our parent `if` will do this for us.
+
+      if me.callback isnt current_callback but not me.is_else_if
+        callback_counter = cb_counter
+        inner_js = me.js_callbacks()
+      return rv + inner_js
+
+`js_no_callbacks` generates synchronous code.
+
+    method js_no_callbacks() of Grammar.IfStatement
+
+Pass any parent block callback, if one exists, down the tree.
+
+      me.block.callback = me.callback
+
+Compile and indent the block.
+
+      block_js = indent(me.block.js() + me.block.js_closeout()) + '}'
+      block_js += '\n' if me.elses.length is 0
+      else_js = ""
+
+Compile any `else` or `else if` clauses.
+
+      for else_clause in me.elses
+        else_clause.block.callback = me.callback
+        else_clause.block.original_callback = me.original_callback
+        else_js += " else"
+        if else_clause.conditional exists
+          else_js += " if (#{else_clause.conditional.js()})"
+        else_js += " {\n"
+        else_js += indent(else_clause.block.js() + else_clause.block.js_closeout())
+        else_js += '}\n'
+      return block_js + else_js
+
+`js_callbacks` generates asynchronous code.
+
+    method js_callbacks() of Grammar.IfStatement
+
+We need a callback that branches use to exit. All branches must call this callback whether they are synchronous or asynchronous. This callback gets passed
+
+      me.callback = create_callback()
+      me.block.callback = me.callback
+      me.block.original_callback = me.callback
+
+Compile the block and any `else`s or `else if`s.
+
+      block_js = indent me.block.js()
+      for else_clause in me.elses
+
+We pass callback trackers down the tree.
+
+        else_clause.block.callback = me.callback
+        else_clause.block.original_callback = me.callback
+        else_clause.block_js_header = " else "
+        if else_clause.conditional exists
+          else_clause.block_js_header += "if (#{else_clause.conditional.js()}) "
+        else_clause.block_js_header += "{\n"
+        else_clause.block_js = indent else_clause.block.js()
+      block_js += indent(me.block.js_closeout()) + '}'
+      block_js += '\n' if me.elses.length is 0
+      else_js = ""
+
+We construct the JavaScript output using the headers we made above, the block JavaScript, and by calling `js_closeout` to get any callback headers and exit callbacks.
+
+      for else_clause in me.elses
+        else_js += else_clause.block_js_header + else_clause.block_js + indent(else_clause.block.js_closeout()) + '}'
+
+Make sure we include the `async` snippet since we're about to use it.
+
+      use_snippets['async'] = snippets['async']
+
+We wrap any code after this `if` statement in our callback function. We also add a call to this function in case we get out of the `if` statement synchronously.
+
+      callback_js = "return k$async(#{me.callback},#{kthis()});\n"
+      callback_js += "function #{me.callback}() {\n"
+      callback_js += indent render_try_blocks()
+
+Tell our parent block what function it is shoving code into.
+
+      me.parent_block.closeout_callback = me.original_callback
+
+Generate a new callback for future if statements/for loops
+
+      create_callback()
+      return block_js + else_js + '\n' + callback_js
+
+### BlankStatement ###
+
+The simplest statement, and the most important. The most important line of code is the one you didn't write. Except in Kal, where `pass` is required to make an empty block.
+
+    method js() of Grammar.BlankStatement
+      return ''
+
+### ForStatement ###
+
+`ForStatement`s are context dependent. When the `js` method is called, we actually don't know if there will be asynchronous code inside the loop block. We first try generating JavaScript assuming this is pure synchronous code using `js_no_callbacks`. If we detect asynchronous calls after code generation, we throw away those results and generate asynchronous code using `js_callbacks`.
+
+    method js() of Grammar.ForStatement
+
+Save the current callback name. We use this to check if any asynchronous code got generated from our block.
+
+      me.callback = current_callback
+
+Pass the `in_loop` and `in_conditional` variables down the tree. These are used in block closouts to decide if we need to call a callback.
+
+      me.loop_block.in_loop = yes
+      me.loop_block.in_conditional = me.in_conditional
+
+Generate variables for an iterator, terminator (end of loop check), and a loop counter (used for asynchronous calls to count the number of callbacks required).
+
+      rv = ""
+      iterator   = "ki$#{for_count}"
+      terminator = "kobj$#{for_count}"
+      loop_counter = "klc$#{for_count}"
+      for_count += 1
+
+Declare the iterant variable (the `x` from `for x in y`).
+
+      scope[me.iterant.value] = 'closures ok' unless scope[me.iterant.value] exists
+
+Try generating synchronous code, fall back to asynchronous code if we detect something asynchronous in our block.
+
+      loop_block_js = me.loop_block.js() + me.loop_block.js_closeout()
+      if me.callback isnt current_callback
+        return me.js_callbacks iterator, terminator, loop_counter
+      else
+
+Declare the iterator and terminator.
+
+        scope[iterator] = 'no closures'
+        scope[terminator] = 'no closures'
+
+`for ... in ...` loops just loop from element 0 of the iterable (the `y` in `for x in y`) to element `iterable.length - 1`. We assign the element to the user supplied `iterant` (`x`) at  the beginning of each iteration.
+
+        if me.type.value is 'in'
+          rv += "#{terminator} = #{me.iterable.js()};\n"
+          rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+          rv += "  #{me.iterant.value} = #{terminator}[#{iterator}];\n"
+
+`for ... of ...` loops loop through each property of the iterable (the `y` in `for x of y`) in whatever order. Luckily the JavaScript `in` operator does almost exactly this. We do have to skip properties that don't meet the `hasOwnProperty` criterion since these are inherited. We assign the element to the user supplied `iterant` (`x`) at the beginning of each iteration.
+
+        else
+          rv += "#{terminator} = #{me.iterable.js()};\n"
+          rv += "for (#{me.iterant.value} in #{terminator}) {\n"
+          rv += "  if (!#{terminator}.hasOwnProperty(#{me.iterant.value})) {continue;}\n"
+        rv += indent loop_block_js
+        rv += "}\n"
+      return rv
+
+`js_callbacks` generates asynchronous code for parallel and series `for` loops.
+
+    method js_callbacks(iterator, terminator, loop_counter) of Grammar.ForStatement
+      rv = ""
+
+The `execution_style` actually matters for asynchronous loops. The default, if none is specified, is `series`.
+
+      if me.execution_style?.value is 'parallel'
+
+The `loop_callback` is called after each iteration of the loop. It uses `loop_counter` to detect when all iterations have called back. `callback` is used after `loop_callback` decides the loop is done.
+
+        loop_callback = create_callback()
+        me.callback = create_callback()
+
+Pass the loop callback down the tree.
+
+        me.loop_block.callback = loop_callback
+        me.loop_block.original_callback = loop_callback
+
+We do need a special stack for parallel for loop callbacks so that `catch` blocks know where to call back to.
+
+        parfor_cb_stack.push parfor_cb
+        parfor_cb = loop_callback
+
+Declare the iterator and terminator.
+
+        scope[iterator] = 'no closures'
+        scope[terminator] = 'no closures'
+
+We wrap the loop block in a function because we want a unique scope for each call to the loop body. Otherwise, you could wind up with the following situation:
+<pre>
+for parallel x in y
+  wait for update(x)
+  wait for save(x)
+</pre>
+If x was part of the current scope, it could change between the `wait for`s if another iteration of the loop was executing. By making `x` an argument to a function, it creates a unique scope for each loop iteration.
+
+        rv += "(function (#{loop_counter}) {\n"
+        rv += "  #{terminator} = #{me.iterable.js()};\n"
+
+Handle `in` and `of` operators like we do in synchronous loops.
+
+        if me.type.value is 'in'
+          rv += "  for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+        else
+          rv += "  for (#{iterator} in #{terminator}) {\n"
+
+Increment the number of calls back we are expecting.
+
+        rv += "      #{loop_counter}++;\n"
+
+Async call a wrapper function for the loop block. This way all iterations start on the next tick.
+
+        rv += "      k$async(function (#{me.iterant.value}) {\n"
+        rv += multi_indent(render_try_blocks(), 3)
+        rv += multi_indent(me.loop_block.js() + me.loop_block.js_closeout(), 3)
+        rv += multi_indent(render_catch_blocks(), 3)
+        if me.type.value is 'in'
+          rv += "    },#{kthis()},[#{terminator}[#{iterator}]]);\n"
+        else
+          rv += "    },#{kthis()},[#{iterator}]);\n"
+        rv += "  }\n"
+
+Ensure the async snippet is present.
+
+        use_snippets['async'] = snippets['async']
+
+Call back to the loop callback once all iterations are accounted for. This decrements the initial seed of 1 that we gave to the loop counter and ensures that the loop counter doesn't hit zero until all the iterations are at least started.
+
+        rv += "  return #{loop_callback}.apply(#{kthis()});\n"
+
+Once the loop counter is zero, the loop callback calls the actual callback.
+
+        rv += "  function #{loop_callback}() {\n"
+        rv += "    if (--#{loop_counter} == 0) return k$async(#{me.callback},#{kthis()});\n"
+        rv += "  }\n"
+        rv += "})(1);\n"
+        rv += "return;\n"
+        rv += "function #{me.callback}() {\n"
+        rv += indent render_try_blocks()
+        me.parent_block.closeout_callback = me.original_callback
+        parfor_cb = parfor_cb_stack.pop()
+
+Series for loops are the default.
+
+      else
+
+Create the callback for the end of the loop. We can safely use `k$lcb` as the loop callback here since we using it inside a new function.
+
+        me.callback = create_callback()
+        me.loop_block.callback = "k$lcb"
+        me.loop_block.original_callback = "k$lcb"
+
+Make sure we have the async snippet.
+
+        use_snippets['async'] = snippets['async']
+
+For `for series ... in ...` loops, we call the `loop_counter` function with the index 0, our iterable, and the value of the iterant to kick off the loop.
+
+        if me.type.value is 'in'
+          rv += "return k$async(#{loop_counter},#{kthis()},[0,#{me.iterable.js()},#{me.iterable.js()}[0]]);\n"
+
+For `for series ... of ...` loops, we fill in `terminator` with an array of `iterable`'s  properties, then kick off `loop_counter` with an index 0, the array of properties, and the first element.
+
+        else
+          scope[terminator] = 'no closures'
+          scope[iterator] = 'no closures'
+          rv += "#{terminator} = [];\n"
+          rv += "for (#{iterator} in #{me.iterable.js()}) {if ((#{me.iterable.js()}).hasOwnProperty(#{iterator})) {#{terminator}.push(#{iterator})};}\n"
+          rv += "return #{loop_counter}.apply(#{kthis()},[0,#{terminator},#{terminator}[0]]);\n"
+
+The loop counter function first checks if the index variable is greater than the terminator length - 1. If so we are done looping and can execute the callback. Otherwise, we execute the loop block and queue up another call to `loop_counter`. We render `try`/`catch` blocks inside loop couner and our callback. function to make sure they get carried through.
+
+        rv += "function #{loop_counter}(k$i,k$obj,#{me.iterant.value}) {\n"
+        rv += render_try_blocks()
+        rv += "  k$i++;\n"
+        rv += "  var k$lcb = function () {if (k$i < k$obj.length) return #{loop_counter}.apply(#{kthis()},[k$i,k$obj,k$obj[k$i]]); else return k$async(#{me.callback},#{kthis()});};\n"
+        rv += indent(me.loop_block.js() + me.loop_block.js_closeout())
+        rv += indent render_catch_blocks()
+        rv += "}\n"
+
+Our callback function, which we pass up to the parent block.
+
+        rv += "function #{me.callback}() {\n"
+        rv += indent render_try_blocks()
+        me.parent_block.closeout_callback = me.original_callback
+      return rv
+
+### WhileStatement ###
+
+`WhileStatement`s are context dependent. When the `js` method is called, we actually don't know if there will be asynchronous code inside the loop block. We first try generating JavaScript assuming this is pure synchronous code using `js`. If we detect asynchronous calls after code generation, we throw away those results and generate asynchronous code using `js_callbacks`.
+
+    method js() of Grammar.WhileStatement
+
+Mark the loop and conditional flags for our child block.
+
+      me.block.in_loop = yes
+      me.block.in_conditional = me.in_conditional
+
+`until` is the same as `while` except that we invert the conditional.
+
+      if me.specifier.value is 'until'
+        rv = "while (!(#{me.expr.js()})) {\n"
+      else
+        rv = "while (#{me.expr.js()}) {\n"
+      rv += indent(me.block.js() + me.block.js_closeout())
+      rv += "}\n"
+
+If asynchronous code was detected, we throw away `rv` and generate an async while loop.
+
+      if me.callback isnt current_callback
+        return me.js_callbacks()
+      else
+        return rv
+
+    method js_callbacks() of Grammar.WhileStatement
+
+Asynchronous while loops do actually need a loop counter and a callback for when the loop is finished. We also need a loop callback that runs after each iteration.
+
+      rv = ""
+      while_count += 1
+      while_wrapper = "kw$#{while_count}"
+      me.callback = create_callback()
+      me.block.callback = "k$lcb"
+      me.block.original_callback = "k$lcb"
+
+Make sure to include the async snippet.
+
+      use_snippets['async'] = snippets['async']
+
+We wrap the code block in a function that runs for each iteration.
+
+      rv += "return #{while_wrapper}();\n"
+      rv += "function #{while_wrapper}() {\n"
+
+`try` and `catch` blocks need to be reinserted in the new function context.
+
+      rv += render_try_blocks()
+
+We finish the iteration by calling back to `k$lcb` and checking the conditional (or it's inverse if appropriate). If the check passes we do an async call to `while_wrapper` again. This puts it on the next tick to avoid super-deep recursion depth.
+
+      expr_js = me.expr.js()
+      expr_js = "!(#{expr_js})" when me.specifier.value is 'until'
+      rv += "  var k$lcb = function () {if (#{expr_js}) return #{while_wrapper}.apply(#{kthis()}); else return k$async(#{me.callback},#{kthis()});};\n"
+      rv += indent(me.block.js() + me.block.js_closeout())
+      rv += indent(render_catch_blocks())
+      rv += "}\n"
+
+Code after this loop is wrapped with a callback wrapper and we re-render try blocks. We tell our parent block what callback it is writing code to.
+
+      rv += "function #{me.callback}() {\n"
+      rv += indent render_try_blocks()
+      me.parent_block.closeout_callback = me.original_callback
+      return rv
+
+### LoopControlStatement ###
+
+This is a very simple class to allow us to use the `break` and `continue` keywords.
+
+    method js() of Grammar.LoopControlStatement
+      return "#{me.control.value};\n"
+
+### Block ###
+
+`Block`s can be standard blocks, like in an `if` statement, or a derived class, like `BlockWithoutIndent`. A `Block` is an ordered list of statements. The `js` function generates JavaScript for the block's statements. The `js_closeout` function closes out any lingering callback functions and `catch` blocks in case one of the block's statements inserted a callback function.
+
+    method js() of Grammar.Block
+
+We set the callback to the current one unless a parent node has already specified a callback to use. We save this callback to check later if any asynchronous code was generated.
+
+      me.callback = current_callback unless me.callback exists
+      me.original_callback = current_callback unless me.original_callback exists
+      previous_cb = current_callback
+
+`callbacks` is a list of callbacks we need to close out (add a trailing `}` to `catch` blocks) in `js_closeout`.
+
+      me.callbacks = []
+      rv = ''
+      me.indent_level = 0
+
+We compile each statement and pass through callback information along with conditional and loop flags.
+
+      for statement in me.statements
+        statement.parent_block = me
+        statement.callback = me.callback
+        statement.original_callback = me.original_callback
+        statement.in_conditional = me.in_conditional
+        statement.in_loop = me.in_loop
+        statement_js = statement.js()
+
+Code is indented to look pretty, trying to avoid multiple newlines.
+
+        if statement_js[0] is '\n' and (rv.slice(-2) is '\n\n' or rv.length is 0)
+          rv += multi_indent statement_js.slice(1), me.indent_level
+        else
+          rv += multi_indent statement_js, me.indent_level
+
+We need to indent if this statement started a new callback function. We also save the new callback.
+
+        if current_callback isnt previous_cb
+          me.indent_level += 1
+          me.callbacks.unshift me.callback
+          me.callback = current_callback
+          previous_cb = current_callback
+
+If there is any asynchronous code, we need to handle the case where we have an implied `return` (the function ends without an explicit `return` statement). If code execution gets to the end of the function or task, we check for a `k$next` variable and call back to it. We clear out `k$next` before doing this to avoid ever calling back twice.
+
+      if me.callbacks.length > 0
+        if scope['k$next'] exists
+          rv += multi_indent "var k$done = (typeof k$next == 'function') ? k$next : function () {}; k$next=function () {}; return k$done();\n", me.indent_level + 1
+      return rv
+
+The closeout method calls the block's `closeout_callback` if it exists. This ensures all branches of `if` statements call back to the `if` block's callback.
+
+    method js_closeout() of Grammar.Block
+      rv = ""
+      if me.closeout_callback exists and me.callbacks.length isnt 0 and (me.in_conditional or me.in_loop)
+        use_snippets['async'] = snippets['async']
+        rv += multi_indent "return k$async(#{me.closeout_callback},#{kthis()});\n", me.indent_level
+
+We also rerender any `catch` blocks at the end of each callback function.
+
+      for callback in me.callbacks
+        rv += multi_indent render_catch_blocks(), me.indent_level
+        rv += multi_indent "}\n", me.indent_level - 1
+      return rv
+
+### ParenExpression ###
+
+A `ParenExpression` is just a normal expression surrounded by parentheses.
+
+    method js() of Grammar.ParenExpression
+      return "(#{me.expr.js()})"
+
+### IndexExpression ###
+
+An `IndexExpression` is an accessor for accessing an array index or object property. It works the same as JavaScript's `[]` operator so we just pass it through.
+
+    method js() of Grammar.IndexExpression
+      return "[#{me.expr.js()}]"
+
+As an accessor, it can have an exisential check like `a?[1]`, so we support the `js_existence` method. This method just passes the arguments to `check_existence_wrapper` if the `IndexExpression` has an exisential chcek.
+
+    method js_existence(accessor, undefined_unary, invert) of Grammar.IndexExpression
+      if me.exisential
+        return check_existence_wrapper(accessor, undefined_unary, invert)
+      else
+        return ''
+
+### ListExpression ###
+
+A `ListExpression` is a definition of a list like `[1, a, 2+3]`. We just pass this through to JavaScript.
+
+    method js() of Grammar.ListExpression
+      if me.comprehension doesnt exist
+        rv = []
+        for item in me.items
+          rv.push item.js()
+        rv = rv.join(', ')
+        return "[#{rv}]"
+      else
+        return me.comprehension.js()
+
+### ListComprehension ###
+
+List comprehensions support the `[x*x for x in [1,2,3]]` syntax. We just use the `k$comprl` function ("array list comprehension" snippet) for this. We pass this snippet the iterable and a function to perform on each item.
+
+    method js() of Grammar.ListComprehension
+      use_snippets['array list comprehension'] = snippets['array list comprehension']
+      scope[me.iterant.value] = 'closures ok'
+      rv = "k$comprl(#{me.iterable.js()},function (k$i) {#{me.iterant.value} = k$i; return #{me.iter_expr.js()};})"
+      return rv
+
+### ObjectComprehension ###
+
+Object comprehensions support the `[x*x for x of {a:1,b:2}]` syntax and the `property`/`value` keywords. We just use the `k$compro` function ("object list comprehension" snippet) for this. We pass this snippet the iterable and a function to perform on each key/value pair.
+
+    method js() of Grammar.ObjectComprehension
+      use_snippets['object list comprehension'] = snippets['object list comprehension']
+      rv = ""
+
+We also assign to the `property_iterant`, `value_iterant`, or both depending on which one was specified. This supports the syntaxes `[k for k of obj]`, `[k for property k in obj]`, `[v for value v in obj]`, and `[k + v for property k with value v in obj]`.
+
+      if me.property_iterant exists
+        scope[me.property_iterant.value] = 'closures ok'
+        rv += "#{me.property_iterant.value} = k$p;"
+      if me.value_iterant exists
+        scope[me.value_iterant.value] = 'closures ok'
+        rv += "#{me.value_iterant.value} = k$v;"
+      rv = "k$compro(#{me.iterable.js()},function (k$p,k$v) {#{rv}; return #{me.iter_expr.js()};})"
+      return rv
+
+### MapItem ###
+
+A `MapItem` is a single item in an object definition. We pass this straight through to JavaScript. Note that this also covers the subclass `ImplicitMapItem`.
+
+    method js() of Grammar.MapItem
+      return "#{me.key.value}: #{me.val.js()}"
+
+### MapExpression ###
+
+A `MapExpression` is an object definition using key/value pairs like `{a:1,b:2}`. JavaScript supports this syntax, so we just pass it through. Note that this also supports the subclass `ImplicitMapExpression` which allows multi-line definitions without `{}`s.
+
+    method js() of Grammar.MapExpression
+      rv = []
+      for item in me.items
+        rv.push item.js()
+      rv = rv.join(', ')
+      return "{#{rv}}"
+
+### FunctionExpression ###
+
+`FunctionExpression`s are function definitions, but like JavaScript they evaluate to a `function` object. There are several "flavors" of functions that each have their own utility generator function, including constructors, class members, and regular functions/tasks.
+
+    method js() of Grammar.FunctionExpression
+
+If this is a task (asynchronous), we set the callback to the `k$next` variable. This will get populated later with the last argument passed into the function.
+
+      me.callback = 'k$next' when me.specifier.value is 'task'
+
+For late binding classes, we pretend to be in the process of defining the owner class by pushing it to the stack. No support for late binding constructors at this time.
+
+      if me.name exists and me.bind_to exists
+        if me.specifier.value is 'method' and me.name.value is 'initialize'
+          throw new Error "late binding for constructors is not supported"
+        else
+          push_class()
+          class_def = {name: me.bind_to.js(), code: '', args: [], has_constructor: no}
+          rv = me.js_class_member()
+          pop_class()
+          return rv
+
+If this is a member of a class (including a late binding), we run `js_constructor` if its name is `initialize`, and `js_class_member` for normal members. `js_constructor` will dump this class's code in the class definition. `js_class_member` will ensure this function gets added to the class's prototype.
+
+      else if class_defs.length > 0 and me.name exists #is a member function/method
+        if me.specifier.value is 'method' and me.name.value is 'initialize'
+          class_def.code += me.js_constructor()
+          return ""
+        else
+          return me.js_class_member()
+
+Normal functions go straight to `js_bare_function`.
+
+      else
+        return me.js_bare_function()
+
+Bare functions just get the `function` header and an optional name before generating the body.
+
+    method js_bare_function() of Grammar.FunctionExpression
+      rv = "function "
+      if me.name exists
+        rv += me.name.value
+      return rv + me.js_body()
+
+Class members get assigned to the class's prototype if they are methods/tasks. Regular function members are just assigned as a member of the class variable.
+
+    method js_class_member() of Grammar.FunctionExpression
+      if me.specifier.value is 'method' or me.specifier.value is 'task'
+        rv = "#{class_def.name}.prototype.#{me.name.value} = function "
+      else
+        rv = "#{class_def.name}.#{me.name.value} = function "
+      return rv + me.js_body()
+
+Constructors are handled a little differently. Since JavaScript "classes" are really just functions, the constructor code has to wind up in a function with the same name as the class. We set the approprate flags for the arguments to the current `class_def`.
+
+Note: The parameter to `js_body` appears to be unused?
+
+    method js_constructor() of Grammar.FunctionExpression
+      class_def.has_constructor = yes
+      rv = "function #{class_def.name}"
+      class_def.args = []
+      class_def.arguments = [argument for argument in me.arguments]
+      rv += me.js_body class_def.args
+      class_def.arguments.push me.callback when me.callback exists
+      return rv
+
+`js_body` is the worker method that generates the function body.
+
+    method js_body() of Grammar.FunctionExpression
+      rv = ""
+      default_arg_js = ""
+
+Start a new scope for this function.
+
+      push_scope()
+
+If this is a task (has a callback), define `k$next` (local only, don't want this to propagate to lower scopes) and `k$this` (OK for closures).
+
+      if me.callback exists
+        scope['k$next'] = 'no closures'
+        scope['k$this'] = 'closures ok'
+
+We create the argument array here by looking through the argument names.
+
+      arg_names = [argument.name?.value or argument for argument in me.arguments]
+      for arg_name in arg_names
+        scope[arg_name] = 'argument'
+
+Generate the block code. Note: the argument to `block.js` appears unused?
+
+      block_code = me.block.js(yes) + me.block.js_closeout()
+
+We assign default values to arguments if necessary. Normally we just do a `null` check on arguments to see if they need to be seeded with default values. For tasks, we also need to make sure they aren't equal to `k$next` (the callback argument) since it's always the last argument, even if some are missing.
+
+      for argument in me.arguments
+        if argument.default exists
+          default_arg_js += "if (#{argument.name.value} == null"
+          default_arg_js += " || #{argument.name.value} == k$next" if me.callback exists
+          default_arg_js += ") #{argument.name.value} = #{argument.default.js()};\n"
+
+For async code, we seed `k$next` with the last argument that is a function using the `k$getcb` ("get callback") snippet. We also save `this` into `k$this`.
+
+Async functions get wrapped in a `try` block so that we can catch errors and forward them to our callback.
+
+      if me.callback exists
+        use_snippets['async'] = snippets['async']
+        use_snippets['get callback'] = snippets['get callback']
+        block_code = "var k$next = k$getcb(arguments);\nk$this = this;\n#{default_arg_js}try {\n" + indent block_code
+      else
+        block_code = default_arg_js + block_code
+
+We pop the scope, which generates `var` definitions as necessary. We pass `no` for the `wrap` argument because we do our own function wrapping here.
+
+      rv += indent pop_scope(block_code, no)
+
+This `catch` block takes care of any uncaught errors from a task. If an error is caught here, we call back to `k$next` with the error as the first and only argument. If `k$next` is another task, this will cause it to throw.
+
+      if me.callback exists
+        rv += "  } catch (k$err) {if (k$next) {return k$async(k$next,k$this,[k$err]);} else {throw k$err;}}\n"
+        rv += "  return k$next ? k$async(k$next,k$this) : void 0;\n"
+
+We then prepend the argument code that we generated previously.
+
+      rv = "(#{arg_names.join(', ')}) {\n#{rv}}"
+      return rv
+
+### FunctionCall ###
+
+`FunctionCall` is an accessor that calls a function. We generate JavaScript for each expression in the argument list and just pass it through to JavaScript.
+
+    method js(as_list) of Grammar.FunctionCall
+      rv = []
+      for argument in me.arguments
+        rv.push argument.js()
+      rv.push me.callback_name if me.callback_name exists
+      rv = rv.join ', '
+
+`as_list` is currently unused (always false). Note: remove this?
+
+      if as_list
+        return "[#{rv}]"
+      else
+        return "(#{rv})"
+
+Function calls can have exisential checks (`a?(1)`) since they are accessors.
+
+    method js_existence(accessor, undefined_unary, invert) of Grammar.FunctionCall
+      if me.exisential
+        return check_existence_wrapper(accessor, undefined_unary, invert)
+      else
+        return ''
+
+### FunctionCallArgument ###
+
+`FunctionCallArgument` is a wrapper for an expression in a function call argument list.
+
+    method js() of Grammar.FunctionCallArgument
+      return me.val.js()
+
+### ClassDefinition ###
+
+Classes contain a code block with function, method, and task definitions.
+
+    method js() of Grammar.ClassDefinition
+
+For the class definition, we start a new scope and class and populate the `class_def` global.
+
+      push_scope()
+      push_class()
+      class_def.name = me.name.value
+      class_def.parent = me.parent?.value
+      block_code = me.block.js() + me.block.js_closeout()
+      block_code = pop_scope block_code, no
+      rv = '\n' + class_def.code
+      rv += '\n' if class_def.code? isnt ''
+
+If there was no `initialize` method defined, we create a function with the class name. It calls the parent constructor if there is a parent. If the user does define an `initialize` method, it will generate this for us.
+
+      unless class_def.has_constructor
+        rv += "function #{class_def.name}() {\n"
+        if me.parent?
+          rv += "  return #{me.parent.value}.prototype.constructor.apply(this,arguments);\n"
+        rv += "}\n"
+
+Use the inheritance snippet if we have a parent class.
+
+      if me.parent?
+        rv += "__extends(#{me.name.value},#{me.parent.value});\n\n"
+        use_snippets['inherits'] = snippets['inherits']
+      else
+        rv += '\n'
+      rv += block_code
+      pop_class()
+      return rv
+
+### TryCatch ###
+
+`TryCatch` blocks are context dependent. In synchronous contexts, they are very similar to JavaScript equivalents. In asynchronous contexts, things get very complicated because we need to redefine the error handling code every time we generate a new callback. As a result, we keep a `try_block_stack` so that we can regenerate error handlers whenever we make a new scope.
+
+    method js() of Grammar.TryCatch
+
+Add this object to the stack and pass conditional and loop status down the tree.
+
+      try_block_stack.unshift me
+      me.try_block.in_conditional = yes
+      me.try_block.in_loop = me.in_loop
+      me.original_callback = me.callback unless me.original_callback exists
+
+Try making synchronous code.
+
+      rv = me.js_no_callbacks()
+
+If that failed, we fall back to asynchronous code generation.
+
+      if me.callback isnt current_callback
+        me.callback = create_callback()
+        me.closeout_callback = me.callback
+        rv = me.js_callbacks()
+
+For synchronous code, we don't need to keep this object on the stack since it is closed out.
+
+      else
+        try_block_stack.shift()
+      return rv
+
+For synchronous code, we use the wrapper methods to generate code. We need to set `original_callback` to our original callback (whatever the current callback is) since we don't have a callback of our own.
+
+    method js_no_callbacks() of Grammar.TryCatch
+      rv = me.js_wrapper_try()
+      me.try_block.original_callback = me.original_callback
+      rv += multi_indent(me.try_block.js() + me.try_block.js_closeout(), try_block_stack.length)
+      rv += me.js_wrapper_catch()
+      return rv
+
+For asynchronous code, we still use the wrappers but start a new closeout callback that all branches need to eventually call. We pass this up to the parent block so it knows what callback it is inserting code into.
+
+    method js_callbacks() of Grammar.TryCatch
+      rv = me.js_wrapper_try()
+      me.try_block.original_callback = me.callback
+      rv += multi_indent(me.try_block.js() + me.try_block.js_closeout(), try_block_stack.length)
+      rv += me.js_wrapper_catch()
+      rv += "function #{me.callback}() {\n"
+      try_block_stack.shift()
+      rv += indent render_try_blocks()
+      me.parent_block.closeout_callback = me.original_callback
+      return rv
+
+    method js_wrapper_try() of Grammar.TryCatch
+      rv = "try {\n"
+      return rv
+
+`js_wrapper_catch` generates catch blocks and associated code. It is meant to be called multiple times (once each time the `try`/`catch` stack is regenerated for a callback).
+
+    method js_wrapper_catch() of Grammar.TryCatch
+
+This is a bit of a hack until we support catch callbacks. We mark `in_catch` on the top try block so that the `WaitForStatement` will fail to generate here. `wait for`s in catch blocks are not yet supported.
+
+      try_block_stack[0].in_catch = yes when try_block_stack[0] exists
+
+Close the `try` block.
+
+      rv = "}"
+
+If the user actually specified a `catch` block (remember they are optional in Kal), generate the code for that block. The identifier name is optional in Kal but not JavaScript, so we just use `k$e` to throw the value away if it's unneeded.
+
+      if me.catch_block exists
+        rv += " catch (#{me.identifier?.value or 'k$e'}) {\n"
+        rv += indent(me.catch_block.js() + me.catch_block.js_closeout())
+
+If no `catch` block was specified, we just make a blank one.
+
+      else
+        rv += " catch (k$e) {"
+        rv += '\n' if parfor_cb exists or me.closeout_callback exists
+
+Parallel `for` loops require that we call back to the `parfor_cb`, otherwise the loop will never finish.
+
+      if parfor_cb exists
+        use_snippets['async'] = snippets['async']
+        rv += indent "return k$async(#{parfor_cb},#{kthis()});\n"
+
+Once complete, we need to call back to the closeout callback.
+
+      else if me.closeout_callback exists
+        use_snippets['async'] = snippets['async']
+        rv += indent "return k$async(#{me.closeout_callback},#{kthis()});\n"
+      rv += '}\n'
+
+Unhack to avoid `wait for`s in `catch` blocks.
+
+      try_block_stack[0].in_catch = no when try_block_stack[0] exists
+      return rv
+
+### SuperStatement ###
+
+The `SuperStatement` calls the parent class's constructor on the current object.
+
+    method js() of Grammar.SuperStatement
+      return "" when class_def.parent doesnt exist
+      rv = "#{class_def.parent}.prototype.constructor.apply(#{kthis()},"
+      if me.accessor exists
+        rv += me.accessor.js(yes)
+      else
+        rv += "arguments"
+      rv += ");\n"
+      return rv
+
+### WaitForStatement ###
+
+`WaitForStatement`s generate new callbacks. They are always considered asynchronous code. This generator needs to be robust to being called multiple times since many parent objects will attempt to make synchronous code, then try again if they see a `wait for`.
+
+    method js() of Grammar.WaitForStatement
+
+`wait for`s are not currently supported in `catch` blocks.
+
+      throw new Error "wait fors not supported in catch blocks" when try_block_stack[0]?.in_catch
+
+If this is a "bare" file, we can't use the `return` statement at the top level when executing callbacks.
+
+      prefix = "" if me.parent_block.bare otherwise "return "
+
+Make the new callback identifier. Most parents that care about context check for the side effect of this function.
+
+      me.new_callback = create_callback()
+
+Standard `wait for`s have an r-value. `pause for`s (a subclass of this) do not have an r-value.
+
+      if me.rvalue exists
+
+For `wait for`s, we set the `callback_args` to the l-values on the left side of the `wait for`. We do support multiple return values here. The `callback_name` field tells this `FunctionCall` which callback function to pass in as its last argument. This allows the `FunctionCall` generator method to generate a call to the task with an extra callback argument. Note: `me.rvalue.callback_args` appears to be unused?
+
+        me.rvalue.callback_args = me.lvalue
+        me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
+        rv = "#{prefix}#{me.rvalue.js()};\n"
+      else
+
+In `pause for`s, we use constant folding since we multiply the time value by 1000 if possible. Because it looks better.
+
+        number = me.tvalue.number_constant()
+        if number exists
+          tvalue_js = "#{number * 1000}"
+        else
+          tvalue_js = me.tvalue.js()
+          tvalue_js = "(#{me.tvalue.js()})*1000"
+
+Then we call `setTimeout` with our callback as the argument.
+
+        rv = "#{prefix}setTimeout(#{me.new_callback},#{tvalue_js});\n"
+
+If there is a tail conditional, we wrap the call in the conditional. Note: TODO - I think we need to pass that code on the second line to `conditional.js` as the false expression.
+
+      if me.conditional exists
+        rv = me.conditional.js(rv, no)
+        rv += "#{prefix}#{me.new_callback}();\n"
+
+Next we compile our "block" which is actually a `BlockWithoutIndent`.
+
+      rv_block = ""
+
+We assign return values (arguments to the callback) to their appropriate variable names and declare the variables. If this is a `safe` wait for (`no_errors`), we don't need to add an error argument. This is used for "non-standard" functions like node's `http.get` which don't call back with error arguments.
+
+      arg_i = 0 when me.no_errors otherwise 1
+      for argument in me.lvalue?.arguments or []
+        rv_block += "#{argument.base.value} = arguments[#{arg_i}];\n"
+        scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
+        arg_i += 1
+
+Pass down the conditional and loop states.
+
+      me.block.in_conditional = me.in_conditional
+      me.block.in_loop = me.in_loop
+
+Now compile the block and wrap it in the callback `function` wrapper.
+
+      rv_block += me.block.js()
+      rv += "function #{me.new_callback}() {\n"
+
+`try_count` is used to determine the indentation level. Note: TODO - it looks like the second line here does nothing `try_block` is not used anywhere.
+
+      try_count = try_block_stack.length + 1
+      try_count += 1 if try_block exists
+
+We render any currently used `try` blocks in the new function scope.
+
+      rv += indent render_try_blocks()
+
+The first thing we do is throw any errors passed into the callback so the user can catch them with normal `try` blocks.
+
+      rv += multi_indent("if (arguments[0] != null) throw arguments[0];\n", try_count) except when me.no_errors
+
+Add the block code.
+
+      rv += multi_indent rv_block, try_count
+
+At the end of the block, call back to any required closeouts or implied returns.
+
+      if me.in_conditional or me.in_loop
+        use_snippets['async'] = snippets['async']
+        rv += multi_indent "#{prefix}k$async(#{me.parent_block.original_callback},#{kthis()});\n", me.block.indent_level + try_count
+      else if scope['k$next']
+        use_snippets['async'] = snippets['async']
+        rv += multi_indent "#{prefix}k$next ? k$async(k$next,#{kthis()}) : void 0;\n", me.block.indent_level + try_count
+
+Close out the function, generating `catch` blocks from the stack.
+
+      rv += me.block.js_closeout()
+      return rv
+
+### WaitForExpression ###
+
+A `WaitForExpression` is like a `WaitForStatement` except that it only occurs inside a `RunInParallelBlock`.
+
+    method js() of Grammar.WaitForExpression
+      rv_block = ""
+
+Make a new callback.
+
+      me.new_callback = create_callback()
+
+If this is a `safe wait for`, we don't need an error argument in the callback. This is used for "non-standard" functions like node's `http.get` which don't call back with error arguments. This section generates code that assigns return values (arguments to our callback) to variables. We add these variables to the local scope.
+
+      arg_i = 0 when me.no_errors otherwise 1
+      for argument in me.lvalue?.arguments or []
+        rv_block += "#{argument.base.value} = arguments[#{arg_i}];\n"
+        scope[argument.base.value] = 'closures ok' unless scope[argument.base.value] exists
+        arg_i += 1
+
+Note: TODO - I think this does nothing.
+
+      me.rvalue.callback_args = me.lvalue
+
+We tell the r-value function call accessor to use our callback as the last argument.
+
+      me.rvalue.accessors[me.rvalue.accessors.length - 1].callback_name = me.new_callback
+
+We add the function call code and any conditional wrapping as appropriate.
+
+      rv = "#{me.rvalue.js()};\n"
+      if me.conditional exists
+        rv = me.conditional.js(rv, no, "k$async(#{me.callback},#{kthis()});\n")
+
+`WaitForExpression`s store any errors in the `error_holder` array, which is thrown if more than zero errors occur (see the `RunInParallelBlock`, which sets these properties). `safe wait for`s don't check for errors.
+
+      rv += "function #{me.new_callback}() {\n"
+      use_snippets['async'] = snippets['async']
+      unless me.no_errors
+        rv += "  if (arguments[0] != null) {\n"
+        rv += "    #{me.error_holder}[#{me.error_index}] = arguments[0];\n"
+        rv += "    return k$async(#{me.callback},#{kthis()});\n"
+        rv += "  }\n"
+      rv += indent rv_block
+      rv += "  k$async(#{me.callback},#{kthis()});\n"
+      rv += "}\n"
+      return rv
+
+### RunInParallelBlock ###
+
+A `RunInParallelBlock` kicks off several `WaitForExpression`s in parallel. It calls its own callback when all these tasks are done. It throws an error (with an array of errors from each `wait for`) if there were any errors.
+
+    method js() of Grammar.RunInParallelBlock
+
+Make our callback and a loop counter and loop error variable.
+
+      me.callback = create_callback()
+      loop_counter = "klc$#{for_count}"
+      loop_errors = "kle$#{for_count}"
+
+This is treated much like a parallel `for` loop.
+
+      for_count += 1
+
+Make sure the counters and error array are defined in the local scope.
+
+      scope[loop_counter] = 'no closures'
+      scope[loop_errors] = 'no closures'
+
+Set the counter variable to the number of tasks. Set the errors array to empty.
+
+      rv = "#{loop_counter} = #{me.wait_fors.length};\n#{loop_errors} = [];\n"
+
+Set the flags on each child `WaitForExpression`. We give each expression an index to store its error information to.
+
+      wf_index = 0
+      for wait_for in me.wait_fors
+        wait_for.callback = me.callback
+        wait_for.parent_block = me.parent_block
+        wait_for.error_holder = loop_errors
+        wait_for.error_index = wf_index
+        rv += "#{wait_for.js()}"
+        wf_index += 1
+
+Our callback checks if all tasks are done. If they are not, it just returns.
+
+      rv += "function #{me.callback}() {\n"
+      rv += "  if (--#{loop_counter}) return;\n"
+
+Add in the user's `try` blocks.
+
+      rv += indent render_try_blocks()
+
+If we are done, check for errors in the array and throw if there were any.
+
+      rv += multi_indent "  for (var #{loop_errors}i = 0; #{loop_errors}i < #{wf_index}; #{loop_errors}i++) { if (#{loop_errors}[#{loop_errors}i]) throw #{loop_errors}; }\n", try_block_stack.length
+      me.parent_block.closeout_callback = me.original_callback
+      return rv
+
+Snippets
+========
+
+These are useful blocks of code that are only included in the output when used.
+
+    snippets =
+
+`in` checks if a variable is a member of an array. It is used by the `in` operator.
+
+      'in': 'var k$indexof = [].indexOf || function (item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };'
+
+`inherits` creates the `__extends` function which makes class inheritance work by copying members to a child class's prototype.
+
+      'inherits': 'var __hasProp = {}.hasOwnProperty, __extends = function (child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; }'
+
+`array list comprehension` preforms a function on each element of an iterable, returning an array of return values. This is used to execute list comprehensions.
+
+      'array list comprehension': 'var k$comprl = function (iterable,func) {var o = []; if (iterable instanceof Array || typeof iterable.length == "number") {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof iterable.next == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'
+
+`object list comprehension` preforms a function on each key-value pair of an object, returning an array of return values. This is used to execute object comprehensions.
+
+      'object list comprehension': 'var k$compro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'
+
+`async` calls a function on the next execution cycle using `process.nextTick` (if available) or `setTimeout`. This is used for callbacks from tasks.
+
+      'async': 'var k$async = (typeof process === "undefined" || !(process.nextTick)) ? (function (fn,self,args) {setTimeout(function () {fn.apply(self,args);}, 0);}) : (function (fn,self,args) {process.nextTick(function () {fn.apply(self,args);});});'
+
+`get callback` is a helper function that gets the last function argument passed to the current function.
+
+      'get callback': 'var k$getcb = function (args) {return typeof args[args.length-1] == "function" ? args[args.length-1] : function () {}};'

@@ -1,0 +1,208 @@
+Command Line Utility
+--------------------
+
+This module defines the command line `kal` utility.
+
+    fs             = require 'fs'
+    path           = require 'path'
+    Kal            = require './kal'
+
+Utilities
+=========
+
+Some messages are written to `stderr` in this module.
+
+    function warn(line)
+      process.stderr.write line + '\n'
+
+This utility function checks if a file is "hidden" by the operating system.
+
+    function hidden(file)
+      /^\.|~$/.test file
+
+`parseOptions` parses the command line switches.
+
+    function parseOptions()
+      options = {}
+      for arg in process.argv
+        if arg[0] is '-' and arg[1] isnt '-'
+          options.help       = yes if 'h' in arg
+          options.tokens     = yes if 't' in arg
+          options.javascript = yes if 'j' in arg
+          options.bare       = yes if 'b' in arg
+          options.version    = yes if 'v' in arg
+          options.minify     = yes if 'm' in arg
+        else if arg[0] is '-' and arg[1] is '-'
+          options.help       = yes if arg is '--help'
+          options.tokens     = yes if arg is '--tokens'
+          options.javascript = yes if arg is '--javascript'
+          options.bare       = yes if arg is '--bare'
+          options.version    = yes if arg is '--version'
+          options.minify     = yes if arg is '--minify'
+
+The `-o` option has an argument (the output directory).
+
+      if '-o' in process.argv
+        index = process.argv.indexOf '-o'
+      else if '--output' in process.argv
+        index = process.argv.indexOf '--output'
+
+      options.output = process.argv[index + 1] if index isnt -1
+
+The remaining arguments are assumed to be input file names. We loop through the array and ignore switches and the output directory (if any).
+
+      inputs = []
+      for arg in process.argv.slice(2)
+        if arg[0] is '-' or arg is options.output
+
+Set the help flag if the user passed input files (or extra arguments) that were followed by other switches like `kal -o output_dir some_file -j`. This is considered invalid.
+
+          options.help = yes if inputs.length isnt 0
+          inputs = []
+Otherwise, add the argument to the list of input files.
+
+        else
+          inputs.push arg
+      options._ = inputs
+      return options
+
+`existsSync` is used to retain compatibility between node.js versions.
+
+    existsSync = fs.existsSync or path.existsSync
+
+Main
+====
+
+    function run()
+
+Parse the command line options and print the version/usage if necessary.
+
+      options = parseOptions()
+      return version() if options.version
+      return usage() if options.help
+
+Check the output path (if specified) and make sure it is valid.
+
+      if options.output exists and not existsSync(options.output)
+        warn('output path does not exist!')
+        return usage()
+
+If no input files are specified, start the interactive shell.
+
+      return require('./interactive') if options._.length is 0
+
+Let scripts know we are running in `kal` not `node`.
+
+      process.argv[0] = 'kal'
+      process.execPath = require.main.filename
+
+Construct the `compile_options` argument for `Kal.compile` or `Kal.eval`.
+
+      compile_options =
+        show_tokens: options.tokens
+        bare:        options.bare
+        show_js:     options.javascript
+
+If an output argument was specified, we are writing JavaScript files to an output directory.
+
+      if options.output exists
+
+Attempt to load `uglify-js` if the user wants to minify files. This is not listed as a dependency so the user needs it installed globally or manually.
+
+        try
+          require('uglify-js') if options.minify
+        catch
+          warn 'error: uglify-js must be installed to use the --minify option'
+          process.exit(3)
+
+If the user just specified one directory, assume they just want all the files in it. Compile the list of files with the given options.
+
+        if options._.length is 1 and fs.statSync(options._[0]).isDirectory()
+          files = [path.join(options._[0],file) for file in fs.readdirSync(options._[0])]
+          compile_files files, options.output, compile_options, options.minify
+        else
+          compile_files options._, options.output, compile_options, options.minify
+      else
+
+If no output was specified, just run the script using `eval`.
+
+        for filename in options._
+          compile_options.literate = path.extname(filename) in ['.litkal', '.md']
+          Kal.eval fs.readFileSync(filename), compile_options
+
+The `scripts/kal` loader calls this entry point.
+
+    exports.run = run
+
+
+Compile Files
+=============
+
+This function recursively compiles a list of files/directories into `output_dir`.
+
+    function compile_files(filenames, output_dir, options, minify)
+      for filename in filenames
+        stat = fs.statSync filename
+
+If this file is a directory, get a list of files in the directory and call this function recursively.
+
+        if stat.isDirectory()
+          new_outdir = path.join(output_dir, path.basename(filename))
+          fs.mkdirSync new_outdir, stat.mode
+          subfiles = [path.join(filename, child) for child in fs.readdirSync(filename)]
+          compile_files subfiles, new_outdir, options, minify
+
+For `.kal`, `.litkal`, and `.md` (literate Kal assumed) files, set up the options structure and call `Kal.compile`.
+
+        else if path.extname(filename) in ['.kal', '.litkal', '.md']
+          extension = path.extname(filename)
+
+Check if this is Literate code.
+
+          options.literate = extension in ['.litkal', '.md']
+
+Compile the source.
+
+          js_output = Kal.compile fs.readFileSync(filename), options
+
+Minify if requested. We've already checked that `uglify-js` is installed at this point.
+
+          if minify
+            js_output = require('uglify-js').minify(js_output, {fromString:yes,mangle:no}).code
+
+Print out the JavaScript if the debug option was passed in.
+
+          print js_output if options.show_js
+
+Write the output to the output directory with a `.js` extension.
+
+          js_filename = path.join(output_dir, path.basename(filename, extension)) + '.js'
+          fs.writeFileSync js_filename, js_output
+
+Version
+=======
+
+Returns the Kal version when for the `-v` switch.
+
+    function version()
+      print "Kal version #{Kal.VERSION}"
+      process.exit(0)
+
+Help options or invalid input will cause this message to print to the screen.
+
+    function usage()
+      print "Usage: kal [options] SOURCE [-o OUTPUT_DIR]"
+      print ""
+      print "If called without the -o option, `kal` will run SOURCE."
+      print "If called without any options, `kal` will start an interactive session."
+      print ""
+      print ""
+      print "Options:"
+      print "  --help, -h        show the command line usage options                  [boolean]"
+      print "  --tokens, -t      print out the tokens that the lexer/sugarer produce  [boolean]"
+      print "  --javascript, -j  print out the compiled javascript                    [boolean]"
+      print "  --bare, -b        don't wrap the output in a function                  [boolean]"
+      print "  --version, -v     display the version number                           [boolean]"
+      print "  --output, -o      the output directory for the compiled source"
+      print "  --minify          minify the output (requires uglify-js)               [boolean]"
+      process.exit(2)

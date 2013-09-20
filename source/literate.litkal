@@ -1,0 +1,25 @@
+Literate Kal
+------------
+
+This file translates Literate Kal files to regular Kal files for the compiler. Literate Kal files are [Markdown](daringfireball.net/projects/markdown/) files with embedded code blocks that contain Kal code. All code blocks (denoted by four leading spaces) are treated as source code while all other Markdown is translated to comments.
+
+    function translate(literate_code)
+
+This function reads the Literate code line by line, building a new array of non-Literate (illiterate?) code.
+
+      regular_kal_lines = []
+      for line in literate_code.split '\n'
+
+If the line starts with four spaces, we keep the line but remove the spaces. If the line does not start with four spaces, we prepend a `# ` comment marker to make it a comment. We also need to replace any occurrances of `###` to avoid creating/destroying block comments.
+
+        if line.match(/^   /) # code
+          regular_kal_lines.push line.slice 4
+        else
+          # prepend with a line comment and remove block comments
+          regular_kal_lines.push '# ' + line.replace(/([^#]|^)###(?=[^#]|$)/g, '$1####')
+
+The translated code is standard Kal.
+
+      return regular_kal_lines.join '\n'
+
+    exports.translate = translate

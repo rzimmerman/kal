@@ -1,0 +1,1051 @@
+Kal Grammar
+-----------
+
+This file defines the parser grammar in the form of abstract syntax tree classes that inherit from `ASTBase`. Each class implements a `parse` method which, given the token stream, attempts to parse the stream as a particular language construct.
+
+The end result of a call to `parse` is a tree of objects representing a language construct or an error if the particular class could not parse the token stream.
+
+The `ast` module defines the base class for these grammar definitions along with utility methods to recursively create subtrees using these classes.
+
+    ast = require './ast'
+    ASTBase = ast.ASTBase
+
+Reserved Words
+==============
+
+Reserved words are used to determine whether assignments are valid (for example, you cannot assign a value to `if`). They are also used by other files for REPL autocompletion and by the `sugar` module to determine where to insert implicit parentheses.
+
+**Words that are reserved in Kal and cannot be used for identifiers**
+
+    KAL_RESERVED = ['true','false','yes','no','on','off','function','method',
+                   'task','return','if','else','unless','except','when',
+                   'otherwise','and','or','but','xor','not','nor','bitwise',
+                   'mod','new','while','until','for','class','exists','doesnt',
+                   'exist','is','isnt','inherits','from','nothing','empty','null',
+                   'break','continue','try','catch','throw','raise','fail',
+                   'with','arguments','of','in','instanceof','property','value',
+                   'parallel','series','pass','pause','until','me','this','typeof']
+
+**Words that are reserved in Kal but can be used as r-values**
+
+    KAL_RVALUE_OK = ['true','false','yes','no','on','off','me','this','super',
+                     'arguments','none','nothing']
+
+**JavaScript reserved words**
+
+Note `label` is not included because it can technically be used as an identifier (and it's more useful as a variable name than for its intended purpose). `undefined`, while technically assignable, is included here to avoid confusion and terribleness.
+
+    JS_RESERVED =  ['break','case','catch','continue','debugger','default',
+                    'delete','do','else','finally','for','function','if','in',
+                    'instanceof','new','return','switch','this','throw','try',
+                    'typeof','var','void','while','with','class','enum','export',
+                    'extends','import','super','implements','interface','let',
+                    'package','private','protected','public','static','yield'
+                    'null','true','false','undefined','const']
+
+JavaScript words that are reserved but usable as rvalues. In the future `super` may get added to this list depending on the ES6 spec.
+
+    JS_RVALUE_OK =  ['this','null','true','false','undefined']
+
+JavaScript keywords are considered reserved in Kal. It's OK if these lists have some duplicates.
+
+    KEYWORDS  = KAL_RESERVED.concat  JS_RESERVED
+    RVALUE_OK = KAL_RVALUE_OK.concat JS_RVALUE_OK
+
+Other modules use these values as well, such as the `sugar` module which checks for reserved words when generating implicit parentheses.
+
+    exports.KEYWORDS  = KEYWORDS
+    exports.RVALUE_OK = RVALUE_OK
+
+Block
+=====
+
+`Block : NEWLINE INDENT Statment* DEDENT`
+
+A code block (`Block`) is defined as a newline + indent followed by zero or more `Statment`s, then a dedent. In practice it is impossible to have an indent followed immediately by a dedent, so technically this class requires one or more `Statment`s.
+
+    class Block inherits from ASTBase
+      method parse()
+        me.req 'NEWLINE'
+        me.lock()
+        me.req 'INDENT'
+        me.lock()
+        me.statements = []
+        while not me.opt('DEDENT')
+          me.statements.push me.req Statement
+          me.lock()
+
+File
+====
+
+`File: Statement* EOF`
+
+The `File` node shares some code generation with `Block`, so it is a subclass of `Block`. It is defined as zero or more statements followed by the end-of-file token.
+
+    class File inherits from Block
+      method parse()
+        me.lock()
+        me.statements = []
+        while not me.opt('EOF')
+          me.statements.push me.req Statement
+          me.lock()
+
+BlockWithoutIndent
+==================
+
+`BlockWithoutIndent: NEWLINE Statement* (?=DEDENT|EOF)
+
+`BlockWithoutIndent` is the same as a block (it shares generator code) but it does not require an indent. This is used for `wait for` statements to separate code after asynchronous calls into its own block.
+
+    class BlockWithoutIndent inherits from Block
+      method parse()
+        me.req 'NEWLINE'
+        me.lock()
+        me.statements = []
+        while not me.opt('DEDENT', 'EOF')
+          me.statements.push me.req Statement
+          me.lock()
+ 
+ Unsee the dedent (don't consume it) since it belongs to our parent block.
+
+        me.ts.prev()
+
+Statement
+=========
+
+`Statement: (BlankStatement|TryCatch|ClassDefinition|ReturnStatement|WaitForStatement|SimpleWaitForStatement|PauseForStatement|IfStatement|WhileStatement|ForStatement|ThrowStatement|SuperStatement|RunInParallelBlock|LoopControlStatement|AssignmentStatement|ExpressionStatement)`
+
+The `Statement` node is a generic wrapper for the many types of statment/control constructs that are valid inside a block. Keeping these in one class helps keep the code maintainable when we add new node types.
+
+The order in the `me.req` call is important here for two reasons. One, we want to keep the compiler fast by keeping commonly used constructs first if possible. This avoids unnecessary parsing steps. More importantly, things like `ExpressionStatement` need to go last because some `AssignmentStatement`s and other constructs can parse as valid `ExpressionStatement`s.
+
+    class Statement inherits from ASTBase
+      method parse()
+        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, AssignmentStatement, ExpressionStatement
+
+LoopControlStatement
+====================
+
+`LoopControlStatement: ('break'|'continue')`
+
+This handles the `break` and `continue` keywords.
+
+    class LoopControlStatement inherits from ASTBase
+      method parse()
+        me.control = me.req_val 'break', 'continue'
+
+ThrowStatement
+==============
+
+`ThrowStatement: ('throw'|'raise'|('fail' 'with')) Expression WhenExpression?`
+
+This handles `throw` and its synonyms followed by an expression and an optional tail conditional.
+
+    class ThrowStatement inherits from ASTBase
+      method parse()
+        specifier = me.req_val 'throw', 'raise', 'fail'
+
+At this point we lock because it is definitely a `throw` statement. Failure to parse the expression is a syntax error.
+
+        me.lock()
+        me.req_val 'with' if specifier.value is 'fail'
+        me.expr = me.req Expression
+
+We also need to check for tail conditionals (`throw "help" if error`)
+
+        me.conditional = me.expr.transform_when_statement()
+
+ReturnStatement
+===============
+
+`ReturnStatement: 'return' (Expression [',' Expression]*) WhenExpression?`
+
+This handles simple `return`s, `return value`s, and returns with multiple return values.
+
+    class ReturnStatement inherits from ASTBase
+      method parse()
+        me.req_val 'return'
+
+Definitely a return statement at this point.
+
+        me.lock()
+
+Check for a conditional here in case there is no return value (for example `return if a is 2`)
+
+        me.conditional = me.opt WhenExpression
+
+Returns can have multiple return values, so we keep grabbing expressions followed by commas.
+
+        me.exprs = []
+        except when me.conditional exists
+          expr = me.opt Expression
+          if expr exists
+            me.exprs.push expr
+            while me.opt_val ','
+              expr = me.req Expression
+              me.exprs.push expr
+
+Check again for a conditional after the expression (`return a if a isnt 2`)
+
+            me.conditional = expr.transform_when_statement() if expr exists
+
+IfStatement
+===========
+
+`IfStatement: ('if'|'when'|'unless'|('except' 'when') Expression Block ElseStatement*`
+
+Parses `if` statments and any attached `else`s or `else if`s (including synonyms).
+
+    class IfStatement inherits from ASTBase
+      method parse()
+        me.condition = me.req_val 'if', 'unless', 'when', 'except'
+        me.lock()
+        me.req_val('when') if me.condition.value is 'except'
+        me.conditional = me.req Expression
+        me.block = me.req Block, Statement
+
+If statements can have multiple `else if`s, but nothing after the final `else` block.
+
+        me.elses = []
+        keep_going = yes
+        got_raw_else = no
+        while keep_going
+          new_else = me.opt ElseStatement
+          if new_else doesnt exist
+            keep_going = no
+          else
+            me.elses.push new_else
+            if new_else.conditional doesnt exist
+              keep_going = no
+
+ElseStatement
+=============
+
+`ElseStatement: ('else'|'otherwise') (('if'|'when') Expression) Block`
+
+This covers `else` and `else if`.
+
+    class ElseStatement inherits from ASTBase
+      method parse()
+        me.req_val 'else', 'otherwise'
+        me.lock()
+        if me.opt_val 'if', 'when'
+          me.conditional = me.req Expression
+        me.block = me.req Block, Statement
+
+WhileStatement
+==============
+
+`WhileStatement: ('while'|'until') Expression Block`
+
+While loops continue executing until the expression is true (or false in the case of `until` loops).
+
+    class WhileStatement inherits from ASTBase
+      method parse()
+        me.specifier = me.req_val 'while', 'until'
+        me.lock()
+        me.expr = me.req Expression
+        me.block = me.req Block
+
+ForStatement
+============
+
+`ForStatement: 'for' ('parallel'|'series')? Variable ('in'|'of') Expression Block`
+
+For loops can iterate over object properties (`of`) or over an array (`in`). The `parallel` and `series` specifiers only apply if there are asynchronous constructs within the loop (the default is `series`).
+
+    class ForStatement inherits from ASTBase
+      method parse()
+        me.req_val 'for'
+        me.lock()
+        me.execution_style = me.opt_val 'parallel', 'series'
+        me.iterant = me.req Variable
+        me.type = me.req_val 'in', 'of'
+        me.iterable = me.req Expression
+        me.loop_block = me.req Block
+
+AssignmentStatement
+===================
+
+`AssignmentStatement: UnaryExpression ('+'|'-'|'*'|'/')? '=' Expression WhenExpression?`
+
+Note that the `UnaryExpression` must be a valid l-value. 
+
+    class AssignmentStatement inherits from ASTBase
+      method parse()
+        me.lvalue   = me.req UnaryExpression
+
+We mark this `UnaryExpression` as a possible l-value for later checks.
+
+        me.lvalue.can_be_lvalue = yes
+        me.assignOp = me.req 'LITERAL'
+        me.error("invalid operator #{me.assignOp.value}") except when me.assignOp.value in ['+','-','*','/','=']
+        if me.assignOp.value isnt '='
+          me.req_val '='
+        me.lock()
+
+Now check that `lvalue` is indeed a valid l-value.
+
+        me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
+        me.rvalue   = me.req Expression
+        me.conditional = me.rvalue.transform_when_statement()
+
+WaitForStatement
+================
+
+`WaitForStatement: 'safe'? 'wait' 'for' MultipleReturnValues 'from' Expression WhenExpression? BlockWithoutIndent`
+
+The `wait for` statement pauses execution asynchronously and waits for the `Expression` to call back. Note that the `Expression` must be a function call. A `WaitForStatement` can optionally be marked `safe` indicating the expression does not use an error callback argument (like node's `http.get`)
+
+    class WaitForStatement inherits from ASTBase
+      method parse()
+        me.no_errors = me.opt_val 'safe'
+        me.req_val 'wait'
+        me.req_val 'for'
+        me.lvalue   = me.req MultipleReturnValues
+
+Mark the return values as possible l-values.
+
+        me.lvalue.can_be_lvalue = yes
+        me.req_val 'from'
+        me.lock()
+
+Verify all return values are valid l-values.
+
+        me.error("invalid assignment - the left side must be assignable") unless me.lvalue.is_lvalue()
+        me.rvalue = me.req UnaryExpression
+
+Check for tail conditionals
+
+        me.conditional = me.opt WhenExpression
+
+Verify that `rvalue` is a function call.
+
+        last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
+        me.error("expected a function call after 'from'") unless last_accessor instanceof FunctionCall
+        me.block = me.req BlockWithoutIndent
+
+SimpleWaitForStatement
+======================
+
+`SimpleWaitForStatement: 'safe'? 'wait' 'for' Expression WhenExpression? BlockWithoutIndent`
+
+The same as a `WaitForStatement` but without any return values.
+
+    class SimpleWaitForStatement inherits from WaitForStatement
+      method parse()
+        me.no_errors = me.opt_val 'safe'
+        me.req_val 'wait'
+        me.lock()
+        me.req_val 'for'
+
+No l-value for this type of `wait for`.
+
+        me.lvalue   = null
+        me.rvalue = me.req UnaryExpression
+        me.conditional = me.opt WhenExpression
+        last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
+        me.error("expected a function call after 'for'") unless last_accessor instanceof FunctionCall
+        me.block = me.req BlockWithoutIndent
+
+WaitForExpression
+=================
+
+`WaitForExpression: 'safe'? ('wait' 'for')? MultipleReturnValues? 'from' UnaryExpression WhenExpression?
+
+This is similar to a WaitForStatement except that it is called as part of a `RunInParallelBlock` and does not contain a `BlockWithoutIndent`.
+
+    class WaitForExpression inherits from ASTBase
+      method parse()
+        me.no_errors = me.opt_val 'safe'
+        me.lock() if me.no_errors
+        explicit = me.opt_val 'wait'
+        me.lock() if me.explicit
+        me.req_val 'for' if explicit
+        me.lvalue = me.opt MultipleReturnValues
+        me.req_val 'from' if me.lvalue exists
+        me.rvalue = me.req UnaryExpression
+        me.lock()
+        me.conditional = me.opt WhenExpression
+        last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - 1]
+        me.error("expected a function call after 'for'") unless last_accessor instanceof FunctionCall
+        me.req 'NEWLINE'
+
+PauseForStatement
+=================
+
+`PauseForStatement: 'pause' 'for' Expression ('second'|'seconds')? WhenExpression?`
+
+`PauseForStatement`s asynchronously pause execution for the specified time interval. The suffix `second` or `seconds` is optional and just for readability.
+
+    class PauseForStatement inherits from WaitForStatement
+      method parse()
+        me.req_val 'pause'
+        me.lock()
+        me.req_val 'for'
+        me.tvalue = me.req Expression
+        me.opt_val 'second', 'seconds'
+        me.conditional = me.opt WhenExpression
+        me.block = me.req BlockWithoutIndent
+
+RunInParallelBlock
+==================
+
+`RunInParallelBlock: 'run' 'in'? 'parallel' NEWLINE INDENT WaitForExpression* DEDENT`
+
+The `RunInParallelBlock` specifies a set of `WaitForExpression`s to kick off in parallel, delaying execution until all are complete. Only `WaitForExpression`s are allowed in the block.
+
+    class RunInParallelBlock inherits from ASTBase
+      method parse()
+        me.req_val 'run'
+        me.opt_val 'in'
+        me.req_val 'parallel'
+        me.lock()
+        me.req 'NEWLINE'
+        me.req 'INDENT'
+        me.wait_fors = me.req_multi WaitForExpression
+        me.lock()
+        me.req 'DEDENT'
+
+MultipleReturnValues
+====================
+
+`MultipleReturnValues: '('? UnaryExpression (',' UnaryExpression)* ')'?`
+
+This class is used in `wait for` expressions to specify a list of return values, such as `wait for x, y from f()`. Enclosing parentheses (`wait for (x, y) from f()`) are optional and must come as a pair.
+
+    class MultipleReturnValues inherits from ASTBase
+      method is_lvalue()
+        for arg in me.arguments
+          return no unless arg.is_lvalue()
+        return yes
+      method parse()
+        left_paren = me.opt_val '('
+        me.arguments = []
+        t = {value:','}
+        while t.value is ','
+          arg = me.req UnaryExpression
+          arg.can_be_lvalue = yes
+          me.arguments.push arg
+          if left_paren
+            t = me.req_val ')', ','
+          else
+            t = me.req_val 'from', ','
+        me.ts.prev()
+        me.req_val ')' if left_paren
+
+ExpressionStatement
+===================
+
+`ExpressionStatement: Expression`
+
+`ExpressionStatement`s are statements that are simply an r-value expression (no assignment or control operators). This is most commonly used for function calls (`my_func()` is a valid statement), though technically things like `x` are also valid statments.
+
+    class ExpressionStatement inherits from ASTBase
+      method parse()
+        me.expr = me.req Expression
+
+BlankStatement
+==============
+
+`BlankStatement: ('pass' NEWLINE|EOF)|NEWLINE`
+
+`BlankStatement`s are used to fill in when there are extra newlines or bare function definitions. A blank statement does not generate any output code and has no semantic significance.
+
+    class BlankStatement inherits from ASTBase
+      method parse()
+        if me.opt_val 'pass'
+          me.lock()
+          me.req 'NEWLINE', 'EOF'
+          me.ts.prev()
+        else
+          me.req 'NEWLINE'
+
+Variable
+========
+
+`Variable: IDENTIFIER`
+
+`Variable` works like an `IDENTIFIER` token except that it also checks to see if the token is a reserved word.
+
+    class Variable inherits from ASTBase
+      method parse()
+        me.identifier = me.req 'IDENTIFIER'
+        me.lock()
+
+We copy the `value` property over so that `Variable` objects can be drop-in replacements for `IDENTIFIER` tokens.
+
+        me.value = me.identifier.value
+        me.error "'#{me.value}' is reserved and can't be used as a name" when me.value in KEYWORDS
+
+BinOp
+=====
+
+`BinOp: ('bitwise'? 'and'|'or'|'xor'|'left'|'right'|'not')|('not' 'in'|'of')|('+'|'-'|'*'|'/'|'>'|'<'|'^'|'<='|'>='|'=='|'!='|'and'|'but'|'or'|'xor'|'nor'|'in'|'mod'|'is'|'isnt'|'instanceof'|'of')`
+
+Binary operators can include bitwise operations, the `in` or `of` collection checks, or standard Boolean and arithmetic operators.
+
+    class BinOp inherits from ASTBase
+      method parse()
+
+Some operations (`in` and `of`) can be inverted using the `not` keyword.
+
+        me.invert = no
+
+Bitwise operators have the `bitwise` prefix.
+
+        me.bitwise = me.opt_val 'bitwise'
+        me.op = me.req 'IDENTIFIER', 'LITERAL'
+
+A `bitwise` prefix indicates this is definitely a `BinOp`
+
+        me.lock() if me.bitwise
+
+Literals are limited to the list of valid arithmetic and Boolean operators above.
+
+        if me.op.type is 'LITERAL'
+
+First we need to fail softly on certain tokens that are not necessarily syntax errors, like closing parens. For example `x[a]` would try to parse for a `BinOp` after `a`, so it must fail cleanly in this case. Note that if `me.bitwise` was set, we are already locked, so this would be a "hard" syntax error as expected.
+
+          me.error("unexpected operator #{this.op.value}") if me.op.value in [')',']','}',';',':',','] or me.bitwise
+          me.lock()
+
+Now we do a "hard" check to make sure the operator is in the acceptabled list.
+
+          me.error("unexpected operator #{this.op.value}") unless me.op.value in ['+','-','*','/','>','<','^','<=','>=','==','!=']
+
+For `IDENTIFIER` tokens, we also check the token against the acceptable list. 
+
+        else
+
+First we need to check if we got a `not` token. In this case we just set the `invert` flag and check that the next token is `in` or `of`.
+
+          if me.op.value is 'not'
+            me.op = me.req_val 'in', 'of'
+            me.invert = yes
+
+Bitwise operators are limited to a smaller list.
+
+          if me.bitwise
+            me.error("unexpected operator #{this.op.value}") unless me.op.value in ['and','or','xor','left','right']
+          else
+            me.error("unexpected operator #{this.op.value}") unless me.op.value in ['and','but','or','xor','nor','in','mod','is','isnt','instanceof','of']
+
+Expression
+==========
+
+`Expression: UnaryExpression (BinOp Expression)? WhenExpression?`
+
+    class Expression inherits from ASTBase
+
+Parent objects may call `transform_when_statement` to grab the rightmost tail conditional and claim it as their own. For example, in `x = y + 1 when y < 2`, normally the `WhenExpression` would associate with `y + 1`, compiling to something like `x = (y < 2) ? y + 1 : void 0;` when in reality we want `if (y < 2) x = y + 1;`. This method allows parent objects, in this case the `AssignmentStatement` to grab child conditionals by recursing down the tree.
+
+      method transform_when_statement()
+        if me.conditional exists but me.conditional.false_expr doesnt exist
+          rv = me.conditional
+          me.conditional = null
+          return rv
+        else if me.right instanceof Expression
+          return me.right.transform_when_statement()
+        else
+          return null
+
+      method parse()
+        me.left  = me.req UnaryExpression
+
+We flag the `left` `UnaryExpression` as not eligable to be an l-value since it is not being assigned to.
+
+        me.left.can_be_lvalue = no
+
+`FunctionExpression`s define a function and we don't want to allow things like:
+```
+function x()
+  return 2
++ 3
+```
+so we don't check for a `BinOp` or right value in these cases.
+
+        return if me.left.base instanceof FunctionExpression
+
+Try to parse this as a binary expression.
+
+        me.op    = me.opt BinOp
+        me.lock()
+
+If it is binary, get the right side.
+
+        me.right = me.req Expression when me.op exists
+
+Don't parse tail conditionals after dedents. This typically is from an `ImplicitMapExpression` followed by an `if` statement (see gh-72).
+
+        me.conditional = me.opt WhenExpression unless me.ts.peek(-1).type is 'DEDENT'
+
+For constant folding, this method returns the numeric value if this is a unary expression with a number constant. Otherwise, it returns null. Only used by the generator for `pause for` statements at this time.
+
+      method number_constant()
+        if me.op exists or me.conditional exists
+          return null
+        else
+          return me.left.number_constant()
+
+UnaryExpression
+===============
+
+`UnaryExpression: (('bitwise' 'not')|'not'|'new'|'-'|'typeof')? ParenExpression|ListExpression|MapExpression|FunctionExpression|ImplicitMapExpression|NumberConstant|StringConstant|RegexConstant|'IDENTIFIER' IndexExpression|FunctionCall|PropertyAccess|ExisentialCheck`
+
+`UnaryExpression` is a container class for the different types of unary expressions supported by the language. It handles the unary prefix operators `not`, `bitwise not`, `new`, `typeof` and unary `-`. This class also handles unary suffix operators such as array/object indexing, funcation calls, property accessors, and existence checks.
+
+    class UnaryExpression inherits from ASTBase
+
+This method is used to check if an expression is an l-value when used in assignments.
+
+      method is_lvalue()
+
+The `can_be_lvalue` flag must be set by the parent node for this check to pass. Things like assignments will set this flag, whereas binary expressions will not.
+
+        return no if me.can_be_lvalue is false
+
+Constants can't be l-values
+
+        return no if me.base.constructor in [NumberConstant, StringConstant, RegexConstant]
+
+We only check if the base is a valid r-value if it has no property accessors. In other words, we allow things like `me.a = 1` but not `me = 1`.
+
+        if me.accessors.length > 0
+          return no if (me.base.value in KEYWORDS) but not (me.base.value in RVALUE_OK)
+        else
+          return no if me.base.value in KEYWORDS
+
+Function call results are not assignable (`f() = 2` for example).
+
+        for accessor in me.accessors
+          if (accessor instanceof FunctionCall)
+            return no
+
+Otherwise, this is a good l-value.
+
+        return yes
+
+      method parse()
+        me.bitwise     = me.opt_val 'bitwise'
+        me.preop       = me.opt_val 'not', 'new', '-', 'typeof'
+        if me.bitwise and me.preop?.value isnt 'not'
+          me.error "expected 'not' after 'bitwise' for a unary expression"
+        me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, ImplicitMapExpression, NumberConstant, StringConstant, RegexConstant, 'IDENTIFIER'
+
+Next we check for suffix operators (accessors), including property access but also function calls, array/object indexing, and exisentials.
+
+If a paren expression occurs immediately after the function block dedent, this would normally be interpreted as a function call on the function expression. While this may be desired it is usually just confusing, so we explicitly avoid it here. By not checking for `FunctionCall`s on the first accessor.
+
+        if (me.base instanceof FunctionExpression)
+          me.accessors = []
+          first = me.opt IndexExpression, PropertyAccess, ExisentialCheck
+          if first exists
+            me.accessors.push(first)
+            me.accessors   = me.accessors.concat(me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck)
+        else
+          me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
+
+        me.lock()
+
+Check for keyword use as an identifier.
+
+        if me.base.value exists and (me.base.value in KEYWORDS) but not (me.base.value in RVALUE_OK)
+          me.error "'#{me.base.value}' is a reserved word and can't be used as a name"
+
+For constant folding, return a numeric value if possible, otherwise `null`. This is used by the `pause for` generator code.
+
+      method number_constant()
+        if me.bitwise exists or me.preop exists
+          return null
+        else if me.base instanceof NumberConstant
+          n = Number(me.base.token.text)
+          return null when isNaN(n) otherwise n
+        else
+          return null
+
+ExisentialCheck
+===============
+
+`ExisentialCheck: 'exists'|('doesnt' 'exist')|'?'
+
+This operator indicates a variable's existence (non-nullness and/or variable is defined) should be checked.
+
+    class ExisentialCheck inherits from ASTBase
+      method parse()
+        op = me.req_val 'exists', '?', 'doesnt'
+        me.lock()
+        if op.value is 'doesnt'
+          me.req_val 'exist'
+          me.invert = yes
+        else
+          me.invert = no
+
+WhenExpression
+==============
+
+`WhenExpression: 'when'|'if'|'unless'|('except' 'when') Expression ('otherwise'|'else' Expression)?`
+
+This node can either be used as a ternary operator (`2 if a otherwise 3`) or a tail conditional (`x = 5 if a`). `Expression` objects use the `transform_when_statement` method to pull these nodes to the top level of a statement (see the definition of `transform_when_statement` above).
+
+    class WhenExpression inherits from ASTBase
+      method parse()
+        me.specifier  = me.req_val 'when', 'except', 'if', 'unless'
+        me.lock()
+        me.req_val('when') if me.specifier.value is 'except'
+        me.condition  = me.req(Expression)
+        me.false_expr = me.req(Expression) if me.opt_val 'otherwise', 'else'
+
+NumberConstant
+==============
+
+`NumberConstant: NUMBER`
+
+A numeric token constant. Can be anything the lexer supports, including scientific notation, integers, floating point, or hex.
+
+    class NumberConstant inherits from ASTBase
+      method parse()
+        me.token = me.req 'NUMBER'
+
+StringConstant
+==============
+
+`StringConstant: STRING`
+
+A string token constant. Can be anything the lexer supports, including single or double-quoted strings. Note that the `sugar` module handles double-quoted strings with embedded code by turning it into multiple `STRING` tokens, so we don't have to do anything special here.
+
+    class StringConstant inherits from ASTBase
+      method parse()
+        me.token = me.req 'STRING'
+
+RegexConstant
+==============
+
+`RegexConstant: REGEX`
+
+A regular expression token constant. Can be anything the lexer supports.
+
+    class RegexConstant inherits from ASTBase
+      method parse()
+        me.token = me.req 'REGEX'
+
+IndexExpression
+==============
+
+`IndexExpression: '?'? '[' Expression ']'`
+
+Array or object property access. This can be prepended by an exisential check, meaning only attempt access if the underlying object is defined. For example, `a?[2]` won't fail if `a` is `null` or not declared, instead it returns `undefined`.
+
+    class IndexExpression inherits from ASTBase
+      method parse()
+        op = me.req_val '[', '?'
+        me.exisential = (op.value is '?')
+        me.req_val('[') if me.exisential
+        me.lock()
+        me.expr = me.req Expression
+        me.req_val ']'
+
+PropertyAccess
+==============
+
+`PropertyAccess: '?'? '.' IDENTIFIER`
+
+Object property access. This can be prepended by an exisential check, meaning only attempt access if the underlying object is defined. For example, `a?.prop` won't fail if `a` is `null` or not declared, instead it returns `undefined`.
+
+    class PropertyAccess inherits from ASTBase
+      method parse()
+        op = me.req_val '.', '?'
+        me.exisential = (op.value is '?')
+        me.req_val('.') if me.exisential
+        me.lock()
+        me.expr = me.req 'IDENTIFIER'
+
+FunctionCall
+==============
+
+`FunctionCall: '?'? '(' FunctionCallArgument* ')'`
+
+Indicates a function call on the preceeding object. This can be prepended by an exisential check, meaning only attempt access if the underlying object is defined. For example, `a?()` won't fail if `a` is `null` or not declared, instead it returns `undefined`. It will fail if `a` is not a function, though this can't be determined at compile time.
+
+    class FunctionCall inherits from ASTBase
+      method parse()
+        op = me.req_val '(', '?'
+        me.exisential = (op.value is '?')
+        me.req_val('(') if me.exisential
+        me.lock()
+        me.arguments = me.opt_multi FunctionCallArgument
+        me.req_val ')'
+
+FunctionCallArgument
+====================
+
+`FunctionCallArgument: (Expression ',')* Expression (?=')')`
+
+A single argument to a function call, followed by a comma or close-paren. If it is followed by a close-paren, that token will not be captured.
+
+    class FunctionCallArgument inherits from ASTBase
+      method parse()
+        me.val = me.req Expression
+        me.lock()
+        if me.req_val(',',')').value is ')'
+          me.ts.prev()
+
+ParenExpression
+==============
+
+`ParenExpression: '(' Expression ')'`
+
+An expression enclosed by parentheses, like `(a + b)`.
+
+    class ParenExpression inherits from ASTBase
+      method parse()
+        me.req_val '('
+        me.lock()
+        me.expr = me.req Expression
+        me.req_val ')'
+
+ListExpression
+==============
+
+`ListExpression: '[' ObjectComprehension|ListComprehension|((Expression ',')* Expression)? ']'`
+
+An array definition, such as `[1,2,3]`. Multiline list definitions are handled by the `sugar` module. This also supports comprehensions inside the definition.
+
+    class ListExpression inherits from ASTBase
+      method parse()
+        me.req_val '['
+        me.lock()
+        me.comprehension = me.opt ObjectComprehension, ListComprehension
+        if me.comprehension doesnt exist
+          me.items = []
+          item = me.opt Expression
+          while item
+            me.items.push(item)
+            if me.opt_val(',')
+              item = me.opt Expression
+            else
+              item = null
+        me.req_val ']'
+
+ListComprehension
+=================
+
+`ListComprehension: Expression 'for' Variable 'in' Expression`
+
+List comprehensions allow list generation by applying an expression to each member in another list. For example `[a+1 for a in [1,2,3]]` would yield `[2,3,4]`.
+
+    class ListComprehension inherits from ASTBase
+      method parse()
+        me.iter_expr = me.req Expression
+        me.req_val 'for'
+        me.lock()
+        me.iterant = me.req Variable
+        me.req_val 'in'
+        me.iterable = me.req Expression
+
+ObjectComprehension
+=================
+
+`ObjectComprehension: Expression 'for' ('property' Variable)|('property' 'value' Variable)|('property' Variable 'with' 'value' Variable) 'in' Expression`
+
+Object comprehensions allow list generation by applying an expression to each member in an object. It comes in three forms:
+
+`[x for property x of obj]` - returns all the keys (properties) of `obj` as a list.
+`[x for property value x of obj]` - returns all the values (property values) of `obj` as a list.
+`[[w,x for property w with value x of obj]` - returns all the keys (properties) and values (property values) of `obj` as a list of list tuples.
+
+    class ObjectComprehension inherits from ASTBase
+      method parse()
+        me.iter_expr = me.req Expression
+        me.req_val 'for'
+        me.req_val 'property'
+        me.lock()
+        if me.opt_val 'value'
+          me.value_iterant = me.req Variable
+        else
+          me.property_iterant = me.req Variable
+          if me.opt_val 'with'
+            me.req_val 'value'
+            me.value_iterant = me.req Variable
+        me.req_val 'in'
+        me.iterable = me.req Expression
+
+MapExpression
+=============
+
+`MapExpression: '{' MapItem* '}'`
+
+Defines an object with a list of key value pairs. This is a JavaScript-style definition. Multiline definitions are supported to some extent by the `sugar` module which removes the newlines and indents:
+
+`x = {a:1,b:2,c:{d:1}}`
+
+    class MapExpression inherits from ASTBase
+      method parse()
+        me.req_val '{'
+        me.lock()
+        me.items = me.opt_multi MapItem
+        me.req_val '}'
+
+ImplicitMapExpression
+=====================
+
+`ImplicitMapExpression: NEWLINE INDENT ImplicitMapItem* DEDENT`
+
+Defines an object with a list of key value pairs. This is a CoffeeScript-style definition:
+```
+x =
+  a: 1
+  b: 2
+```
+
+    class ImplicitMapExpression inherits from MapExpression
+      method parse()
+        me.req 'NEWLINE'
+        me.req 'INDENT'
+        me.lock()
+        me.items = me.req_multi ImplicitMapItem
+        me.req 'DEDENT'
+
+MapItem
+=======
+
+`MapItem: IDENTIFIER|STRING|NUMBER ':' Expression ','|(?='}')`
+
+A single definition in a `MapExpression` of a property/value pair. It also tries to consume a comma if one is available and fails if it is not followed by a comma or `}`.
+
+    class MapItem inherits from ASTBase
+      method parse()
+        me.key = me.req 'IDENTIFIER', 'STRING', 'NUMBER'
+        me.req_val ':'
+        me.lock()
+        me.val = me.req Expression
+        me.end_token = me.req_val ',', '}'
+        if me.end_token.value is '}'
+          me.ts.prev()
+
+ImplicitMapItem
+=======
+
+`ImplicitMapItem: IDENTIFIER|STRING|NUMBER ':' Expression ','|(?='}')`
+
+A single definition in a `ImplicitMapExpression` of a property/value pair.
+
+    class ImplicitMapItem inherits from MapItem
+      method parse()
+        me.key = me.req 'IDENTIFIER', 'STRING', 'NUMBER'
+        me.req_val ':'
+        me.lock()
+        me.val = me.req Expression
+
+It requires either a `NEWLINE` or comma unless the value expression is another `ImplicitMapExpression` or a function definition, since these consume the newline for us.
+
+        unless me.val.left?.base instanceof ImplicitMapExpression or me.val.left?.base instanceof FunctionExpression
+          me.end_token = me.opt_multi 'NEWLINE'
+          me.end_token = me.req_val ',' when me.end_token.length is 0
+
+FunctionExpression
+==================
+
+`FunctionExpression: 'function'|'method'|'task' Variable? '(' FunctionDefArgument* ')' ('of' UnaryExpression)? Block`
+
+Defines a function, method, or task. The `of` suffix allows us to late-bind this function to another class.
+
+    class FunctionExpression inherits from ASTBase
+      method parse()
+        me.specifier = me.req_val 'function', 'method', 'task'
+        me.lock()
+        me.name = me.opt Variable
+        me.req_val '('
+        me.arguments = me.opt_multi FunctionDefArgument
+        me.req_val ')'
+        me.late_bind = me.opt_val 'of'
+        if me.late_bind
+          me.lock()
+          me.bind_to = me.req UnaryExpression
+        me.block = me.req Block
+
+FunctionDefArgument
+===================
+
+`FunctionDefArgument: Variable ('=' Expression)? ','|(?=')')`
+
+    class FunctionDefArgument inherits from ASTBase
+      method parse()
+        me.name = me.req Variable
+        me.lock()
+        if me.opt_val '='
+          me.default = me.req Expression
+
+Require either a comma or ')', but unsee a ')' since the `FunctionExpression` needs it.
+
+        if me.req_val(',',')').value is ')'
+          me.ts.prev()
+
+ClassDefinition
+===============
+
+`ClassDefinition: class Variable ('inherits' 'from' Variable)? Block`
+
+Defines a new class with an optional parent class. Methods and members go inside the block.
+
+    class ClassDefinition inherits from ASTBase
+      method parse()
+        me.req_val 'class'
+        me.lock()
+        me.name = me.opt 'IDENTIFIER'
+        if me.opt_val('inherits')
+          me.req_val 'from'
+          me.parent = me.req Variable
+        me.block = me.req Block
+
+TryCatch
+========
+
+`TryCatch: 'try' Block ('catch' Variable? Block)?`
+
+Defines a `try` and `catch` block for trapping exceptions and handling them. `finally` is not supported at this time. The `catch` block and error variable are optional.
+
+    class TryCatch inherits from ASTBase
+      method parse()
+        me.req_val 'try'
+        me.lock()
+        me.try_block = me.req Block
+        if me.opt_val('catch')
+          me.lock()
+          me.identifier = me.opt Variable
+          me.catch_block = me.req Block
+
+SuperStatement
+==============
+
+`SuperStatement: 'super' FunctionCall?`
+
+Within a method, calls the parent class's version of that method. Unlike most function calls, the `()`s are optional even when there are no arguments.
+
+    class SuperStatement inherits from ASTBase
+      method parse()
+        me.req_val 'super'
+        me.lock()
+        me.accessor = me.opt FunctionCall
+
+Exports
+=======
+
+A list of nodes to export. For now, this is the cleanest way to do this in Kal. Perhaps an `export` keyword in the future will make this neater.
+
+    Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement,
+             ElseStatement, WhileStatement, ForStatement, AssignmentStatement,
+             ExpressionStatement, LoopControlStatement, BlankStatement, BinOp, Expression,
+             UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant,
+             RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument,
+             FunctionCall, ParenExpression, ListExpression, ListComprehension,
+             ObjectComprehension, MapItem, MapExpression, ImplicitMapItem,
+             ImplicitMapExpression, FunctionDefArgument, FunctionExpression,
+             ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent,
+             SimpleWaitForStatement, WaitForStatement, PauseForStatement,
+             MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable]
+
+    exports.Grammar = {}
+    for v in Nodes
+      exports.Grammar[v.name] = v
+    exports.GrammarRoot = exports.Grammar.File
