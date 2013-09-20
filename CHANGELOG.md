@@ -1,5 +1,8 @@
 #Change Log
 
+### [0.5.3](https://github.com/rzimmerman/kal/compare/r0.5.2...r0.5.3)
+* Bug fixes to Literat Kal support
+
 ### [0.5.2](https://github.com/rzimmerman/kal/compare/r0.5.1...r0.5.2)
 * Added Literate Kal support
 
