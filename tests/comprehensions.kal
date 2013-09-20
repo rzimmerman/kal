@@ -25,4 +25,7 @@ describe 'List Comprehensions', ->
     z2.should.eql([1,2,3])
     z3 = ["#{k}: #{v}" for property k with value v in y]
     z3.should.eql(['a: 1','b: 2','c: 3'])
-
+  it 'should support the `arguments` object', -> #gh-114
+    function a()
+      return [x+1 for x in arguments]
+    a(1,2,3).should.eql [2,3,4]
