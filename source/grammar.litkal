@@ -992,7 +992,7 @@ Defines a new class with an optional parent class. Methods and members go inside
       method parse()
         me.req_val 'class'
         me.lock()
-        me.name = me.opt 'IDENTIFIER'
+        me.name = me.req Variable
         if me.opt_val('inherits')
           me.req_val 'from'
           me.parent = me.req Variable
