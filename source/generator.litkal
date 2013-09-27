@@ -1044,6 +1044,30 @@ Our callback function, which we pass up to the parent block.
         me.parent_block.closeout_callback = me.original_callback
       return rv
 
+### FromToAs ###
+
+    method js() of Grammar.FromToAsStatement
+      
+      me.block.in_loop = yes
+      me.block.in_conditional = me.in_conditional
+      
+      num = me.from.number_constant()
+      from_value = num when num exists otherwise me.from.js()
+      
+      num = me.to.number_constant()
+      to_value = num when num exists otherwise me.to.js()
+
+      as_value = me.as.js()
+
+      indexer = "k$index"
+      
+      rv = "for(var #{indexer} = #{from_value}, #{as_value}; #{indexer} != #{to_value}; #{indexer}++){\n"
+      rv += "#{as_value} = #{indexer};\n"
+      rv += indent(me.block.js() + me.block.js_closeout())
+      rv += "}\n"
+
+      return rv
+
 ### WhileStatement ###
 
 `WhileStatement`s are context dependent. When the `js` method is called, we actually don't know if there will be asynchronous code inside the loop block. We first try generating JavaScript assuming this is pure synchronous code using `js`. If we detect asynchronous calls after code generation, we throw away those results and generate asynchronous code using `js_callbacks`.
