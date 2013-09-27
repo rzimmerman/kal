@@ -1,0 +1,6 @@
+describe 'From To As Statement', ->
+  it 'should iterate over the given from/to values', ->
+    count = 0
+    from 0 to 4 as index
+    	index.should.equal count
+    	count += 1
