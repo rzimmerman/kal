@@ -3,7 +3,7 @@
   "description":  "Simple and useful",
   "keywords":     ["javascript", "language", "kal", "coffeescript", "compiler"],
   "author":       "Rob Zimmerman",
-  "version":      "0.5.3",
+  "version":      "0.5.4",
   "licenses":     [{
     "type":       "MIT",
     "url":        "https://raw.github.com/rzimmerman/kal/master/LICENSE"

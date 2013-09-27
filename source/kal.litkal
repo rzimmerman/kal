@@ -36,7 +36,7 @@ The generator stage turns the syntax tree into JavaScript by traversing the tree
 
 This file maintains the version reported by `kal -v`. Unfortunately, this is not the same as the version listed in `package.json`, which is used to set the version reported by npm. Both this line and the `package.json` file need to be updated before an npm release.
 
-    exports.VERSION = '0.5.3'
+    exports.VERSION = '0.5.4'
 
 Compilation
 ===========

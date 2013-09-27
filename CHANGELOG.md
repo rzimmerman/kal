@@ -1,7 +1,12 @@
 #Change Log
 
+### [0.5.4](https://github.com/rzimmerman/kal/compare/r0.5.4...r0.5.3)
+* Fixed support for using the `arguments` structure in list comprehensions.
+* Fixed a bug where Kal would allow compilation of class definitions with bad class names
+* Converted source to Literate Kal.
+
 ### [0.5.3](https://github.com/rzimmerman/kal/compare/r0.5.2...r0.5.3)
-* Bug fixes to Literat Kal support
+* Bug fixes to Literate Kal support
 
 ### [0.5.2](https://github.com/rzimmerman/kal/compare/r0.5.1...r0.5.2)
 * Added Literate Kal support
