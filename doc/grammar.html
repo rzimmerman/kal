@@ -1,0 +1,2640 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>grammar.litkal</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="ast.html">
+                ast.litkal
+              </a>
+            
+              
+              <a class="source" href="command.html">
+                command.litkal
+              </a>
+            
+              
+              <a class="source" href="generator.html">
+                generator.litkal
+              </a>
+            
+              
+              <a class="source" href="grammar.html">
+                grammar.litkal
+              </a>
+            
+              
+              <a class="source" href="interactive.html">
+                interactive.litkal
+              </a>
+            
+              
+              <a class="source" href="kal.html">
+                kal.litkal
+              </a>
+            
+              
+              <a class="source" href="lexer.html">
+                lexer.litkal
+              </a>
+            
+              
+              <a class="source" href="literate.html">
+                literate.litkal
+              </a>
+            
+              
+              <a class="source" href="parser.html">
+                parser.litkal
+              </a>
+            
+              
+              <a class="source" href="sugar.html">
+                sugar.litkal
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>grammar.litkal</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h2>Kal Grammar</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>This file defines the parser grammar in the form of abstract syntax tree classes that inherit from <code>ASTBase</code>. Each class implements a <code>parse</code> method which, given the token stream, attempts to parse the stream as a particular language construct.</p>
+<p>The end result of a call to <code>parse</code> is a tree of objects representing a language construct or an error if the particular class could not parse the token stream.</p>
+<p>The <code>ast</code> module defines the base class for these grammar definitions along with utility methods to recursively create subtrees using these classes.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>ast = <span class="built_in">require</span> <span class="string">'./ast'</span>
+ASTBase = ast.ASTBase</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h1>Reserved Words</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Reserved words are used to determine whether assignments are valid (for example, you cannot assign a value to <code>if</code>). They are also used by other files for REPL autocompletion and by the <code>sugar</code> module to determine where to insert implicit parentheses.</p>
+<p><strong>Words that are reserved in Kal and cannot be used for identifiers</strong></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>KAL_RESERVED = [<span class="string">'true'</span>,<span class="string">'false'</span>,<span class="string">'yes'</span>,<span class="string">'no'</span>,<span class="string">'on'</span>,<span class="string">'off'</span>,<span class="string">'function'</span>,<span class="string">'method'</span>,
+               <span class="string">'task'</span>,<span class="string">'return'</span>,<span class="string">'if'</span>,<span class="string">'else'</span>,<span class="string">'unless'</span>,<span class="string">'except'</span>,<span class="string">'when'</span>,
+               <span class="string">'otherwise'</span>,<span class="string">'and'</span>,<span class="string">'or'</span>,<span class="string">'but'</span>,<span class="string">'xor'</span>,<span class="string">'not'</span>,<span class="string">'nor'</span>,<span class="string">'bitwise'</span>,
+               <span class="string">'mod'</span>,<span class="string">'new'</span>,<span class="string">'while'</span>,<span class="string">'until'</span>,<span class="string">'for'</span>,<span class="string">'class'</span>,<span class="string">'exists'</span>,<span class="string">'doesnt'</span>,
+               <span class="string">'exist'</span>,<span class="string">'is'</span>,<span class="string">'isnt'</span>,<span class="string">'inherits'</span>,<span class="string">'from'</span>,<span class="string">'nothing'</span>,<span class="string">'empty'</span>,<span class="string">'null'</span>,
+               <span class="string">'break'</span>,<span class="string">'continue'</span>,<span class="string">'try'</span>,<span class="string">'catch'</span>,<span class="string">'throw'</span>,<span class="string">'raise'</span>,<span class="string">'fail'</span>,
+               <span class="string">'with'</span>,<span class="string">'arguments'</span>,<span class="string">'of'</span>,<span class="string">'in'</span>,<span class="string">'instanceof'</span>,<span class="string">'property'</span>,<span class="string">'value'</span>,
+               <span class="string">'parallel'</span>,<span class="string">'series'</span>,<span class="string">'pass'</span>,<span class="string">'pause'</span>,<span class="string">'until'</span>,<span class="string">'me'</span>,<span class="string">'this'</span>,<span class="string">'typeof'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p><strong>Words that are reserved in Kal but can be used as r-values</strong></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>KAL_RVALUE_OK = [<span class="string">'true'</span>,<span class="string">'false'</span>,<span class="string">'yes'</span>,<span class="string">'no'</span>,<span class="string">'on'</span>,<span class="string">'off'</span>,<span class="string">'me'</span>,<span class="string">'this'</span>,<span class="string">'super'</span>,
+                 <span class="string">'arguments'</span>,<span class="string">'none'</span>,<span class="string">'nothing'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p><strong>JavaScript reserved words</strong></p>
+<p>Note <code>label</code> is not included because it can technically be used as an identifier (and it&#39;s more useful as a variable name than for its intended purpose). <code>undefined</code>, while technically assignable, is included here to avoid confusion and terribleness.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>JS_RESERVED =  [<span class="string">'break'</span>,<span class="string">'case'</span>,<span class="string">'catch'</span>,<span class="string">'continue'</span>,<span class="string">'debugger'</span>,<span class="string">'default'</span>,
+                <span class="string">'delete'</span>,<span class="string">'do'</span>,<span class="string">'else'</span>,<span class="string">'finally'</span>,<span class="string">'for'</span>,<span class="string">'function'</span>,<span class="string">'if'</span>,<span class="string">'in'</span>,
+                <span class="string">'instanceof'</span>,<span class="string">'new'</span>,<span class="string">'return'</span>,<span class="string">'switch'</span>,<span class="string">'this'</span>,<span class="string">'throw'</span>,<span class="string">'try'</span>,
+                <span class="string">'typeof'</span>,<span class="string">'var'</span>,<span class="string">'void'</span>,<span class="string">'while'</span>,<span class="string">'with'</span>,<span class="string">'class'</span>,<span class="string">'enum'</span>,<span class="string">'export'</span>,
+                <span class="string">'extends'</span>,<span class="string">'import'</span>,<span class="string">'super'</span>,<span class="string">'implements'</span>,<span class="string">'interface'</span>,<span class="string">'let'</span>,
+                <span class="string">'package'</span>,<span class="string">'private'</span>,<span class="string">'protected'</span>,<span class="string">'public'</span>,<span class="string">'static'</span>,<span class="string">'yield'</span>
+                <span class="string">'null'</span>,<span class="string">'true'</span>,<span class="string">'false'</span>,<span class="string">'undefined'</span>,<span class="string">'const'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>JavaScript words that are reserved but usable as rvalues. In the future <code>super</code> may get added to this list depending on the ES6 spec.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>JS_RVALUE_OK =  [<span class="string">'this'</span>,<span class="string">'null'</span>,<span class="string">'true'</span>,<span class="string">'false'</span>,<span class="string">'undefined'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>JavaScript keywords are considered reserved in Kal. It&#39;s OK if these lists have some duplicates.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>KEYWORDS  = KAL_RESERVED.concat  JS_RESERVED
+RVALUE_OK = KAL_RVALUE_OK.concat JS_RVALUE_OK</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Other modules use these values as well, such as the <code>sugar</code> module which checks for reserved words when generating implicit parentheses.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="reserved">export</span>s.KEYWORDS  = KEYWORDS
+<span class="reserved">export</span>s.RVALUE_OK = RVALUE_OK</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h1>Block</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p><code>Block : NEWLINE INDENT Statment* DEDENT</code></p>
+<p>A code block (<code>Block</code>) is defined as a newline + indent followed by zero or more <code>Statment</code>s, then a dedent. In practice it is impossible to have an indent followed immediately by a dedent, so technically this class requires one or more <code>Statment</code>s.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">Block</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req <span class="string">'NEWLINE'</span>
+    me.lock()
+    me.req <span class="string">'INDENT'</span>
+    me.lock()
+    me.statements = []
+    <span class="keyword">while</span> <span class="keyword">not</span> me.opt(<span class="string">'DEDENT'</span>)
+      me.statements.push me.req Statement
+      me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <h1>File</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p><code>File: Statement* EOF</code></p>
+<p>The <code>File</code> node shares some code generation with <code>Block</code>, so it is a subclass of <code>Block</code>. It is defined as zero or more statements followed by the end-of-file token.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">File</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">Block</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.lock()
+    me.statements = []
+    <span class="keyword">while</span> <span class="keyword">not</span> me.opt(<span class="string">'EOF'</span>)
+      me.statements.push me.req Statement
+      me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <h1>BlockWithoutIndent</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>`BlockWithoutIndent: NEWLINE Statement* (?=DEDENT|EOF)</p>
+<p><code>BlockWithoutIndent</code> is the same as a block (it shares generator code) but it does not require an indent. This is used for <code>wait for</code> statements to separate code after asynchronous calls into its own block.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">BlockWithoutIndent</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">Block</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req <span class="string">'NEWLINE'</span>
+    me.lock()
+    me.statements = []
+    <span class="keyword">while</span> <span class="keyword">not</span> me.opt(<span class="string">'DEDENT'</span>, <span class="string">'EOF'</span>)
+      me.statements.push me.req Statement
+      me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p> Unsee the dedent (don&#39;t consume it) since it belongs to our parent block.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.ts.prev()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <h1>Statement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p><code>Statement: (BlankStatement|TryCatch|ClassDefinition|ReturnStatement|WaitForStatement|SimpleWaitForStatement|PauseForStatement|IfStatement|WhileStatement|ForStatement|ThrowStatement|SuperStatement|RunInParallelBlock|LoopControlStatement|AssignmentStatement|ExpressionStatement)</code></p>
+<p>The <code>Statement</code> node is a generic wrapper for the many types of statment/control constructs that are valid inside a block. Keeping these in one class helps keep the code maintainable when we add new node types.</p>
+<p>The order in the <code>me.req</code> call is important here for two reasons. One, we want to keep the compiler fast by keeping commonly used constructs first if possible. This avoids unnecessary parsing steps. More importantly, things like <code>ExpressionStatement</code> need to go last because some <code>AssignmentStatement</code>s and other constructs can parse as valid <code>ExpressionStatement</code>s.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">Statement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, AssignmentStatement, ExpressionStatement</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <h1>LoopControlStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p><code>LoopControlStatement: (&#39;break&#39;|&#39;continue&#39;)</code></p>
+<p>This handles the <code>break</code> and <code>continue</code> keywords.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">LoopControlStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.control = me.req_val <span class="string">'break'</span>, <span class="string">'continue'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <h1>ThrowStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p><code>ThrowStatement: (&#39;throw&#39;|&#39;raise&#39;|(&#39;fail&#39; &#39;with&#39;)) Expression WhenExpression?</code></p>
+<p>This handles <code>throw</code> and its synonyms followed by an expression and an optional tail conditional.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ThrowStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    specifier = me.req_val <span class="string">'throw'</span>, <span class="string">'raise'</span>, <span class="string">'fail'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>At this point we lock because it is definitely a <code>throw</code> statement. Failure to parse the expression is a syntax error.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.lock()
+    me.req_val <span class="string">'with'</span> <span class="keyword">if</span> specifier.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'fail'</span>
+    me.expr = me.req Expression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>We also need to check for tail conditionals (<code>throw &quot;help&quot; if error</code>)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.conditional = me.expr.transform_when_statement()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <h1>ReturnStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p><code>ReturnStatement: &#39;return&#39; (Expression [&#39;,&#39; Expression]*) WhenExpression?</code></p>
+<p>This handles simple <code>return</code>s, <code>return value</code>s, and returns with multiple return values.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ReturnStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'return'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>Definitely a return statement at this point.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>Check for a conditional here in case there is no return value (for example <code>return if a is 2</code>)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.conditional = me.opt WhenExpression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>Returns can have multiple return values, so we keep grabbing expressions followed by commas.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.exprs = []
+    <span class="keyword">except</span> <span class="keyword">when</span> me.conditional <span class="keyword">exists</span>
+      expr = me.opt Expression
+      <span class="keyword">if</span> expr <span class="keyword">exists</span>
+        me.exprs.push expr
+        <span class="keyword">while</span> me.opt_val <span class="string">','</span>
+          expr = me.req Expression
+          me.exprs.push expr</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>Check again for a conditional after the expression (<code>return a if a isnt 2</code>)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        me.conditional = expr.transform_when_statement() <span class="keyword">if</span> expr <span class="keyword">exists</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <h1>IfStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p><code>IfStatement: (&#39;if&#39;|&#39;when&#39;|&#39;unless&#39;|(&#39;except&#39; &#39;when&#39;) Expression Block ElseStatement*</code></p>
+<p>Parses <code>if</code> statments and any attached <code>else</code>s or <code>else if</code>s (including synonyms).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">IfStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.condition = me.req_val <span class="string">'if'</span>, <span class="string">'unless'</span>, <span class="string">'when'</span>, <span class="string">'except'</span>
+    me.lock()
+    me.req_val(<span class="string">'when'</span>) <span class="keyword">if</span> me.condition.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'except'</span>
+    me.conditional = me.req Expression
+    me.block = me.req Block, Statement</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>If statements can have multiple <code>else if</code>s, but nothing after the final <code>else</code> block.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.elses = []
+    keep_going = <span class="literal">yes</span>
+    got_raw_else = <span class="literal">no</span>
+    <span class="keyword">while</span> keep_going
+      new_else = me.opt ElseStatement
+      <span class="keyword">if</span> new_else <span class="keyword">doesnt</span> <span class="keyword">exist</span>
+        keep_going = <span class="literal">no</span>
+      <span class="keyword">else</span>
+        me.<span class="keyword">else</span>s.push new_else
+        <span class="keyword">if</span> new_else.conditional <span class="keyword">doesnt</span> <span class="keyword">exist</span>
+          keep_going = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <h1>ElseStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p><code>ElseStatement: (&#39;else&#39;|&#39;otherwise&#39;) ((&#39;if&#39;|&#39;when&#39;) Expression) Block</code></p>
+<p>This covers <code>else</code> and <code>else if</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ElseStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'else'</span>, <span class="string">'otherwise'</span>
+    me.lock()
+    <span class="keyword">if</span> me.opt_val <span class="string">'if'</span>, <span class="string">'when'</span>
+      me.conditional = me.req Expression
+    me.block = me.req Block, Statement</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <h1>WhileStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p><code>WhileStatement: (&#39;while&#39;|&#39;until&#39;) Expression Block</code></p>
+<p>While loops continue executing until the expression is true (or false in the case of <code>until</code> loops).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">WhileStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.specifier = me.req_val <span class="string">'while'</span>, <span class="string">'until'</span>
+    me.lock()
+    me.expr = me.req Expression
+    me.block = me.req Block</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <h1>ForStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p><code>ForStatement: &#39;for&#39; (&#39;parallel&#39;|&#39;series&#39;)? Variable (&#39;in&#39;|&#39;of&#39;) Expression Block</code></p>
+<p>For loops can iterate over object properties (<code>of</code>) or over an array (<code>in</code>). The <code>parallel</code> and <code>series</code> specifiers only apply if there are asynchronous constructs within the loop (the default is <code>series</code>).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ForStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'for'</span>
+    me.lock()
+    me.execution_style = me.opt_val <span class="string">'parallel'</span>, <span class="string">'series'</span>
+    me.iterant = me.req Variable
+    me.type = me.req_val <span class="string">'in'</span>, <span class="string">'of'</span>
+    me.iterable = me.req Expression
+    me.loop_block = me.req Block</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <h1>AssignmentStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p><code>AssignmentStatement: UnaryExpression (&#39;+&#39;|&#39;-&#39;|&#39;*&#39;|&#39;/&#39;)? &#39;=&#39; Expression WhenExpression?</code></p>
+<p>Note that the <code>UnaryExpression</code> must be a valid l-value. </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">AssignmentStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.lvalue   = me.req UnaryExpression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>We mark this <code>UnaryExpression</code> as a possible l-value for later checks.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.lvalue.can_be_lvalue = <span class="literal">yes</span>
+    me.assignOp = me.req <span class="string">'LITERAL'</span>
+    me.error(<span class="string">"invalid operator <span class="subst">#{me.assignOp.<span class="keyword">value</span>}</span>"</span>) <span class="keyword">except</span> <span class="keyword">when</span> me.assignOp.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">'+'</span>,<span class="string">'-'</span>,<span class="string">'*'</span>,<span class="string">'/'</span>,<span class="string">'='</span>]
+    <span class="keyword">if</span> me.assignOp.<span class="keyword">value</span> <span class="keyword">isnt</span> <span class="string">'='</span>
+      me.req_val <span class="string">'='</span>
+    me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <p>Now check that <code>lvalue</code> is indeed a valid l-value.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.error(<span class="string">"invalid assignment - the left side must be assignable"</span>) <span class="keyword">unless</span> me.lvalue.is_lvalue()
+    me.rvalue   = me.req Expression
+    me.conditional = me.rvalue.transform_when_statement()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <h1>WaitForStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <p><code>WaitForStatement: &#39;safe&#39;? &#39;wait&#39; &#39;for&#39; MultipleReturnValues &#39;from&#39; Expression WhenExpression? BlockWithoutIndent</code></p>
+<p>The <code>wait for</code> statement pauses execution asynchronously and waits for the <code>Expression</code> to call back. Note that the <code>Expression</code> must be a function call. A <code>WaitForStatement</code> can optionally be marked <code>safe</code> indicating the expression does not use an error callback argument (like node&#39;s <code>http.get</code>)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">WaitForStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.no_errors = me.opt_val <span class="string">'safe'</span>
+    me.req_val <span class="string">'wait'</span>
+    me.req_val <span class="string">'for'</span>
+    me.lvalue   = me.req MultipleReturnValues</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p>Mark the return values as possible l-values.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.lvalue.can_be_lvalue = <span class="literal">yes</span>
+    me.req_val <span class="string">'from'</span>
+    me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-47">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-47">&#182;</a>
+              </div>
+              <p>Verify all return values are valid l-values.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.error(<span class="string">"invalid assignment - the left side must be assignable"</span>) <span class="keyword">unless</span> me.lvalue.is_lvalue()
+    me.rvalue = me.req UnaryExpression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-48">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-48">&#182;</a>
+              </div>
+              <p>Check for tail conditionals</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.conditional = me.opt WhenExpression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-49">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-49">&#182;</a>
+              </div>
+              <p>Verify that <code>rvalue</code> is a function call.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - <span class="number">1</span>]
+    me.error(<span class="string">"expected a function call after 'from'"</span>) <span class="keyword">unless</span> last_accessor <span class="keyword">instanceof</span> FunctionCall
+    me.block = me.req BlockWithoutIndent</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-50">&#182;</a>
+              </div>
+              <h1>SimpleWaitForStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-51">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-51">&#182;</a>
+              </div>
+              <p><code>SimpleWaitForStatement: &#39;safe&#39;? &#39;wait&#39; &#39;for&#39; Expression WhenExpression? BlockWithoutIndent</code></p>
+<p>The same as a <code>WaitForStatement</code> but without any return values.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">SimpleWaitForStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">WaitForStatement</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.no_errors = me.opt_val <span class="string">'safe'</span>
+    me.req_val <span class="string">'wait'</span>
+    me.lock()
+    me.req_val <span class="string">'for'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-52">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-52">&#182;</a>
+              </div>
+              <p>No l-value for this type of <code>wait for</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.lvalue   = <span class="literal">null</span>
+    me.rvalue = me.req UnaryExpression
+    me.conditional = me.opt WhenExpression
+    last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - <span class="number">1</span>]
+    me.error(<span class="string">"expected a function call after 'for'"</span>) <span class="keyword">unless</span> last_accessor <span class="keyword">instanceof</span> FunctionCall
+    me.block = me.req BlockWithoutIndent</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-53">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-53">&#182;</a>
+              </div>
+              <h1>WaitForExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-54">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-54">&#182;</a>
+              </div>
+              <p>`WaitForExpression: ‘safe’? (‘wait’ ‘for’)? MultipleReturnValues? ‘from’ UnaryExpression WhenExpression?</p>
+<p>This is similar to a WaitForStatement except that it is called as part of a <code>RunInParallelBlock</code> and does not contain a <code>BlockWithoutIndent</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">WaitForExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.no_errors = me.opt_val <span class="string">'safe'</span>
+    me.lock() <span class="keyword">if</span> me.no_errors
+    explicit = me.opt_val <span class="string">'wait'</span>
+    me.lock() <span class="keyword">if</span> me.explicit
+    me.req_val <span class="string">'for'</span> <span class="keyword">if</span> explicit
+    me.lvalue = me.opt MultipleReturnValues
+    me.req_val <span class="string">'from'</span> <span class="keyword">if</span> me.lvalue <span class="keyword">exists</span>
+    me.rvalue = me.req UnaryExpression
+    me.lock()
+    me.conditional = me.opt WhenExpression
+    last_accessor = me.rvalue.accessors[me.rvalue.accessors.length - <span class="number">1</span>]
+    me.error(<span class="string">"expected a function call after 'for'"</span>) <span class="keyword">unless</span> last_accessor <span class="keyword">instanceof</span> FunctionCall
+    me.req <span class="string">'NEWLINE'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-55">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-55">&#182;</a>
+              </div>
+              <h1>PauseForStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-56">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-56">&#182;</a>
+              </div>
+              <p><code>PauseForStatement: &#39;pause&#39; &#39;for&#39; Expression (&#39;second&#39;|&#39;seconds&#39;)? WhenExpression?</code></p>
+<p><code>PauseForStatement</code>s asynchronously pause execution for the specified time interval. The suffix <code>second</code> or <code>seconds</code> is optional and just for readability.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">PauseForStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">WaitForStatement</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'pause'</span>
+    me.lock()
+    me.req_val <span class="string">'for'</span>
+    me.tvalue = me.req Expression
+    me.opt_val <span class="string">'second'</span>, <span class="string">'seconds'</span>
+    me.conditional = me.opt WhenExpression
+    me.block = me.req BlockWithoutIndent</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-57">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-57">&#182;</a>
+              </div>
+              <h1>RunInParallelBlock</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-58">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-58">&#182;</a>
+              </div>
+              <p><code>RunInParallelBlock: &#39;run&#39; &#39;in&#39;? &#39;parallel&#39; NEWLINE INDENT WaitForExpression* DEDENT</code></p>
+<p>The <code>RunInParallelBlock</code> specifies a set of <code>WaitForExpression</code>s to kick off in parallel, delaying execution until all are complete. Only <code>WaitForExpression</code>s are allowed in the block.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">RunInParallelBlock</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'run'</span>
+    me.opt_val <span class="string">'in'</span>
+    me.req_val <span class="string">'parallel'</span>
+    me.lock()
+    me.req <span class="string">'NEWLINE'</span>
+    me.req <span class="string">'INDENT'</span>
+    me.wait_fors = me.req_multi WaitForExpression
+    me.lock()
+    me.req <span class="string">'DEDENT'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-59">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-59">&#182;</a>
+              </div>
+              <h1>MultipleReturnValues</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-60">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-60">&#182;</a>
+              </div>
+              <p><code>MultipleReturnValues: &#39;(&#39;? UnaryExpression (&#39;,&#39; UnaryExpression)* &#39;)&#39;?</code></p>
+<p>This class is used in <code>wait for</code> expressions to specify a list of return values, such as <code>wait for x, y from f()</code>. Enclosing parentheses (<code>wait for (x, y) from f()</code>) are optional and must come as a pair.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">MultipleReturnValues</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">is_lvalue</span><span class="params">()</span></span>
+    <span class="keyword">for</span> arg <span class="keyword">in</span> me.arguments
+      <span class="keyword">return</span> <span class="literal">no</span> <span class="keyword">unless</span> arg.is_lvalue()
+    <span class="keyword">return</span> <span class="literal">yes</span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    left_paren = me.opt_val <span class="string">'('</span>
+    me.arguments = []
+    t = {<span class="attribute">value</span>:<span class="string">','</span>}
+    <span class="keyword">while</span> t.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">','</span>
+      arg = me.req UnaryExpression
+      arg.can_be_lvalue = <span class="literal">yes</span>
+      me.arguments.push arg
+      <span class="keyword">if</span> left_paren
+        t = me.req_val <span class="string">')'</span>, <span class="string">','</span>
+      <span class="keyword">else</span>
+        t = me.req_val <span class="string">'from'</span>, <span class="string">','</span>
+    me.ts.prev()
+    me.req_val <span class="string">')'</span> <span class="keyword">if</span> left_paren</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-61">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-61">&#182;</a>
+              </div>
+              <h1>ExpressionStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-62">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-62">&#182;</a>
+              </div>
+              <p><code>ExpressionStatement: Expression</code></p>
+<p><code>ExpressionStatement</code>s are statements that are simply an r-value expression (no assignment or control operators). This is most commonly used for function calls (<code>my_func()</code> is a valid statement), though technically things like <code>x</code> are also valid statments.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ExpressionStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.expr = me.req Expression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-63">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-63">&#182;</a>
+              </div>
+              <h1>BlankStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-64">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-64">&#182;</a>
+              </div>
+              <p><code>BlankStatement: (&#39;pass&#39; NEWLINE|EOF)|NEWLINE</code></p>
+<p><code>BlankStatement</code>s are used to fill in when there are extra newlines or bare function definitions. A blank statement does not generate any output code and has no semantic significance.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">BlankStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    <span class="keyword">if</span> me.opt_val <span class="string">'pass'</span>
+      me.lock()
+      me.req <span class="string">'NEWLINE'</span>, <span class="string">'EOF'</span>
+      me.ts.prev()
+    <span class="keyword">else</span>
+      me.req <span class="string">'NEWLINE'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-65">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-65">&#182;</a>
+              </div>
+              <h1>Variable</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-66">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-66">&#182;</a>
+              </div>
+              <p><code>Variable: IDENTIFIER</code></p>
+<p><code>Variable</code> works like an <code>IDENTIFIER</code> token except that it also checks to see if the token is a reserved word.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">Variable</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.identifier = me.req <span class="string">'IDENTIFIER'</span>
+    me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-67">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-67">&#182;</a>
+              </div>
+              <p>We copy the <code>value</code> property over so that <code>Variable</code> objects can be drop-in replacements for <code>IDENTIFIER</code> tokens.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.<span class="keyword">value</span> = me.identifier.<span class="keyword">value</span>
+    me.error <span class="string">"'<span class="subst">#{me.<span class="keyword">value</span>}</span>' is reserved and can't be used as a name"</span> <span class="keyword">when</span> me.<span class="keyword">value</span> <span class="keyword">in</span> KEYWORDS</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-68">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-68">&#182;</a>
+              </div>
+              <h1>BinOp</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-69">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-69">&#182;</a>
+              </div>
+              <p><code>BinOp: (&#39;bitwise&#39;? &#39;and&#39;|&#39;or&#39;|&#39;xor&#39;|&#39;left&#39;|&#39;right&#39;|&#39;not&#39;)|(&#39;not&#39; &#39;in&#39;|&#39;of&#39;)|(&#39;+&#39;|&#39;-&#39;|&#39;*&#39;|&#39;/&#39;|&#39;&gt;&#39;|&#39;&lt;&#39;|&#39;^&#39;|&#39;&lt;=&#39;|&#39;&gt;=&#39;|&#39;==&#39;|&#39;!=&#39;|&#39;and&#39;|&#39;but&#39;|&#39;or&#39;|&#39;xor&#39;|&#39;nor&#39;|&#39;in&#39;|&#39;mod&#39;|&#39;is&#39;|&#39;isnt&#39;|&#39;instanceof&#39;|&#39;of&#39;)</code></p>
+<p>Binary operators can include bitwise operations, the <code>in</code> or <code>of</code> collection checks, or standard Boolean and arithmetic operators.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">BinOp</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-70">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-70">&#182;</a>
+              </div>
+              <p>Some operations (<code>in</code> and <code>of</code>) can be inverted using the <code>not</code> keyword.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.invert = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-71">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-71">&#182;</a>
+              </div>
+              <p>Bitwise operators have the <code>bitwise</code> prefix.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.<span class="keyword">bitwise</span> = me.opt_val <span class="string">'bitwise'</span>
+    me.op = me.req <span class="string">'IDENTIFIER'</span>, <span class="string">'LITERAL'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-72">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-72">&#182;</a>
+              </div>
+              <p>A <code>bitwise</code> prefix indicates this is definitely a <code>BinOp</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.lock() <span class="keyword">if</span> me.<span class="keyword">bitwise</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-73">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-73">&#182;</a>
+              </div>
+              <p>Literals are limited to the list of valid arithmetic and Boolean operators above.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> me.op.type <span class="keyword">is</span> <span class="string">'LITERAL'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-74">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-74">&#182;</a>
+              </div>
+              <p>First we need to fail softly on certain tokens that are not necessarily syntax errors, like closing parens. For example <code>x[a]</code> would try to parse for a <code>BinOp</code> after <code>a</code>, so it must fail cleanly in this case. Note that if <code>me.bitwise</code> was set, we are already locked, so this would be a “hard” syntax error as expected.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      me.error(<span class="string">"unexpected operator <span class="subst">#{this.op.<span class="keyword">value</span>}</span>"</span>) <span class="keyword">if</span> me.op.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">')'</span>,<span class="string">']'</span>,<span class="string">'}'</span>,<span class="string">';'</span>,<span class="string">':'</span>,<span class="string">','</span>] <span class="keyword">or</span> me.<span class="keyword">bitwise</span>
+      me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-75">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-75">&#182;</a>
+              </div>
+              <p>Now we do a “hard” check to make sure the operator is in the acceptabled list.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      me.error(<span class="string">"unexpected operator <span class="subst">#{this.op.<span class="keyword">value</span>}</span>"</span>) <span class="keyword">unless</span> me.op.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">'+'</span>,<span class="string">'-'</span>,<span class="string">'*'</span>,<span class="string">'/'</span>,<span class="string">'&gt;'</span>,<span class="string">'&lt;'</span>,<span class="string">'^'</span>,<span class="string">'&lt;='</span>,<span class="string">'&gt;='</span>,<span class="string">'=='</span>,<span class="string">'!='</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-76">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-76">&#182;</a>
+              </div>
+              <p>For <code>IDENTIFIER</code> tokens, we also check the token against the acceptable list. </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-77">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-77">&#182;</a>
+              </div>
+              <p>First we need to check if we got a <code>not</code> token. In this case we just set the <code>invert</code> flag and check that the next token is <code>in</code> or <code>of</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">if</span> me.op.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'not'</span>
+        me.op = me.req_val <span class="string">'in'</span>, <span class="string">'of'</span>
+        me.invert = <span class="literal">yes</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-78">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-78">&#182;</a>
+              </div>
+              <p>Bitwise operators are limited to a smaller list.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">if</span> me.<span class="keyword">bitwise</span>
+        me.error(<span class="string">"unexpected operator <span class="subst">#{this.op.<span class="keyword">value</span>}</span>"</span>) <span class="keyword">unless</span> me.op.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">'and'</span>,<span class="string">'or'</span>,<span class="string">'xor'</span>,<span class="string">'left'</span>,<span class="string">'right'</span>]
+      <span class="keyword">else</span>
+        me.error(<span class="string">"unexpected operator <span class="subst">#{this.op.<span class="keyword">value</span>}</span>"</span>) <span class="keyword">unless</span> me.op.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">'and'</span>,<span class="string">'but'</span>,<span class="string">'or'</span>,<span class="string">'xor'</span>,<span class="string">'nor'</span>,<span class="string">'in'</span>,<span class="string">'mod'</span>,<span class="string">'is'</span>,<span class="string">'isnt'</span>,<span class="string">'instanceof'</span>,<span class="string">'of'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-79">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-79">&#182;</a>
+              </div>
+              <h1>Expression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-80">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-80">&#182;</a>
+              </div>
+              <p><code>Expression: UnaryExpression (BinOp Expression)? WhenExpression?</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">Expression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-81">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-81">&#182;</a>
+              </div>
+              <p>Parent objects may call <code>transform_when_statement</code> to grab the rightmost tail conditional and claim it as their own. For example, in <code>x = y + 1 when y &lt; 2</code>, normally the <code>WhenExpression</code> would associate with <code>y + 1</code>, compiling to something like <code>x = (y &lt; 2) ? y + 1 : void 0;</code> when in reality we want <code>if (y &lt; 2) x = y + 1;</code>. This method allows parent objects, in this case the <code>AssignmentStatement</code> to grab child conditionals by recursing down the tree.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">transform_when_statement</span><span class="params">()</span></span>
+    <span class="keyword">if</span> me.conditional <span class="keyword">exists</span> but me.conditional.false_expr <span class="keyword">doesnt</span> <span class="keyword">exist</span>
+      rv = me.conditional
+      me.conditional = <span class="literal">null</span>
+      <span class="keyword">return</span> rv
+    <span class="keyword">else</span> <span class="keyword">if</span> me.right <span class="keyword">instanceof</span> Expression
+      <span class="keyword">return</span> me.right.transform_when_statement()
+    <span class="keyword">else</span>
+      <span class="keyword">return</span> <span class="literal">null</span><span class="function">
+
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.left  = me.req UnaryExpression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-82">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-82">&#182;</a>
+              </div>
+              <p>We flag the <code>left</code> <code>UnaryExpression</code> as not eligable to be an l-value since it is not being assigned to.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.left.can_be_lvalue = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-83">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-83">&#182;</a>
+              </div>
+              <p><code>FunctionExpression</code>s define a function and we don&#39;t want to allow things like:</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">x</span><span class="params">()</span></span>
+  <span class="keyword">return</span> <span class="number">2</span>
++ <span class="number">3</span></code></pre>
+<p>so we don&#39;t check for a <code>BinOp</code> or right value in these cases.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">return</span> <span class="keyword">if</span> me.left.base <span class="keyword">instanceof</span> FunctionExpression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-84">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-84">&#182;</a>
+              </div>
+              <p>Try to parse this as a binary expression.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.op    = me.opt BinOp
+    me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-85">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-85">&#182;</a>
+              </div>
+              <p>If it is binary, get the right side.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.right = me.req Expression <span class="keyword">when</span> me.op <span class="keyword">exists</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-86">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-86">&#182;</a>
+              </div>
+              <p>Don&#39;t parse tail conditionals after dedents. This typically is from an <code>ImplicitMapExpression</code> followed by an <code>if</code> statement (see gh-72).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.conditional = me.opt WhenExpression <span class="keyword">unless</span> me.ts.peek(-<span class="number">1</span>).type <span class="keyword">is</span> <span class="string">'DEDENT'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-87">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-87">&#182;</a>
+              </div>
+              <p>For constant folding, this method returns the numeric value if this is a unary expression with a number constant. Otherwise, it returns null. Only used by the generator for <code>pause for</code> statements at this time.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">number_constant</span><span class="params">()</span></span>
+    <span class="keyword">if</span> me.op <span class="keyword">exists</span> <span class="keyword">or</span> me.conditional <span class="keyword">exists</span>
+      <span class="keyword">return</span> <span class="literal">null</span>
+    <span class="keyword">else</span>
+      <span class="keyword">return</span> me.left.number_constant()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-88">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-88">&#182;</a>
+              </div>
+              <h1>UnaryExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-89">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-89">&#182;</a>
+              </div>
+              <p><code>UnaryExpression: ((&#39;bitwise&#39; &#39;not&#39;)|&#39;not&#39;|&#39;new&#39;|&#39;-&#39;|&#39;typeof&#39;)? ParenExpression|ListExpression|MapExpression|FunctionExpression|ImplicitMapExpression|NumberConstant|StringConstant|RegexConstant|&#39;IDENTIFIER&#39; IndexExpression|FunctionCall|PropertyAccess|ExisentialCheck</code></p>
+<p><code>UnaryExpression</code> is a container class for the different types of unary expressions supported by the language. It handles the unary prefix operators <code>not</code>, <code>bitwise not</code>, <code>new</code>, <code>typeof</code> and unary <code>-</code>. This class also handles unary suffix operators such as array/object indexing, funcation calls, property accessors, and existence checks.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">UnaryExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-90">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-90">&#182;</a>
+              </div>
+              <p>This method is used to check if an expression is an l-value when used in assignments.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">is_lvalue</span><span class="params">()</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-91">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-91">&#182;</a>
+              </div>
+              <p>The <code>can_be_lvalue</code> flag must be set by the parent node for this check to pass. Things like assignments will set this flag, whereas binary expressions will not.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">return</span> <span class="literal">no</span> <span class="keyword">if</span> me.can_be_lvalue <span class="keyword">is</span> <span class="literal">false</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-92">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-92">&#182;</a>
+              </div>
+              <p>Constants can&#39;t be l-values</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">return</span> <span class="literal">no</span> <span class="keyword">if</span> me.base.constructor <span class="keyword">in</span> [NumberConstant, StringConstant, RegexConstant]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-93">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-93">&#182;</a>
+              </div>
+              <p>We only check if the base is a valid r-value if it has no property accessors. In other words, we allow things like <code>me.a = 1</code> but not <code>me = 1</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> me.accessors.length &gt; <span class="number">0</span>
+      <span class="keyword">return</span> <span class="literal">no</span> <span class="keyword">if</span> (me.base.<span class="keyword">value</span> <span class="keyword">in</span> KEYWORDS) but <span class="keyword">not</span> (me.base.<span class="keyword">value</span> <span class="keyword">in</span> RVALUE_OK)
+    <span class="keyword">else</span>
+      <span class="keyword">return</span> <span class="literal">no</span> <span class="keyword">if</span> me.base.<span class="keyword">value</span> <span class="keyword">in</span> KEYWORDS</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-94">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-94">&#182;</a>
+              </div>
+              <p>Function call results are not assignable (<code>f() = 2</code> for example).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">for</span> accessor <span class="keyword">in</span> me.accessors
+      <span class="keyword">if</span> (accessor <span class="keyword">instanceof</span> FunctionCall)
+        <span class="keyword">return</span> <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-95">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-95">&#182;</a>
+              </div>
+              <p>Otherwise, this is a good l-value.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">return</span> <span class="literal">yes</span><span class="function">
+
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.<span class="keyword">bitwise</span>     = me.opt_val <span class="string">'bitwise'</span>
+    me.preop       = me.opt_val <span class="string">'not'</span>, <span class="string">'new'</span>, <span class="string">'-'</span>, <span class="string">'typeof'</span>
+    <span class="keyword">if</span> me.<span class="keyword">bitwise</span> <span class="keyword">and</span> me.preop?.<span class="keyword">value</span> <span class="keyword">isnt</span> <span class="string">'not'</span>
+      me.error <span class="string">"expected 'not' after 'bitwise' for a unary expression"</span>
+    me.base        = me.req ParenExpression, ListExpression, MapExpression, FunctionExpression, ImplicitMapExpression, NumberConstant, StringConstant, RegexConstant, <span class="string">'IDENTIFIER'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-96">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-96">&#182;</a>
+              </div>
+              <p>Next we check for suffix operators (accessors), including property access but also function calls, array/object indexing, and exisentials.</p>
+<p>If a paren expression occurs immediately after the function block dedent, this would normally be interpreted as a function call on the function expression. While this may be desired it is usually just confusing, so we explicitly avoid it here. By not checking for <code>FunctionCall</code>s on the first accessor.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> (me.base <span class="keyword">instanceof</span> FunctionExpression)
+      me.accessors = []
+      first = me.opt IndexExpression, PropertyAccess, ExisentialCheck
+      <span class="keyword">if</span> first <span class="keyword">exists</span>
+        me.accessors.push(first)
+        me.accessors   = me.accessors.concat(me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck)
+    <span class="keyword">else</span>
+      me.accessors   = me.opt_multi IndexExpression, FunctionCall, PropertyAccess, ExisentialCheck
+
+    me.lock()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-97">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-97">&#182;</a>
+              </div>
+              <p>Check for keyword use as an identifier.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> me.base.<span class="keyword">value</span> <span class="keyword">exists</span> <span class="keyword">and</span> (me.base.<span class="keyword">value</span> <span class="keyword">in</span> KEYWORDS) but <span class="keyword">not</span> (me.base.<span class="keyword">value</span> <span class="keyword">in</span> RVALUE_OK)
+      me.error <span class="string">"'<span class="subst">#{me.base.<span class="keyword">value</span>}</span>' is a reserved word and can't be used as a name"</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-98">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-98">&#182;</a>
+              </div>
+              <p>For constant folding, return a numeric value if possible, otherwise <code>null</code>. This is used by the <code>pause for</code> generator code.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">number_constant</span><span class="params">()</span></span>
+    <span class="keyword">if</span> me.<span class="keyword">bitwise</span> <span class="keyword">exists</span> <span class="keyword">or</span> me.preop <span class="keyword">exists</span>
+      <span class="keyword">return</span> <span class="literal">null</span>
+    <span class="keyword">else</span> <span class="keyword">if</span> me.base <span class="keyword">instanceof</span> NumberConstant
+      n = Number(me.base.token.text)
+      <span class="keyword">return</span> <span class="literal">null</span> <span class="keyword">when</span> isNaN(n) <span class="keyword">otherwise</span> n
+    <span class="keyword">else</span>
+      <span class="keyword">return</span> <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-99">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-99">&#182;</a>
+              </div>
+              <h1>ExisentialCheck</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-100">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-100">&#182;</a>
+              </div>
+              <p>`ExisentialCheck: ‘exists’|(‘doesnt’ ‘exist’)|‘?’</p>
+<p>This operator indicates a variable&#39;s existence (non-nullness and/or variable is defined) should be checked.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ExisentialCheck</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    op = me.req_val <span class="string">'exists'</span>, <span class="string">'?'</span>, <span class="string">'doesnt'</span>
+    me.lock()
+    <span class="keyword">if</span> op.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'doesnt'</span>
+      me.req_val <span class="string">'exist'</span>
+      me.invert = <span class="literal">yes</span>
+    <span class="keyword">else</span>
+      me.invert = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-101">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-101">&#182;</a>
+              </div>
+              <h1>WhenExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-102">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-102">&#182;</a>
+              </div>
+              <p><code>WhenExpression: &#39;when&#39;|&#39;if&#39;|&#39;unless&#39;|(&#39;except&#39; &#39;when&#39;) Expression (&#39;otherwise&#39;|&#39;else&#39; Expression)?</code></p>
+<p>This node can either be used as a ternary operator (<code>2 if a otherwise 3</code>) or a tail conditional (<code>x = 5 if a</code>). <code>Expression</code> objects use the <code>transform_when_statement</code> method to pull these nodes to the top level of a statement (see the definition of <code>transform_when_statement</code> above).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">WhenExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.specifier  = me.req_val <span class="string">'when'</span>, <span class="string">'except'</span>, <span class="string">'if'</span>, <span class="string">'unless'</span>
+    me.lock()
+    me.req_val(<span class="string">'when'</span>) <span class="keyword">if</span> me.specifier.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'except'</span>
+    me.condition  = me.req(Expression)
+    me.false_expr = me.req(Expression) <span class="keyword">if</span> me.opt_val <span class="string">'otherwise'</span>, <span class="string">'else'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-103">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-103">&#182;</a>
+              </div>
+              <h1>NumberConstant</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-104">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-104">&#182;</a>
+              </div>
+              <p><code>NumberConstant: NUMBER</code></p>
+<p>A numeric token constant. Can be anything the lexer supports, including scientific notation, integers, floating point, or hex.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">NumberConstant</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.token = me.req <span class="string">'NUMBER'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-105">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-105">&#182;</a>
+              </div>
+              <h1>StringConstant</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-106">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-106">&#182;</a>
+              </div>
+              <p><code>StringConstant: STRING</code></p>
+<p>A string token constant. Can be anything the lexer supports, including single or double-quoted strings. Note that the <code>sugar</code> module handles double-quoted strings with embedded code by turning it into multiple <code>STRING</code> tokens, so we don&#39;t have to do anything special here.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">StringConstant</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.token = me.req <span class="string">'STRING'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-107">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-107">&#182;</a>
+              </div>
+              <h1>RegexConstant</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-108">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-108">&#182;</a>
+              </div>
+              <p><code>RegexConstant: REGEX</code></p>
+<p>A regular expression token constant. Can be anything the lexer supports.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">RegexConstant</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.token = me.req <span class="string">'REGEX'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-109">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-109">&#182;</a>
+              </div>
+              <h1>IndexExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-110">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-110">&#182;</a>
+              </div>
+              <p><code>IndexExpression: &#39;?&#39;? &#39;[&#39; Expression &#39;]&#39;</code></p>
+<p>Array or object property access. This can be prepended by an exisential check, meaning only attempt access if the underlying object is defined. For example, <code>a?[2]</code> won&#39;t fail if <code>a</code> is <code>null</code> or not declared, instead it returns <code>undefined</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">IndexExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    op = me.req_val <span class="string">'['</span>, <span class="string">'?'</span>
+    me.exisential = (op.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'?'</span>)
+    me.req_val(<span class="string">'['</span>) <span class="keyword">if</span> me.exisential
+    me.lock()
+    me.expr = me.req Expression
+    me.req_val <span class="string">']'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-111">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-111">&#182;</a>
+              </div>
+              <h1>PropertyAccess</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-112">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-112">&#182;</a>
+              </div>
+              <p><code>PropertyAccess: &#39;?&#39;? &#39;.&#39; IDENTIFIER</code></p>
+<p>Object property access. This can be prepended by an exisential check, meaning only attempt access if the underlying object is defined. For example, <code>a?.prop</code> won&#39;t fail if <code>a</code> is <code>null</code> or not declared, instead it returns <code>undefined</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">PropertyAccess</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    op = me.req_val <span class="string">'.'</span>, <span class="string">'?'</span>
+    me.exisential = (op.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'?'</span>)
+    me.req_val(<span class="string">'.'</span>) <span class="keyword">if</span> me.exisential
+    me.lock()
+    me.expr = me.req <span class="string">'IDENTIFIER'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-113">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-113">&#182;</a>
+              </div>
+              <h1>FunctionCall</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-114">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-114">&#182;</a>
+              </div>
+              <p><code>FunctionCall: &#39;?&#39;? &#39;(&#39; FunctionCallArgument* &#39;)&#39;</code></p>
+<p>Indicates a function call on the preceeding object. This can be prepended by an exisential check, meaning only attempt access if the underlying object is defined. For example, <code>a?()</code> won&#39;t fail if <code>a</code> is <code>null</code> or not declared, instead it returns <code>undefined</code>. It will fail if <code>a</code> is not a function, though this can&#39;t be determined at compile time.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">FunctionCall</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    op = me.req_val <span class="string">'('</span>, <span class="string">'?'</span>
+    me.exisential = (op.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'?'</span>)
+    me.req_val(<span class="string">'('</span>) <span class="keyword">if</span> me.exisential
+    me.lock()
+    me.arguments = me.opt_multi FunctionCallArgument
+    me.req_val <span class="string">')'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-115">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-115">&#182;</a>
+              </div>
+              <h1>FunctionCallArgument</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-116">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-116">&#182;</a>
+              </div>
+              <p><code>FunctionCallArgument: (Expression &#39;,&#39;)* Expression (?=&#39;)&#39;)</code></p>
+<p>A single argument to a function call, followed by a comma or close-paren. If it is followed by a close-paren, that token will not be captured.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">FunctionCallArgument</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.val = me.req Expression
+    me.lock()
+    <span class="keyword">if</span> me.req_val(<span class="string">','</span>,<span class="string">')'</span>).<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">')'</span>
+      me.ts.prev()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-117">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-117">&#182;</a>
+              </div>
+              <h1>ParenExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-118">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-118">&#182;</a>
+              </div>
+              <p><code>ParenExpression: &#39;(&#39; Expression &#39;)&#39;</code></p>
+<p>An expression enclosed by parentheses, like <code>(a + b)</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ParenExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'('</span>
+    me.lock()
+    me.expr = me.req Expression
+    me.req_val <span class="string">')'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-119">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-119">&#182;</a>
+              </div>
+              <h1>ListExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-120">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-120">&#182;</a>
+              </div>
+              <p><code>ListExpression: &#39;[&#39; ObjectComprehension|ListComprehension|((Expression &#39;,&#39;)* Expression)? &#39;]&#39;</code></p>
+<p>An array definition, such as <code>[1,2,3]</code>. Multiline list definitions are handled by the <code>sugar</code> module. This also supports comprehensions inside the definition.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ListExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'['</span>
+    me.lock()
+    me.comprehension = me.opt ObjectComprehension, ListComprehension
+    <span class="keyword">if</span> me.comprehension <span class="keyword">doesnt</span> <span class="keyword">exist</span>
+      me.items = []
+      item = me.opt Expression
+      <span class="keyword">while</span> item
+        me.items.push(item)
+        <span class="keyword">if</span> me.opt_val(<span class="string">','</span>)
+          item = me.opt Expression
+        <span class="keyword">else</span>
+          item = <span class="literal">null</span>
+    me.req_val <span class="string">']'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-121">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-121">&#182;</a>
+              </div>
+              <h1>ListComprehension</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-122">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-122">&#182;</a>
+              </div>
+              <p><code>ListComprehension: Expression &#39;for&#39; Variable &#39;in&#39; Expression</code></p>
+<p>List comprehensions allow list generation by applying an expression to each member in another list. For example <code>[a+1 for a in [1,2,3]]</code> would yield <code>[2,3,4]</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ListComprehension</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.iter_expr = me.req Expression
+    me.req_val <span class="string">'for'</span>
+    me.lock()
+    me.iterant = me.req Variable
+    me.req_val <span class="string">'in'</span>
+    me.iterable = me.req Expression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-123">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-123">&#182;</a>
+              </div>
+              <h1>ObjectComprehension</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-124">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-124">&#182;</a>
+              </div>
+              <p><code>ObjectComprehension: Expression &#39;for&#39; (&#39;property&#39; Variable)|(&#39;property&#39; &#39;value&#39; Variable)|(&#39;property&#39; Variable &#39;with&#39; &#39;value&#39; Variable) &#39;in&#39; Expression</code></p>
+<p>Object comprehensions allow list generation by applying an expression to each member in an object. It comes in three forms:</p>
+<p><code>[x for property x of obj]</code> - returns all the keys (properties) of <code>obj</code> as a list.
+<code>[x for property value x of obj]</code> - returns all the values (property values) of <code>obj</code> as a list.
+<code>[[w,x for property w with value x of obj]</code> - returns all the keys (properties) and values (property values) of <code>obj</code> as a list of list tuples.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ObjectComprehension</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.iter_expr = me.req Expression
+    me.req_val <span class="string">'for'</span>
+    me.req_val <span class="string">'property'</span>
+    me.lock()
+    <span class="keyword">if</span> me.opt_val <span class="string">'value'</span>
+      me.value_iterant = me.req Variable
+    <span class="keyword">else</span>
+      me.property_iterant = me.req Variable
+      <span class="keyword">if</span> me.opt_val <span class="string">'with'</span>
+        me.req_val <span class="string">'value'</span>
+        me.value_iterant = me.req Variable
+    me.req_val <span class="string">'in'</span>
+    me.iterable = me.req Expression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-125">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-125">&#182;</a>
+              </div>
+              <h1>MapExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-126">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-126">&#182;</a>
+              </div>
+              <p><code>MapExpression: &#39;{&#39; MapItem* &#39;}&#39;</code></p>
+<p>Defines an object with a list of key value pairs. This is a JavaScript-style definition. Multiline definitions are supported to some extent by the <code>sugar</code> module which removes the newlines and indents:</p>
+<p><code>x = {a:1,b:2,c:{d:1}}</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">MapExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'{'</span>
+    me.lock()
+    me.items = me.opt_multi MapItem
+    me.req_val <span class="string">'}'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-127">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-127">&#182;</a>
+              </div>
+              <h1>ImplicitMapExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-128">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-128">&#182;</a>
+              </div>
+              <p><code>ImplicitMapExpression: NEWLINE INDENT ImplicitMapItem* DEDENT</code></p>
+<p>Defines an object with a list of key value pairs. This is a CoffeeScript-style definition:</p>
+<pre><code>x =
+  <span class="attribute">a</span>: <span class="number">1</span>
+  <span class="attribute">b</span>: <span class="number">2</span></code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ImplicitMapExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">MapExpression</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req <span class="string">'NEWLINE'</span>
+    me.req <span class="string">'INDENT'</span>
+    me.lock()
+    me.items = me.req_multi ImplicitMapItem
+    me.req <span class="string">'DEDENT'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-129">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-129">&#182;</a>
+              </div>
+              <h1>MapItem</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-130">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-130">&#182;</a>
+              </div>
+              <p><code>MapItem: IDENTIFIER|STRING|NUMBER &#39;:&#39; Expression &#39;,&#39;|(?=&#39;}&#39;)</code></p>
+<p>A single definition in a <code>MapExpression</code> of a property/value pair. It also tries to consume a comma if one is available and fails if it is not followed by a comma or <code>}</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">MapItem</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.key = me.req <span class="string">'IDENTIFIER'</span>, <span class="string">'STRING'</span>, <span class="string">'NUMBER'</span>
+    me.req_val <span class="string">':'</span>
+    me.lock()
+    me.val = me.req Expression
+    me.end_token = me.req_val <span class="string">','</span>, <span class="string">'}'</span>
+    <span class="keyword">if</span> me.end_token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'}'</span>
+      me.ts.prev()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-131">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-131">&#182;</a>
+              </div>
+              <h1>ImplicitMapItem</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-132">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-132">&#182;</a>
+              </div>
+              <p><code>ImplicitMapItem: IDENTIFIER|STRING|NUMBER &#39;:&#39; Expression &#39;,&#39;|(?=&#39;}&#39;)</code></p>
+<p>A single definition in a <code>ImplicitMapExpression</code> of a property/value pair.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ImplicitMapItem</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">MapItem</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.key = me.req <span class="string">'IDENTIFIER'</span>, <span class="string">'STRING'</span>, <span class="string">'NUMBER'</span>
+    me.req_val <span class="string">':'</span>
+    me.lock()
+    me.val = me.req Expression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-133">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-133">&#182;</a>
+              </div>
+              <p>It requires either a <code>NEWLINE</code> or comma unless the value expression is another <code>ImplicitMapExpression</code> or a function definition, since these consume the newline for us.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">unless</span> me.val.left?.base <span class="keyword">instanceof</span> ImplicitMapExpression <span class="keyword">or</span> me.val.left?.base <span class="keyword">instanceof</span> FunctionExpression
+      me.end_token = me.opt_multi <span class="string">'NEWLINE'</span>
+      me.end_token = me.req_val <span class="string">','</span> <span class="keyword">when</span> me.end_token.length <span class="keyword">is</span> <span class="number">0</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-134">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-134">&#182;</a>
+              </div>
+              <h1>FunctionExpression</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-135">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-135">&#182;</a>
+              </div>
+              <p><code>FunctionExpression: &#39;function&#39;|&#39;method&#39;|&#39;task&#39; Variable? &#39;(&#39; FunctionDefArgument* &#39;)&#39; (&#39;of&#39; UnaryExpression)? Block</code></p>
+<p>Defines a function, method, or task. The <code>of</code> suffix allows us to late-bind this function to another class.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">FunctionExpression</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.specifier = me.req_val <span class="string">'function'</span>, <span class="string">'method'</span>, <span class="string">'task'</span>
+    me.lock()
+    me.name = me.opt Variable
+    me.req_val <span class="string">'('</span>
+    me.arguments = me.opt_multi FunctionDefArgument
+    me.req_val <span class="string">')'</span>
+    me.late_bind = me.opt_val <span class="string">'of'</span>
+    <span class="keyword">if</span> me.late_bind
+      me.lock()
+      me.bind_to = me.req UnaryExpression
+    me.block = me.req Block</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-136">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-136">&#182;</a>
+              </div>
+              <h1>FunctionDefArgument</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-137">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-137">&#182;</a>
+              </div>
+              <p><code>FunctionDefArgument: Variable (&#39;=&#39; Expression)? &#39;,&#39;|(?=&#39;)&#39;)</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">FunctionDefArgument</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.name = me.req Variable
+    me.lock()
+    <span class="keyword">if</span> me.opt_val <span class="string">'='</span>
+      me.<span class="reserved">default</span> = me.req Expression</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-138">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-138">&#182;</a>
+              </div>
+              <p>Require either a comma or ‘)’, but unsee a ‘)’ since the <code>FunctionExpression</code> needs it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> me.req_val(<span class="string">','</span>,<span class="string">')'</span>).<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">')'</span>
+      me.ts.prev()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-139">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-139">&#182;</a>
+              </div>
+              <h1>ClassDefinition</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-140">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-140">&#182;</a>
+              </div>
+              <p><code>ClassDefinition: class Variable (&#39;inherits&#39; &#39;from&#39; Variable)? Block</code></p>
+<p>Defines a new class with an optional parent class. Methods and members go inside the block.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ClassDefinition</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'class'</span>
+    me.lock()
+    me.name = me.req Variable
+    <span class="keyword">if</span> me.opt_val(<span class="string">'inherits'</span>)
+      me.req_val <span class="string">'from'</span>
+      me.parent = me.req Variable
+    me.block = me.req Block</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-141">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-141">&#182;</a>
+              </div>
+              <h1>TryCatch</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-142">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-142">&#182;</a>
+              </div>
+              <p><code>TryCatch: &#39;try&#39; Block (&#39;catch&#39; Variable? Block)?</code></p>
+<p>Defines a <code>try</code> and <code>catch</code> block for trapping exceptions and handling them. <code>finally</code> is not supported at this time. The <code>catch</code> block and error variable are optional.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">TryCatch</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'try'</span>
+    me.lock()
+    me.try_block = me.req Block
+    <span class="keyword">if</span> me.opt_val(<span class="string">'catch'</span>)
+      me.lock()
+      me.identifier = me.opt Variable
+      me.catch_block = me.req Block</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-143">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-143">&#182;</a>
+              </div>
+              <h1>SuperStatement</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-144">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-144">&#182;</a>
+              </div>
+              <p><code>SuperStatement: &#39;super&#39; FunctionCall?</code></p>
+<p>Within a method, calls the parent class&#39;s version of that method. Unlike most function calls, the <code>()</code>s are optional even when there are no arguments.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">SuperStatement</span> <span class="keyword">inherits</span> <span class="keyword">from</span> <span class="title">ASTBase</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.req_val <span class="string">'super'</span>
+    me.lock()
+    me.accessor = me.opt FunctionCall</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-145">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-145">&#182;</a>
+              </div>
+              <h1>Exports</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-146">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-146">&#182;</a>
+              </div>
+              <p>A list of nodes to export. For now, this is the cleanest way to do this in Kal. Perhaps an <code>export</code> keyword in the future will make this neater.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement,
+         ElseStatement, WhileStatement, ForStatement, AssignmentStatement,
+         ExpressionStatement, LoopControlStatement, BlankStatement, BinOp, Expression,
+         UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant,
+         RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument,
+         FunctionCall, ParenExpression, ListExpression, ListComprehension,
+         ObjectComprehension, MapItem, MapExpression, ImplicitMapItem,
+         ImplicitMapExpression, FunctionDefArgument, FunctionExpression,
+         ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent,
+         SimpleWaitForStatement, WaitForStatement, PauseForStatement,
+         MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable]
+
+<span class="reserved">export</span>s.Grammar = {}
+<span class="keyword">for</span> v <span class="keyword">in</span> Nodes
+  <span class="reserved">export</span>s.Grammar[v.name] = v
+<span class="reserved">export</span>s.GrammarRoot = <span class="reserved">export</span>s.Grammar.File</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

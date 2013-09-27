@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>ast.litkal</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="ast.html">
+                ast.litkal
+              </a>
+            
+              
+              <a class="source" href="command.html">
+                command.litkal
+              </a>
+            
+              
+              <a class="source" href="generator.html">
+                generator.litkal
+              </a>
+            
+              
+              <a class="source" href="grammar.html">
+                grammar.litkal
+              </a>
+            
+              
+              <a class="source" href="interactive.html">
+                interactive.litkal
+              </a>
+            
+              
+              <a class="source" href="kal.html">
+                kal.litkal
+              </a>
+            
+              
+              <a class="source" href="lexer.html">
+                lexer.litkal
+              </a>
+            
+              
+              <a class="source" href="literate.html">
+                literate.litkal
+              </a>
+            
+              
+              <a class="source" href="parser.html">
+                parser.litkal
+              </a>
+            
+              
+              <a class="source" href="sugar.html">
+                sugar.litkal
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>ast.litkal</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h2>The Abstract Syntax Tree (AST)</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>This module defines error classes and the base abstract syntax tree class used by the parser and grammar. It&#39;s main purpose is to provide utility methods to parse the token array into classes that inherit from <code>ASTBase</code>.</p>
+<h1>Errors</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>There are two types of errors that can be reported during parsing. <code>ParseFailed</code> is less serious indicating that the class failed to parse the upcoming tokens in the array, however the syntax might still be valid if parsed as another type of AST node. This generally will not abort compilation as the parent node will try other AST classes against the token stream before failing. <code>not_compiler_issue</code> indicates to the compiler that this is a problem with the input code, not a bug in the compiler itself. This error is used internally only.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ParseFailed</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">initialize</span><span class="params">(message)</span></span>
+    me.message = message
+    me.not_compiler_issue = <span class="literal">yes</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p><code>SyntaxError</code> is more serious indicating that the parser is using the correct class to parse the stream, but the code has invalid syntax. For example, <code>if for x</code> would throw this error because the <code>IfStatement</code> class is sure that this is an <code>if</code> statement, but <code>if for</code> is definitely invalid. This always aborts compilation and gives the user an error. This error will get thrown to the top level module.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">SyntaxError</span></span><span class="function">
+  <span class="keyword">method</span> <span class="title">initialize</span><span class="params">(message)</span></span>
+    me.message = message
+    me.locked = <span class="literal">yes</span>
+    me.not_compiler_issue = <span class="literal">yes</span>
+
+<span class="reserved">export</span>s.SyntaxError = SyntaxError</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <h1>ASTBase Class</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>This class serves as a base class on top of which AST nodes are defined. It contains utility functions to parse the token stream.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="class"><span class="keyword">class</span> <span class="title">ASTBase</span></span><span class="function">
+
+  <span class="keyword">method</span> <span class="title">initialize</span><span class="params">(ts, parent)</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>The object is initially marked as “unlocked”, indicating that we are not sure that this is the right node to parse this segment of the token stream. We can&#39;t declare syntax errors until we are sure this is the right class.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.locked = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Record the line and link to the token stream. Also note the parent object for code generation</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.ts = ts
+    me.line = ts.line
+    me.ast_parent = parent</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>The <code>parse</code> method, which is overriden by child classes, attempts to parse the current spot in the token stream. It will fail with a <code>ParseFailed</code> error or <code>SyntaxError</code> if parsing fails.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.parse()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Record the last line of the node. This is used to place comments correctly in the output Javascript.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    me.endline = ts.line</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p><strong>opt</strong> attempts to parse the token stream using one of the classes or token types specified. This method takes a variable number of arguments. For example, calling <code>me.opt IfStatement, Expression, &#39;IDENTIFIER&#39;</code> would attempt to parse the token stream first as an <code>IfStatement</code>. If that fails, it would attempt to use the <code>Expression</code> class. If that fails, it will accept a token of type <code>IDENTIFIER</code>. If all of those fail, it will return <code>none</code>. </p>
+<p>Note that <code>SyntaxError</code>s will still be thrown, but not <code>ParseFailed</code> errors.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">opt</span><span class="params">()</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>If <code>opt</code> fails, it will reset the current index of the token stream.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    start_index = me.ts.index</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>For each argument, which can be a class or a string, it will attempt to parse the token stream with that class or match the token type to the string.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">for</span> cls <span class="keyword">in</span> arguments</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>For strings it just checks the token type. And returns the token (incrementing the token stream index) if the type matches.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">if</span> <span class="keyword">typeof</span>(cls) <span class="keyword">is</span> <span class="string">'string'</span>
+        <span class="keyword">if</span> me.ts.type <span class="keyword">is</span> cls
+          token = me.ts.current
+          me.ts.next()
+          <span class="keyword">return</span> token</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>For classes, it attempts to instantiate the class (which calls the class&#39;s <code>parse</code>). <code>new</code> will fail with either a <code>ParseFailed</code>, <code>SyntaxError</code>, or other exception (if the compiler has a bug) if parsing fails.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">else</span>
+        <span class="keyword">try</span>
+          <span class="keyword">return</span> <span class="keyword">new</span> cls me.ts, <span class="literal">me</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>If parsing does fail, we want to rewind the token stream. If the error has the <code>locked</code> flag or the error came from the compiler, we do want to abort and throw. </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">catch</span> err
+          me.ts.goto_token start_index
+          <span class="keyword">fail</span> <span class="keyword">with</span> err <span class="keyword">when</span> err.locked <span class="keyword">or</span> <span class="keyword">not</span> err.not_compiler_issue</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p><code>opt</code> returns <code>nothing</code> if none of the arguments could be use to parse the stream.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">return</span> <span class="literal">nothing</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p><strong>req</strong> works the same way as <code>opt</code> except that it throws an error if none of the arguments can be used to parse the stream.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">req</span><span class="params">()</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>We first call <code>opt</code> to see what we get. If a value is returned, the function was successful, so we just return the node that <code>opt</code> found.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    rv = me.opt.apply <span class="keyword">this</span>, arguments
+    <span class="keyword">return</span> rv <span class="keyword">if</span> rv <span class="keyword">exists</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>If <code>opt</code> returned nothing, we want to give the user a useful error.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    list = [cls.name <span class="keyword">or</span> cls <span class="keyword">for</span> cls <span class="keyword">in</span> Array.prototype.slice.call(arguments)]
+    <span class="keyword">if</span> list.length <span class="keyword">is</span> <span class="number">1</span>
+      message = <span class="string">"Expected <span class="subst">#{list[<span class="number">0</span>]}</span>"</span>
+    <span class="keyword">else</span>
+      message = <span class="string">"Expected one of <span class="subst">#{list.join(<span class="string">', '</span>)}</span>"</span>
+    me.error <span class="string">"<span class="subst">#{message}</span>"</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p><strong>opt_val</strong> checks if the next token has a semantic value that matches one of the arguments provided. If so it returns that token and advances the stream. Otherwise, it returns <code>nothing</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">opt_val</span><span class="params">()</span></span>
+    <span class="keyword">if</span> me.ts.<span class="keyword">value</span> <span class="keyword">in</span> arguments
+      token = me.ts.current
+      me.ts.next()
+      <span class="keyword">return</span> token
+    <span class="keyword">else</span>
+      <span class="keyword">return</span> <span class="literal">nothing</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p><strong>req_val</strong> is the same as <code>opt_val</code> except that it throws an error if the semantic value could not be matched.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">req_val</span><span class="params">()</span></span>
+    rv = me.opt_val.apply <span class="keyword">this</span>, arguments
+    <span class="keyword">return</span> rv <span class="keyword">if</span> rv <span class="keyword">exists</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>The JavaScript (node) <code>arguments</code> structure is a little weird in that it‘s not strictly an array. It’s actually an object mapping with some extra properties. In order to produce a useful error message we make a copy of the values as an array.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    args = [v <span class="keyword">for</span> v <span class="keyword">in</span> Array.prototype.slice.call(arguments)]
+    me.error <span class="string">"Expected '<span class="subst">#{args.join(<span class="string">'\' or \''</span>)}</span>'"</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p><strong>opt_multi</strong> this method is like <code>opt</code> except that it will return zero or more of the requested class or token type. If it can&#39;t match any tokens it returns an empty array. It is “greedy” in that it will try to match as many occurances of a token or class as possible. <code>opt_multi</code> will only return objects/tokens from the first argument that matches the token stream. This method always returns an array.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">opt_multi</span><span class="params">()</span></span>
+    cls = me.opt.apply <span class="keyword">this</span>, arguments
+    <span class="keyword">return</span> [] <span class="keyword">unless</span> cls <span class="keyword">exists</span>
+    rv = [cls]
+    <span class="keyword">while</span> cls <span class="keyword">exists</span>
+      cls = me.opt.apply <span class="keyword">this</span>, arguments
+      rv.push(cls) <span class="keyword">if</span> cls <span class="keyword">exists</span>
+    <span class="keyword">return</span> rv</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p><strong>req_multi</strong> this method is like <code>req</code> except that it will return one or more of the requested class or token type. If it can&#39;t match any tokens it does throw an error. It is “greedy” in that it will try to match as many occurances as possible. <code>req_multi</code> will only return objects/tokens from the first argument that matches the token stream. This method always returns an array.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">req_multi</span><span class="params">()</span></span>
+    rv = me.opt_multi.apply <span class="keyword">this</span>, arguments
+    <span class="keyword">return</span> rv <span class="keyword">if</span> rv.length &gt; <span class="number">0</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>Create a useful error message for the user.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    list = [cls.name <span class="keyword">or</span> cls <span class="keyword">for</span> cls <span class="keyword">in</span> Array.prototype.slice.call(arguments)]
+    me.error <span class="string">"Expected one of <span class="subst">#{list.join(<span class="string">', '</span>)}</span>"</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p><strong>parse</strong> and <strong>js</strong> are abstract methods defined here to catch missing implementations. Child classes <em>must</em> override these methods, otherwise compilation will fail.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">parse</span><span class="params">()</span></span>
+    me.lock()
+    me.error <span class="string">'Parser Not Implemented: '</span> + me.constructor.name<span class="function">
+
+  <span class="keyword">method</span> <span class="title">js</span><span class="params">()</span></span>
+    me.error <span class="string">'Javascript Generator Not Implemented: '</span> + me.constructor.name</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p><strong>error</strong> throws a <code>ParseFailed</code> error if the object is unlocked (syntax does not match this class, but may still be valid for another node) or a <code>SyntaxError</code> if the object is locked (syntax matches this node but is invalid).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">error</span><span class="params">(msg)</span></span>
+    <span class="keyword">if</span> me.locked
+      full_msg = msg + <span class="string">' on line '</span> + me.line</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>We try to report the filename if possible.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">if</span> me.ts.options?[<span class="string">'filename'</span>] <span class="keyword">exists</span>
+        full_msg += <span class="string">' in file '</span> + me.ts.options[<span class="string">'filename'</span>]
+      <span class="keyword">throw</span> <span class="keyword">new</span> SyntaxError full_msg
+    <span class="keyword">else</span>
+      <span class="keyword">throw</span> <span class="keyword">new</span> ParseFailed msg</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p><strong>lock</strong> marks this class as locked, meaning we are certain this is the correct class for the given syntax. For example, if the <code>FunctionExpression</code> class sees the IDENTIFIER <code>function</code>, we are certain this is the correct class to use. Once locked, any invalid syntax causes compilation to fail.</p>
+<p><code>lock</code> can be called multiple times to update the line number. If a node spans multiple lines, this is useful because the line number is reported in the error message.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function">  <span class="keyword">method</span> <span class="title">lock</span><span class="params">()</span></span>
+    me.locked = <span class="literal">yes</span>
+    me.line = me.ts.line</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>ASTBase is the base class for all AST nodes.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="reserved">export</span>s.ASTBase = ASTBase</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

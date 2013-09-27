@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>interactive.litkal</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="ast.html">
+                ast.litkal
+              </a>
+            
+              
+              <a class="source" href="command.html">
+                command.litkal
+              </a>
+            
+              
+              <a class="source" href="generator.html">
+                generator.litkal
+              </a>
+            
+              
+              <a class="source" href="grammar.html">
+                grammar.litkal
+              </a>
+            
+              
+              <a class="source" href="interactive.html">
+                interactive.litkal
+              </a>
+            
+              
+              <a class="source" href="kal.html">
+                kal.litkal
+              </a>
+            
+              
+              <a class="source" href="lexer.html">
+                lexer.litkal
+              </a>
+            
+              
+              <a class="source" href="literate.html">
+                literate.litkal
+              </a>
+            
+              
+              <a class="source" href="parser.html">
+                parser.litkal
+              </a>
+            
+              
+              <a class="source" href="sugar.html">
+                sugar.litkal
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>interactive.litkal</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h2>Kal Interactive Shell</h2>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>The interactive shell is a read-evaluate-print loop (REPL) that compiles one line to Javascript and executes it, displaying the result to the user.</p>
+<p>Most of this was lovingly stolen from <a href="http://coffeescript.org/documentation/docs/repl.html">CoffeeScript</a>.</p>
+<p>The REPL starts by opening up <code>stdin</code> and <code>stdout</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>stdin = process.openStdin()
+stdout = process.stdout</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>The Kal compiler and the built-in node utilities are also used, including <code>util.inspect</code> for displaying pretty values of objects. Kal keywords are used to help autocomplete.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>Kal          = <span class="built_in">require</span> <span class="string">'./kal'</span>
+readline     = <span class="built_in">require</span> <span class="string">'readline'</span>
+util         = <span class="built_in">require</span> <span class="string">'util'</span>
+inspect      = util.inspect
+vm           = <span class="built_in">require</span> <span class="string">'vm'</span>
+Script       = vm.Script
+Module       = <span class="built_in">require</span> <span class="string">'module'</span>
+KAL_KEYWORDS = <span class="built_in">require</span>(<span class="string">'./grammar'</span>).KEYWORDS</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>The prompt is five characters (with a space) and defaults to <code>kal&gt;</code>. We tried to enable color output if the OS/shell supports it. We don‘t bother on Windows since it won’t work with normal escape codes anyway.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>REPL_PROMPT = <span class="string">'kal&gt; '</span>
+REPL_PROMPT_MULTILINE = <span class="string">'---&gt; '</span>
+REPL_PROMPT_CONTINUATION = <span class="string">'...&gt; '</span>
+enableColors = <span class="literal">no</span>
+<span class="keyword">unless</span> process.platform <span class="keyword">is</span> <span class="string">'win32'</span>
+  enableColors = <span class="keyword">not</span> process.env.NODE_DISABLE_COLORS</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>The error function will print the stack trace if it is available.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">error</span><span class="params">(err)</span></span>
+  stdout.write err.stack <span class="keyword">or</span> err.toString()
+  stdout.write <span class="string">'\n'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h1>Autocompletion</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>These regexes match complete-able bits of text.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>ACCESSOR  = <span class="regexp">/\s*([\w\.]+)(?:\.(\w*))$/</span>
+SIMPLEVAR = <span class="regexp">/(\w+)$/i</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>The <code>autocomplete</code> function returns a list of completions, and the completed text.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">autocomplete</span> <span class="params">(text)</span></span>
+  <span class="keyword">return</span> completeAttribute(text) <span class="keyword">or</span> completeVariable(text) <span class="keyword">or</span> [[], text]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p><code>completeAttribute</code> attempts to autocomplete a chained dotted attribute: <code>one.two.three</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">completeAttribute</span><span class="params">(text)</span></span>
+  match = text.match ACCESSOR
+  <span class="keyword">if</span> match
+    all = match[<span class="number">0</span>]
+    obj = match[<span class="number">1</span>]
+    prefix = match[<span class="number">2</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>If the object doesn&#39;t exist (or running it causes an error), we abort autocomplete.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">try</span>
+      obj = Script.runInThisContext obj
+    <span class="keyword">catch</span> e
+      <span class="keyword">return</span>
+    <span class="keyword">return</span> <span class="keyword">when</span> obj <span class="keyword">doesnt</span> <span class="keyword">exist</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Otherwise we get property names and return them as a list, avoiding duplicates.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    obj = Object(obj)
+    candidates = Object.getOwnPropertyNames obj
+    obj = Object.getPrototypeOf obj
+    <span class="keyword">while</span> obj
+      <span class="keyword">for</span> key <span class="keyword">in</span> Object.getOwnPropertyNames(obj)
+        candidates.push key <span class="keyword">unless</span> key <span class="keyword">in</span> candidates
+      obj = Object.getPrototypeOf obj
+    completions = getCompletions prefix, candidates
+    <span class="keyword">return</span> [completions, prefix]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p><code>completeVariable</code> attempts to autocomplete an in-scope free variable like <code>one</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">completeVariable</span> <span class="params">(text)</span></span>
+  free = text.match(SIMPLEVAR)?[<span class="number">1</span>]
+  free = <span class="string">""</span> <span class="keyword">if</span> text <span class="keyword">is</span> <span class="string">""</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Get a list of variables by running <code>getOwnPropertyNames</code> on <code>this</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> free <span class="keyword">exists</span>
+    vars = Script.runInThisContext <span class="string">'Object.getOwnPropertyNames(Object(this))'</span>
+    keywords = []</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Include keywords as possible matches unless they start with <code>__</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">for</span> r <span class="keyword">in</span> KAL_KEYWORDS
+      keywords.push r <span class="keyword">when</span> r.slice(<span class="number">0</span>,<span class="number">2</span>) <span class="keyword">isnt</span> <span class="string">'__'</span>
+    candidates = vars
+    <span class="keyword">for</span> key <span class="keyword">in</span> keywords
+      candidates.push key <span class="keyword">when</span> <span class="keyword">not</span> (key <span class="keyword">in</span> candidates)
+    completions = getCompletions free, candidates
+    <span class="keyword">return</span> [completions, free]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p><code>getCompletions</code> returns elements of candidates for which <code>prefix</code> is a prefix.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">getCompletions</span><span class="params">(prefix, candidates)</span></span>
+  rv = []
+  <span class="keyword">for</span> el <span class="keyword">in</span> candidates
+    rv.push el <span class="keyword">when</span> <span class="number">0</span> <span class="keyword">is</span> el.indexOf prefix
+  <span class="keyword">return</span> rv</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <h1>Exceptions</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Make sure that uncaught exceptions don&#39;t kill the REPL.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>process.<span class="literal">on</span>(<span class="string">'uncaughtException'</span>, error)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <h1>Running the REPL</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>The current backlog of multi-line code.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>backlog = <span class="string">''</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>The current sandbox. We run in the current scope because certain globals (like Array) are not identical in a sandbox. For example, [1,2] instanceof Array would be false in a sandbox.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>sandbox = <span class="built_in">global</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>The main REPL function, <strong>run</strong>, is called every time a line of code is entered. We attempt to evaluate the command. If there&#39;s an exception, we print it out instead of exiting.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">run</span><span class="params">(buffer)</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>Remove single-line comments</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  buffer = buffer.replace <span class="regexp">/(^|[\r\n]+)(\s*)##?(?:[^#\r\n][^\r\n]*|)($|[\r\n])/</span>, <span class="string">"$1$2$3"</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>Remove trailing newlines.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  buffer = buffer.replace <span class="regexp">/[\r\n]+$/</span>, <span class="string">""</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>If we are in multiline mode, just add text to the backlog.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> multilineMode
+    backlog += <span class="string">"<span class="subst">#{buffer}</span>\n"</span>
+    repl.setPrompt REPL_PROMPT_CONTINUATION
+    repl.prompt()
+    <span class="keyword">return</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>If there was nothing entered, don&#39;t bother to evaluate it - just print a new prompt.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> buffer.toString().trim() <span class="keyword">is</span> <span class="string">""</span> <span class="keyword">and</span> backlog <span class="keyword">is</span> <span class="string">""</span>
+    repl.prompt()
+    <span class="keyword">return</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>Otherwise, update the backlog.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  backlog += buffer
+  code = backlog</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>Check for a line continuation character and give another prompt line if one was found.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> code[code.length - <span class="number">1</span>] <span class="keyword">is</span> <span class="string">'\\'</span>
+    backlog = <span class="string">"<span class="subst">#{backlog.slice(<span class="number">0</span>,-<span class="number">1</span>)}</span>\n"</span>
+    repl.setPrompt REPL_PROMPT_CONTINUATION
+    repl.prompt()
+    <span class="keyword">return</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>If we made it this far, we are ready to execute <code>code</code>. Reset the prompt and backlog then make the sandbox.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  repl.setPrompt REPL_PROMPT
+  backlog = <span class="string">""</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>We keep the same sandbox between runs, so only create it if it doesn&#39;t exist.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  sandbox = Kal.makeSandbox() <span class="keyword">unless</span> sandbox <span class="keyword">exists</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>Run the code and print the output (using <code>util.inspect</code>) or error trace.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">try</span>
+    _ = global._
+    returnValue = Kal.eval(code, {<span class="attribute">filename</span>: <span class="string">'repl'</span>, <span class="attribute">modulename</span>: <span class="string">'repl'</span>, <span class="attribute">bare</span>:<span class="literal">yes</span>, <span class="attribute">sandbox</span>:sandbox})
+    <span class="keyword">if</span> returnValue <span class="keyword">is</span> <span class="literal">undefined</span>
+      global._ = _
+    repl.output.write <span class="string">"<span class="subst">#{inspect(returnValue, <span class="literal">no</span>, <span class="number">2</span>, enableColors)}</span>\n"</span>
+  <span class="keyword">catch</span> err
+    error err
+  repl.prompt()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Set up <code>stdin</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">if</span> stdin.readable <span class="keyword">and</span> stdin.isRaw</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Handle piped input.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  pipedInput = <span class="string">''</span>
+  repl = {}
+  repl.<span class="function"><span class="title">prompt</span> = -&gt;
+</span>    stdout.write me._prompt
+  repl.<span class="function"><span class="title">setPrompt</span> = <span class="params">(p)</span> -&gt;
+</span>    me._prompt = p
+  repl.input = stdin
+  repl.output = stdout
+  repl.<span class="function"><span class="title">on</span> = -&gt;
+</span>    <span class="keyword">return</span>
+
+  stdin.<span class="literal">on</span> <span class="string">'data'</span>, <span class="function"><span class="params">(chunk)</span> -&gt;
+</span>    pipedInput += chunk
+    nlre = <span class="regexp">/\n/</span>
+    <span class="keyword">return</span> <span class="keyword">unless</span> nlre.test pipedInput
+    lines = pipedInput.split <span class="string">"\n"</span>
+    pipedInput = lines[lines.length - <span class="number">1</span>]
+    <span class="keyword">for</span> line <span class="keyword">in</span> lines.slice(<span class="number">1</span>,-<span class="number">1</span>)
+      <span class="keyword">if</span> line
+        stdout.write <span class="string">"<span class="subst">#{line}</span>\n"</span>
+        <span class="keyword">run</span> line, sandbox
+    <span class="keyword">return</span>
+
+  stdin.<span class="literal">on</span> <span class="string">'end'</span>,<span class="function"> -&gt;
+</span>    <span class="keyword">for</span> line <span class="keyword">in</span> pipedInput.trim().split(<span class="string">"\n"</span>)
+      <span class="keyword">if</span> line
+        stdout.write <span class="string">"<span class="subst">#{line}</span>\n"</span>
+        <span class="keyword">run</span> line, sandbox
+    stdout.write <span class="string">"\n"</span>
+    process.exit(<span class="number">0</span>)
+
+<span class="keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>Handle user input using autocomplete and a read buffer.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> readline.createInterface.length &lt; <span class="number">3</span>
+    repl = readline.createInterface stdin, autocomplete
+    stdin.<span class="literal">on</span> <span class="string">'data'</span>, <span class="function"><span class="params">(buffer)</span> -&gt;
+</span>      repl.write buffer
+  <span class="keyword">else</span>
+    repl = readline.createInterface stdin, stdout, autocomplete</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>Default multiline mode to off.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>multilineMode = <span class="literal">off</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p>Handle the multi-line mode key switch (Ctrl-V).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>repl.input.<span class="literal">on</span> <span class="string">'keypress'</span>, <span class="function"><span class="params">(char, key)</span> -&gt;
+</span>  <span class="keyword">return</span> <span class="keyword">unless</span> key <span class="keyword">and</span> key.ctrl <span class="keyword">and</span> <span class="keyword">not</span> key.meta <span class="keyword">and</span> <span class="keyword">not</span> key.shift <span class="keyword">and</span> key.name <span class="keyword">is</span> <span class="string">'v'</span>
+  cursorPos = repl.cursor
+  repl.output.cursorTo <span class="number">0</span>
+  repl.output.clearLine <span class="number">1</span>
+  multilineMode = <span class="keyword">not</span> multilineMode
+  repl._line() <span class="keyword">if</span> <span class="keyword">not</span> multilineMode <span class="keyword">and</span> backlog
+  backlog = <span class="string">''</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>Switch the prompt and reset the cursor to the next line.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  newPrompt = REPL_PROMPT_MULTILINE <span class="keyword">when</span> multilineMode <span class="keyword">otherwise</span> REPL_PROMPT
+  repl.setPrompt newPrompt
+  repl.prompt()
+  repl.cursor = cursorPos
+  repl.output.cursorTo newPrompt.length + (repl.cursor)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>Handle Ctrl-d press at end of last line in multiline mode</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>repl.input.<span class="literal">on</span> <span class="string">'keypress'</span>, <span class="function"><span class="params">(char, key)</span> -&gt;
+</span>  <span class="keyword">return</span> <span class="keyword">unless</span> multilineMode <span class="keyword">and</span> repl.line
+  <span class="keyword">return</span> <span class="keyword">unless</span> key <span class="keyword">and</span> key.ctrl <span class="keyword">and</span> <span class="keyword">not</span> key.meta <span class="keyword">and</span> <span class="keyword">not</span> key.shift <span class="keyword">and</span> key.name <span class="keyword">is</span> <span class="string">'d'</span>
+  multilineMode = <span class="literal">off</span>
+  repl._line()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>Watch for Ctrl-C and handle it gracefully if we are in the midle of a multiline entry.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>repl.<span class="literal">on</span> <span class="string">'attemptClose'</span>,<span class="function"> -&gt;
+</span>  <span class="keyword">if</span> multilineMode
+    multilineMode = <span class="literal">off</span>
+    repl.output.cursorTo <span class="number">0</span>
+    repl.output.clearLine <span class="number">1</span>
+    repl._onLine repl.line
+    <span class="keyword">return</span>
+  <span class="keyword">if</span> backlog <span class="keyword">or</span> repl.line
+    backlog = <span class="string">''</span>
+    repl.historyIndex = -<span class="number">1</span>
+    repl.setPrompt REPL_PROMPT
+    repl.output.write <span class="string">'\n(^C again to quit)'</span>
+    repl.line = <span class="string">''</span>
+    repl._line (repl.line)
+  <span class="keyword">else</span>
+    repl.close()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>Cleanup on close.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>repl.<span class="literal">on</span> <span class="string">'close'</span>,<span class="function"> -&gt;
+</span>  repl.output.write <span class="string">'\n'</span>
+  repl.input.destroy()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>Run <code>run</code> when a line is entered.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>repl.<span class="literal">on</span> <span class="string">'line'</span>, <span class="keyword">run</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>Start with the default prompt and go.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>repl.setPrompt REPL_PROMPT
+repl.prompt()</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

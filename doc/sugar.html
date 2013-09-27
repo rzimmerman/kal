@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Kal Sugar</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="ast.html">
+                ast.litkal
+              </a>
+            
+              
+              <a class="source" href="command.html">
+                command.litkal
+              </a>
+            
+              
+              <a class="source" href="generator.html">
+                generator.litkal
+              </a>
+            
+              
+              <a class="source" href="grammar.html">
+                grammar.litkal
+              </a>
+            
+              
+              <a class="source" href="interactive.html">
+                interactive.litkal
+              </a>
+            
+              
+              <a class="source" href="kal.html">
+                kal.litkal
+              </a>
+            
+              
+              <a class="source" href="lexer.html">
+                lexer.litkal
+              </a>
+            
+              
+              <a class="source" href="literate.html">
+                literate.litkal
+              </a>
+            
+              
+              <a class="source" href="parser.html">
+                parser.litkal
+              </a>
+            
+              
+              <a class="source" href="sugar.html">
+                sugar.litkal
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h1>Kal Sugar</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>This module applies a couple of “syntactic sugar” pre-processing steps to Kal code before it goes to the compiler. These steps would be onerous to do during the parsing stage, but are generally easier to do on a token stream. Each function in this module takes an input token stream and returns a new, possibly modified one.</p>
+<p>Some sugar functions use the keyword list from the grammar, most notable the implicit parentheses for function calls.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>grammar  = <span class="built_in">require</span> <span class="string">'./grammar'</span>
+KEYWORDS  = grammar.KEYWORDS
+RVALUE_OK = grammar.RVALUE_OK</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>The entry point for this module is the <code>translate_sugar</code> function, which takes an input token stream and returns a modified token stream for use with the parser. It also takes an optional <code>options</code> parameter which may contain the following properties:</p>
+<ul>
+<li><strong>show_tokens</strong> - if true, this module will print the input token stream to the console. This is useful for debugging the compiler</li>
+</ul>
+<p>The function also takes a <code>tokenizer</code> argument which is a function that given a code string, returns an array with the first element being a token array and the second a comment token array. The Kal compiler uses the <code>tokenize</code> funtion in the <code>lexer</code> module for this argument. <code>tokenizer</code>, if present, is used to tokenize code embedded in double-quoted strings. If this argument is missing, double-quoted strings with embedded code blocks will be left as strings.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">translate_sugar</span> <span class="params">(tokens, options, tokenizer)</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>The current sugar stages are:</p>
+<ol>
+<li><strong>code_in_strings</strong> - for double-quoted strings with embedded code blocks (<code>&quot;1 + 1 = #{1 + 1}&quot;</code>), this function tokenizes the code blocks and converts the string to the equivalent of <code>&quot;1 + 1 = &quot; + (1 + 1)</code>.</li>
+<li><strong>clean</strong> - removes whitespace</li>
+<li><strong>multiline_statements</strong> - removes line breaks after commas on long statements</li>
+<li><strong>multiline_lists</strong> - this function collapses list definitions that span muliple lines into a single line, though the tokens do still retain their original line numbers.</li>
+<li><strong>no_paren_function_calls</strong> - adds parentheses around implicit function calls like <code>my_function 1, 2</code>.</li>
+<li><strong>print_statement</strong> - converts calls to <code>print</code> to <code>console.log</code></li>
+<li><strong>coffee_style_functions</strong> - converts functions with CoffeeScript syntax (<code>(a,b) -&gt; return a + b</code>) to standard Kal function syntax.</li>
+</ol>
+<p>The output is a new token stream (array).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  out_tokens = coffee_style_<span class="function"><span class="keyword">function</span><span class="title">s</span> <span class="title">print_statement</span> <span class="title">noparen_function_calls</span> <span class="title">multiline_statements</span> <span class="title">multiline_lists</span> <span class="title">clean</span> <span class="title">code_in_strings</span> <span class="title">tokens</span>, <span class="title">tokenizer</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Debug printing of the token stream is enabled with the <code>show_tokens</code> option.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">if</span> options?.show_tokens
+    debug = []
+    <span class="keyword">for</span> t <span class="keyword">in</span> out_tokens
+      <span class="keyword">if</span> t.type <span class="keyword">is</span> <span class="string">'NEWLINE'</span>
+        debug.push <span class="string">'\n'</span>
+      <span class="keyword">else</span>
+        debug.push t.<span class="keyword">value</span> <span class="keyword">or</span> t.type
+    console.log debug.join <span class="string">' '</span>
+  <span class="keyword">return</span> out_tokens
+<span class="reserved">export</span>s.translate_sugar = translate_sugar</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <h1>Code In Strings</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>This function allows support for double-quoted strings with embedded code, like: “x is #{x}”. It uses the <code>tokenizer</code> argument (a function that converts a code string into a token array, like <code>lexer.tokenize</code>)  to run the code blocks in the string through the lexer. The return value is the merged stream of tokens.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">code_in_strings</span> <span class="params">(tokens, tokenizer)</span></span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>We abort if there is no <code>tokenizer</code> provided and just don&#39;t translate the strings.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">return</span> tokens <span class="keyword">when</span> tokenizer <span class="keyword">doesnt</span> <span class="keyword">exist</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>The output is a new token array (we don&#39;t modify the original).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  out_tokens = []
+  <span class="keyword">for</span> token <span class="keyword">in</span> tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>For double-quoted strings, we search for code blocks like <code>&quot;#{code}&quot;</code>. The regex uses the non-greedy operator to avoid parsing <code>&quot;#{block1} #{block2}&quot;</code> as a single block.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'STRING'</span> <span class="keyword">and</span> token.<span class="keyword">value</span>[<span class="number">0</span>] <span class="keyword">is</span> <span class="string">'"'</span>
+      rv = token.<span class="keyword">value</span>
+      r = <span class="regexp">/#{.*?}/g</span>
+      m = r.exec rv</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>We generally must add parentheses around any string that gets broken up for code blocks (and it is always safe to do so). <code>soft</code> indicates that this was added by the <code>sugar</code> module, not the user. It&#39;s passed forward to no-paren function calls.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      add_parens = <span class="literal">yes</span> <span class="keyword">if</span> m <span class="keyword">otherwise</span> <span class="literal">no</span>
+      out_tokens.push({<span class="attribute">text</span>:<span class="string">'('</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'('</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>, <span class="attribute">soft</span>:<span class="literal">yes</span>}) <span class="keyword">when</span> add_parens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>For each code block match, we first add a string token to the stream for all the constant text before the block start, then a <code>+</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">while</span> m
+        new_token_text = rv.slice(<span class="number">0</span>,m.index) + <span class="string">'"'</span>
+        out_tokens.push {<span class="attribute">text</span>:new_token_text, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:new_token_text, <span class="attribute">type</span>:<span class="string">'STRING'</span>}
+        out_tokens.push {<span class="attribute">text</span>:<span class="string">'+'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'+'</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Next we add the parsed version of the code block (a token array) generated by running the code through the lexer. If there is more than one token, this also needs to be in parentheses.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        new_tokens = tokenizer(rv.slice(m.index+<span class="number">2</span>,m.index+m[<span class="number">0</span>].length-<span class="number">1</span>))[<span class="number">0</span>]
+        out_tokens.push({<span class="attribute">text</span>:<span class="string">'('</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'('</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}) <span class="keyword">when</span> new_tokens.length <span class="keyword">isnt</span> <span class="number">1</span>
+        out_tokens = out_tokens.concat new_tokens
+        out_tokens.push({<span class="attribute">text</span>:<span class="string">')'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">')'</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}) <span class="keyword">when</span> new_tokens.length <span class="keyword">isnt</span> <span class="number">1</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Next we make a string out of any remaining text after the block in case this is the last match. If the loop exits here, it gets added to the token stream, otherwise we ignore it since the next iteration will take care of it. If the string is the empty string, we set it to blank since we don&#39;t want things like <code>&quot;a is #{a}&quot;</code> turning into <code>(&quot;a is &quot; + a + &quot;&quot;)</code> for asthetic reasons.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        rv = <span class="string">'"'</span> + rv.slice(m.index+m[<span class="number">0</span>].length)
+        <span class="keyword">if</span> rv <span class="keyword">is</span> <span class="string">'""'</span>
+          rv = <span class="string">''</span>
+        <span class="keyword">else</span>
+          out_tokens.push {<span class="attribute">text</span>:<span class="string">'+'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'+'</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>Find the next code block if there is one.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        r = <span class="regexp">/#{.*?}/g</span>
+        m = r.exec rv</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>If there wasn&#39;t a next code block, add the remaining string (if any) and close paren.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      out_tokens.push({<span class="attribute">text</span>:rv, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:rv, <span class="attribute">type</span>:<span class="string">'STRING'</span>}) <span class="keyword">when</span> rv <span class="keyword">isnt</span> <span class="string">''</span>
+      out_tokens.push({<span class="attribute">text</span>:<span class="string">')'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">')'</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>, <span class="attribute">soft</span>:<span class="literal">yes</span>}) <span class="keyword">when</span> add_parens
+    <span class="keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>For anything other than a double-quoted string, just pass it through.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      out_tokens.push token
+  <span class="keyword">return</span> out_tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <h1>Clean</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Removes whitespace. It marks tokens that were followed by whitespace so that the later stages can detect the difference between things like <code>my_function(a) -&gt;</code> and <code>my_function (a) -&gt;</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">clean</span> <span class="params">(tokens)</span></span>
+  out_tokens = []
+  <span class="keyword">for</span> token <span class="keyword">in</span> tokens
+    <span class="keyword">if</span> token.type <span class="keyword">isnt</span> <span class="string">'WHITESPACE'</span>
+      out_tokens.push token
+    <span class="keyword">else</span> <span class="keyword">if</span> out_tokens.length &gt; <span class="number">0</span>
+      out_tokens[out_tokens.length - <span class="number">1</span>].trailed_by_white = <span class="literal">yes</span>
+  <span class="keyword">return</span> out_tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <h1>Multiline Statements</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>This function removes newlines and indentation after commas, allowing long lines of code to be broken up into multiple lines. Token line numbers are preserved for error reporting.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">multiline_statements</span> <span class="params">(tokens)</span></span>
+  out_tokens = []
+  last_token = <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>We keep track of whether or not we are on a continued line and how many indents we ignored.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  continue_line = <span class="literal">no</span>
+  reduce_dedent = <span class="number">0</span>
+
+  <span class="keyword">for</span> token <span class="keyword">in</span> tokens
+    skip_token = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>If we see a newline after a comma, remove it from the stream and mark that we are in line continuation mode.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> last_token?.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">','</span>] <span class="keyword">and</span> token.type <span class="keyword">is</span> <span class="string">'NEWLINE'</span>
+      continue_line = <span class="literal">yes</span>
+      skip_token = <span class="literal">yes</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>In line continuation mode, ignore indents and dedents, but keep track of them. We exit line continuation mode when we see a <code>DEDENT</code> that brings back to even with the original line.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> continue_line
+      <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'INDENT'</span>
+        skip_token = <span class="literal">yes</span>
+        reduce_dedent += <span class="number">1</span>
+      <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'NEWLINE'</span>
+        skip_token = <span class="literal">yes</span>
+      <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'DEDENT'</span>
+        <span class="keyword">if</span> reduce_dedent &gt; <span class="number">0</span>
+          reduce_dedent -= <span class="number">1</span>
+          skip_token = <span class="literal">yes</span>
+          <span class="keyword">if</span> reduce_dedent <span class="keyword">is</span> <span class="number">0</span>
+            out_tokens.push {<span class="attribute">text</span>:<span class="string">'\n'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">''</span>,<span class="attribute">type</span>:<span class="string">'NEWLINE'</span>}
+        <span class="keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>When exiting line continuation mode, we have to add back in the last <code>NEWLINE</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>          out_tokens.push last_token</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>Add the token to the new stream unless we decided to skip it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    out_tokens.push(token) <span class="keyword">unless</span> skip_token
+    last_token = token
+  <span class="keyword">return</span> out_tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <h1>No-Paren Function Calls</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>This stage converts implicit function calls (<code>my_function a, b</code>) to explicit ones (<code>my_function(a,b)</code>). <code>NOPAREN_WORDS</code> specify keywords that should not be considered as a first argument to a function call. For example, we don&#39;t want <code>x is a</code> to turn into <code>x(is(a))</code>, but we do want <code>x y z</code> to become <code>x(y(z))</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>NOPAREN_WORDS = [<span class="string">'is'</span>,<span class="string">'otherwise'</span>,<span class="string">'except'</span>,<span class="string">'else'</span>,<span class="string">'doesnt'</span>,<span class="string">'exist'</span>,<span class="string">'exists'</span>,<span class="string">'isnt'</span>,<span class="string">'inherits'</span>,
+                 <span class="string">'from'</span>,<span class="string">'and'</span>,<span class="string">'or'</span>,<span class="string">'xor'</span>,<span class="string">'in'</span>,<span class="string">'when'</span>,<span class="string">'instanceof'</span>,<span class="string">'of'</span>,<span class="string">'nor'</span>,<span class="string">'if'</span>,<span class="string">'unless'</span>,
+                 <span class="string">'except'</span>,<span class="string">'for'</span>,<span class="string">'with'</span>,<span class="string">'wait'</span>,<span class="string">'task'</span>,<span class="string">'fail'</span>,<span class="string">'parallel'</span>,<span class="string">'series'</span>,<span class="string">'safe'</span>,<span class="string">'but'</span>,
+                 <span class="string">'bitwise'</span>,<span class="string">'mod'</span>,<span class="string">'second'</span>,<span class="string">'seconds'</span>,<span class="string">'while'</span>,<span class="string">'until'</span>]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>This function is admittedly messy and in need of a rewrite. But it&#39;s not broken, so…</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">noparen_function_calls</span> <span class="params">(tokens)</span></span>
+  out_tokens = []
+  close_paren_count = <span class="number">0</span>
+  last_token = <span class="literal">null</span>
+  triggers = []
+  closures = []
+  ignore_next_indent = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>We need a token counter because sometimes we look back two or three tokens.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  i = <span class="number">0</span>
+  <span class="keyword">while</span> i &lt; tokens.length
+    token = tokens[i]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Check that the previous token is not a reserved word. This can happen if the last token is not a keyword, two tokens ago was a <code>.</code> (like <code>x.for a</code>), or the last token is a keyword but a valid r-value (<code>me x</code>).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    last_token_isnt_reserved = <span class="keyword">not</span> (last_token?.<span class="keyword">value</span> <span class="keyword">in</span> KEYWORDS) <span class="keyword">or</span> tokens[i-<span class="number">2</span>]?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'.'</span> <span class="keyword">or</span> (last_token?.<span class="keyword">value</span> <span class="keyword">in</span> RVALUE_OK)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Check if the previous token was callable. This is only true if it is an <code>IDENTIFIER</code> (not reserved) or a <code>]</code> like <code>x[1] a</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    last_token_callable = (last_token?.type <span class="keyword">is</span> <span class="string">'IDENTIFIER'</span> <span class="keyword">and</span> last_token_isnt_reserved) <span class="keyword">or</span> last_token?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">']'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>Check that the current token isn&#39;t a no-paren word (not looking at something like <code>x for</code>).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    token_isnt_reserved = <span class="keyword">not</span> (token.<span class="keyword">value</span> <span class="keyword">in</span> NOPAREN_WORDS)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>Check that the current token is not a literal (don&#39;t want <code>my_function * 2</code> to become <code>my_function(* 2)</code>).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    non_literal = (token.type <span class="keyword">in</span> [<span class="string">'IDENTIFIER'</span>,<span class="string">'NUMBER'</span>,<span class="string">'STRING'</span>,<span class="string">'REGEX'</span>])</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p>There are some exceptions for callable literals, for things like <code>f {x:1}</code>, <code>f [1]</code>, and <code>-&gt;</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    callable_literal = (token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'{'</span> <span class="keyword">or</span> (token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'['</span> <span class="keyword">and</span> last_token?.trailed_by_white) <span class="keyword">or</span> (token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'-'</span> <span class="keyword">and</span> tokens[i+<span class="number">1</span>]?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'&gt;'</span>))</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>Combining previous checks, we check that this token is not an operator.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    this_token_not_operator = ((non_literal <span class="keyword">or</span> callable_literal) <span class="keyword">and</span> token_isnt_reserved)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>Check if this is a function declaration.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    declaring_a_<span class="function"><span class="keyword">function</span> = <span class="title">tokens</span>[<span class="title">i</span>-2]?.<span class="title">value</span> <span class="title">in</span> ['<span class="title">function</span>','<span class="title">task</span>','<span class="title">method</span>','<span class="title">class</span>'] <span class="title">and</span> <span class="title">last_token</span>?.<span class="title">type</span> <span class="title">is</span> '<span class="title">IDENTIFIER</span>'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-38">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-38">&#182;</a>
+              </div>
+              <p>Check if a parenthesis is <code>soft</code>, meaning added by the sugar and not the user.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    soft_paren = (token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'('</span> <span class="keyword">and</span> token.soft but <span class="keyword">not</span> declaring_a_<span class="function"><span class="keyword">function</span>)</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>Don&#39;t want to add parentheses around <code>bitwise left</code> or <code>bitwise right</code>, but we also really don&#39;t want <code>left</code> and <code>right</code> to be no-paren words, otherwise <code>x left</code> would not translate to <code>x(left)</code>. These are really useful words, so we handle them in this special case to avoid this issue.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    bitwise_shift = (last_token?.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">'left'</span>,<span class="string">'right'</span>]) <span class="keyword">and</span> tokens[i-<span class="number">2</span>]?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'bitwise'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
+              <p>If the previous token is callable and the current token is not an operator (or it‘s a parenthesis that the user didn’t add) and we&#39;re not in the special <code>bitwise</code> case, then we add an open paren. We add a trigger to close the parentheses on the next <code>NEWLINE</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> last_token_callable <span class="keyword">and</span> (this_token_not_operator <span class="keyword">or</span> soft_paren) but <span class="keyword">not</span> bitwise_shift
+      triggers.push <span class="string">'NEWLINE'</span>
+      out_tokens.push {<span class="attribute">text</span>:<span class="string">'('</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'('</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}
+      closures.push <span class="string">')'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-41">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>If we&#39;re passing a function as an argument, we want to change the close trigger to a <code>DEDENT</code> and ignore the next <code>INDENT</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> (token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'function'</span> <span class="keyword">or</span> (token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'&gt;'</span> <span class="keyword">and</span> last_token?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'-'</span>)) <span class="keyword">and</span> triggers[triggers.length-<span class="number">1</span>] <span class="keyword">is</span> <span class="string">'NEWLINE'</span>
+      triggers[triggers.length-<span class="number">1</span>] = <span class="string">'DEDENT'</span>
+      ignore_next_indent = <span class="literal">yes</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>Keep track of indents so that streams like: <code>x = myfunct function () NEWLINE INDENT ... DEDENT</code> will not close out parentheses early.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'INDENT'</span>
+      <span class="keyword">if</span> ignore_next_indent
+        ignore_next_indent = <span class="literal">no</span>
+      <span class="keyword">else</span>
+        triggers.push <span class="string">'DEDENT'</span>
+        closures.push <span class="string">''</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
+              </div>
+              <p>Reset the <code>ignore_next_indent</code> flag if necessary.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'NEWLINE'</span> <span class="keyword">and</span> tokens[i+<span class="number">1</span>]?.type <span class="keyword">isnt</span> <span class="string">'INDENT'</span>
+      ignore_next_indent = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-44">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-44">&#182;</a>
+              </div>
+              <p>Check if we hit a “closure” (end of implied parentheses) when we are looking for a <code>NEWLINE</code>. This can happen on an actual <code>NEWLINE</code> or when we hit a tail conditional.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> (token.type <span class="keyword">is</span> <span class="string">'NEWLINE'</span> <span class="keyword">or</span> token.<span class="keyword">value</span> <span class="keyword">in</span> [<span class="string">'if'</span>,<span class="string">'unless'</span>,<span class="string">'when'</span>,<span class="string">'except'</span>]) <span class="keyword">and</span> closures.length &gt; <span class="number">0</span> <span class="keyword">and</span> triggers[triggers.length - <span class="number">1</span>] <span class="keyword">is</span> <span class="string">'NEWLINE'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-45">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-45">&#182;</a>
+              </div>
+              <p>If so, pop all <code>NEWLINE</code> closures and add in the implied tokens. <code>NEWLINE</code>s can close out multiple parentheses (<code>x = a b c</code>).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">while</span> closures.length &gt; <span class="number">0</span> <span class="keyword">and</span> triggers[triggers.length - <span class="number">1</span>] <span class="keyword">is</span> <span class="string">'NEWLINE'</span>
+        triggers.pop()
+        closure = closures.pop()
+        out_tokens.push({<span class="attribute">text</span>:closure, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:closure, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}) <span class="keyword">if</span> closure <span class="keyword">isnt</span> <span class="string">''</span>
+      out_tokens.push token</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-46">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-46">&#182;</a>
+              </div>
+              <p>If our closure had a <code>DEDENT</code> trigger, pop it and add the token.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'DEDENT'</span> <span class="keyword">and</span> closures.length &gt; <span class="number">0</span> <span class="keyword">and</span> triggers[triggers.length - <span class="number">1</span>] <span class="keyword">is</span> <span class="string">'DEDENT'</span>
+      out_tokens.push token
+      triggers.pop()
+      closure = closures.pop()
+      out_tokens.push({<span class="attribute">text</span>:closure, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:closure, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}) <span class="keyword">if</span> closure <span class="keyword">isnt</span> <span class="string">''</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-47">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-47">&#182;</a>
+              </div>
+              <p>If no trigger was matched, just pass the token through.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> closures.length <span class="keyword">is</span> <span class="number">0</span> <span class="keyword">or</span> token.type <span class="keyword">isnt</span> triggers[triggers.length - <span class="number">1</span>]
+      out_tokens.push token
+    last_token = token
+    i += <span class="number">1</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-48">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-48">&#182;</a>
+              </div>
+              <p>If we hit EOF, pop out all the remaning closures.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  <span class="keyword">while</span> closures.length &gt; <span class="number">0</span>
+    closure = closures.pop()
+    out_tokens.push({<span class="attribute">text</span>:closure, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:closure, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}) <span class="keyword">if</span> closure <span class="keyword">isnt</span> <span class="string">''</span>
+  <span class="keyword">return</span> out_tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-49">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-49">&#182;</a>
+              </div>
+              <h1>Coffee-Style Functions</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-50">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-50">&#182;</a>
+              </div>
+              <p>This function converts CoffeeScript-style functions (<code>() -&gt;</code>) to Kal syntax.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">coffee_style_functions</span> <span class="params">(tokens)</span></span>
+  out_tokens = []
+  last_token = <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-51">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-51">&#182;</a>
+              </div>
+              <p>We need to track the token index since we look back several tokens in this stage.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  i = <span class="number">0</span>
+  <span class="keyword">while</span> i &lt; tokens.length
+    token = tokens[i]</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-52">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-52">&#182;</a>
+              </div>
+              <p>Look for a <code>-&gt;</code>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> last_token?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'-'</span> <span class="keyword">and</span> token?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'&gt;'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-53">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-53">&#182;</a>
+              </div>
+              <p>If we see the <code>-&gt;</code>, that means the current token is <code>&gt;</code> and we already added the <code>-</code> to the new stream. We have to pop the <code>-</code> off the stream.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      out_tokens.pop()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-54">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-54">&#182;</a>
+              </div>
+              <p>We create a new token stream fragment for this function header.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      new_tokens = []</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-55">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-55">&#182;</a>
+              </div>
+              <p>Next we examine the last token in the stream. Since we just popped the <code>-</code>, this will either be a <code>)</code> if the definition is in the form <code>(args) -&gt;</code> or something else if it doesn&#39;t specify arguments.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      t = out_tokens.pop()
+      <span class="keyword">if</span> t?.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">')'</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-56">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-56">&#182;</a>
+              </div>
+              <p>If there are arguments here, keep popping until we hit the <code>(</code>, adding the argument tokens to the <code>new_tokens</code> stream. At the end of this loop, <code>new_tokens</code> will be the arguments passed (if any) without enclosing parens.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">while</span> t?.<span class="keyword">value</span> <span class="keyword">isnt</span> <span class="string">'('</span>
+          new_tokens.unshift t
+          t = out_tokens.pop()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-57">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-57">&#182;</a>
+              </div>
+              <p>Pass the closing paren.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        new_tokens.unshift t
+      <span class="keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-58">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-58">&#182;</a>
+              </div>
+              <p>If no arguments were specified, let new_tokens be <code>()</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        out_tokens.push t
+        new_tokens.push {<span class="attribute">text</span>:<span class="string">'('</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'('</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}
+        new_tokens.push {<span class="attribute">text</span>:<span class="string">')'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">')'</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-59">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-59">&#182;</a>
+              </div>
+              <p>Prepend the <code>function</code> token to <code>new_tokens</code>, which currently has the arguments (if any) in parentheses. Then add it to the <code>out_tokens</code> stream.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      f_token = {<span class="attribute">text</span>:<span class="string">'function'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'function'</span>, <span class="attribute">type</span>:<span class="string">'IDENTIFIER'</span>}
+      new_tokens.unshift f_token
+      out_tokens = out_tokens.concat new_tokens
+    <span class="keyword">else</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-60">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-60">&#182;</a>
+              </div>
+              <p>If we&#39;re not handling a Coffee-Style function, just pass tokens through.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      out_tokens.push token
+    last_token = token
+    i += <span class="number">1</span>
+  <span class="keyword">return</span> out_tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-61">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-61">&#182;</a>
+              </div>
+              <h1>Multiline Lists</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-62">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-62">&#182;</a>
+              </div>
+              <p>This function converts list definitions that span multiple lines into a single line. Tokens retain their original line numbers. This supports lists and explicit map definitions (<code>{}</code>).</p>
+<p>This function is admittedly awful and needs rework.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">multiline_lists</span> <span class="params">(tokens)</span></span>
+  out_tokens = []</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-63">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-63">&#182;</a>
+              </div>
+              <p>We need to track nested lists.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>  list_depth = <span class="number">0</span>
+  last_token_was_separator = <span class="literal">no</span>
+  indent_depths = []
+  indent_depth = <span class="number">0</span>
+  leftover_indent = <span class="number">0</span>
+  <span class="keyword">for</span> token <span class="keyword">in</span> tokens
+    skip_this_token = <span class="literal">no</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-64">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-64">&#182;</a>
+              </div>
+              <p>We need to keep track of whether or not this token is eligible as a list item separator.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    token_is_separator = (token.type <span class="keyword">in</span> [<span class="string">'NEWLINE'</span>,<span class="string">'INDENT'</span>, <span class="string">'DEDENT'</span>] <span class="keyword">or</span> token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">','</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-65">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-65">&#182;</a>
+              </div>
+              <p>When we see a list start, we push to the list stack.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span> token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'['</span> <span class="keyword">or</span> token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'{'</span>
+      list_depth += <span class="number">1</span>
+      indent_depths.push indent_depth
+      indent_depth = <span class="number">0</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-66">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-66">&#182;</a>
+              </div>
+              <p>Likewise for a list end, we pop the stack.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">']'</span> <span class="keyword">or</span> token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'}'</span>
+      list_depth -= <span class="number">1</span>
+      leftover_indent = indent_depth
+      indent_depth = indent_depths.pop()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-67">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-67">&#182;</a>
+              </div>
+              <p>Keep track of the indentation level, looking for a token that returns us to the original indent. We continue to skip indents/dedents until this happens. Basically, we want to ignore indentation inside these multi-line definitions. Once back to original the indent level, we push in a <code>NEWLINE</code>.</p>
+<p>Note that none of this happens unless we are inside a list definition (all these flags are ignored).</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'INDENT'</span>
+      indent_depth += <span class="number">1</span>
+      <span class="keyword">if</span> leftover_indent <span class="keyword">isnt</span> <span class="number">0</span>
+        leftover_indent += <span class="number">1</span>
+        skip_this_token = <span class="literal">yes</span>
+        out_tokens.push({<span class="attribute">text</span>:<span class="string">''</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'\n'</span>, <span class="attribute">type</span>:<span class="string">'NEWLINE'</span>}) <span class="keyword">if</span> leftover_indent <span class="keyword">is</span> <span class="number">0</span>
+    <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'DEDENT'</span>
+      indent_depth -= <span class="number">1</span>
+      <span class="keyword">if</span> leftover_indent <span class="keyword">isnt</span> <span class="number">0</span>
+        leftover_indent -= <span class="number">1</span>
+        out_tokens.push({<span class="attribute">text</span>:<span class="string">''</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'\n'</span>, <span class="attribute">type</span>:<span class="string">'NEWLINE'</span>}) <span class="keyword">if</span> leftover_indent <span class="keyword">is</span> <span class="number">0</span>
+        skip_this_token = <span class="literal">yes</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-68">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-68">&#182;</a>
+              </div>
+              <p>Skip newlines inside of list definitions.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">else</span> <span class="keyword">if</span> token.type <span class="keyword">is</span> <span class="string">'NEWLINE'</span>
+      <span class="keyword">if</span> leftover_indent <span class="keyword">isnt</span> <span class="number">0</span>
+        skip_this_token = <span class="literal">yes</span>
+    <span class="keyword">else</span>
+      leftover_indent = <span class="number">0</span>
+
+    <span class="keyword">if</span> list_depth &gt; <span class="number">0</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-69">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-69">&#182;</a>
+              </div>
+              <p>The first token in a newline stretch gets turned into a comma</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      <span class="keyword">if</span> token_is_separator <span class="keyword">and</span> <span class="keyword">not</span> last_token_was_separator
+        out_tokens.push {<span class="attribute">text</span>:<span class="string">','</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">','</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}
+      <span class="keyword">else</span>
+        out_tokens.push token <span class="keyword">unless</span> token_is_separator <span class="keyword">or</span> skip_this_token
+    <span class="keyword">else</span>
+      out_tokens.push token <span class="keyword">unless</span> skip_this_token
+    last_token_was_separator = token_is_separator <span class="keyword">and</span> (list_depth &gt; <span class="number">0</span>)
+  <span class="keyword">return</span> out_tokens</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-70">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h1">
+                <a class="pilcrow" href="#section-70">&#182;</a>
+              </div>
+              <h1>Print Statements</h1>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-71">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-71">&#182;</a>
+              </div>
+              <p>Convert <code>print</code> tokens to <code>console</code> <code>.</code> <code>log</code> tokens.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="function"><span class="keyword">function</span> <span class="title">print_statement</span> <span class="params">(tokens)</span></span>
+  new_tokens = []
+  <span class="keyword">for</span> token <span class="keyword">in</span> tokens
+    <span class="keyword">if</span> token.<span class="keyword">value</span> <span class="keyword">is</span> <span class="string">'print'</span> <span class="keyword">and</span> token.type <span class="keyword">is</span> <span class="string">'IDENTIFIER'</span>
+      new_tokens.push {<span class="attribute">text</span>:<span class="string">'print'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'console'</span>, <span class="attribute">type</span>:<span class="string">'IDENTIFIER'</span>}
+      new_tokens.push {<span class="attribute">text</span>:<span class="string">'print'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'.'</span>, <span class="attribute">type</span>:<span class="string">'LITERAL'</span>}
+      new_tokens.push {<span class="attribute">text</span>:<span class="string">'print'</span>, <span class="attribute">line</span>:token.line, <span class="attribute">value</span>:<span class="string">'log'</span>, <span class="attribute">type</span>:<span class="string">'IDENTIFIER'</span>}
+    <span class="keyword">else</span>
+      new_tokens.push token
+  <span class="keyword">return</span> new_tokens</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
