@@ -974,6 +974,7 @@ Defines a function, method, or task. The `of` suffix allows us to late-bind this
         if me.late_bind
           me.lock()
           me.bind_to = me.req UnaryExpression
+          me.bind_to.can_be_lvalue = no
         me.block = me.req Block
 
 FunctionDefArgument
