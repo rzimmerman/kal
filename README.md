@@ -490,7 +490,7 @@ Listed below are Kal's operators and their other-language equivalents. Note that
 | `exists`, `?`              | `?`                     | none                      | Existential check              |
 | `doesnt exist`             | none                    | none                      | Existential check (inverted)   |
 | `is`, `==`                 | `is`, `==`              | `===`                     | Boolean equality               |
-| `isnt`, `!=`               | `isnt`, `==`            | `!==`                     | Boolean inequality             |
+| `isnt`, `is not`, `!=`     | `isnt`, `==`            | `!==`                     | Boolean inequality             |
 | `>`, `>=`, `<`, `<=`       | `>`, `>=`, `<`, `<=`    | `>`, `>=`, `<`, `<=`      | Boolean comparisons            |
 | `me`, `this`               | `@`, `this`             | `this`                    | Current object                 |
 | `in`, `not in`             | `in`, `not in`          | none                      | Boolean search of array/string |

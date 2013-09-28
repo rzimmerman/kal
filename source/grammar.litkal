@@ -488,7 +488,7 @@ We copy the `value` property over so that `Variable` objects can be drop-in repl
 BinOp
 =====
 
-`BinOp: ('bitwise'? 'and'|'or'|'xor'|'left'|'right'|'not')|('not' 'in'|'of')|('+'|'-'|'*'|'/'|'>'|'<'|'^'|'<='|'>='|'=='|'!='|'and'|'but'|'or'|'xor'|'nor'|'in'|'mod'|'is'|'isnt'|'instanceof'|'of')`
+`BinOp: ('bitwise'? 'and'|'or'|'xor'|'left'|'right'|'not')|('not' 'in'|'of')|('+'|'-'|'*'|'/'|'>'|'<'|'^'|'<='|'>='|'=='|'!='|'and'|'but'|'or'|'xor'|'nor'|'in'|'mod'|('is' 'not'?)|'isnt'|'instanceof'|'of')`
 
 Binary operators can include bitwise operations, the `in` or `of` collection checks, or standard Boolean and arithmetic operators.
 
@@ -529,6 +529,11 @@ First we need to check if we got a `not` token. In this case we just set the `in
 
           if me.op.value is 'not'
             me.op = me.req_val 'in', 'of'
+            me.invert = yes
+
+Also check for `is not`, which we treat as `isnt` rather than `is (not`.
+
+          else if me.op.value is 'is' and me.opt_val 'not'
             me.invert = yes
 
 Bitwise operators are limited to a smaller list.

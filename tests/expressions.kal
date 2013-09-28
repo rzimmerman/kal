@@ -241,3 +241,9 @@ describe 'Expression', ->
     else
       s = no
     s.should.be.true
+
+  it 'should treat "is not" as "isnt"', -> #gh-112
+    x = 3
+    (x is not 3).should.be.false
+    (x is not 4).should.be.true
+    (true is not 5).should.be.true # this case would fail if we compile this as `true is (not 5)`.
