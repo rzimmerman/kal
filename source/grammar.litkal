@@ -106,7 +106,7 @@ BlockWithoutIndent
         while not me.opt('DEDENT', 'EOF')
           me.statements.push me.req Statement
           me.lock()
- 
+
  Unsee the dedent (don't consume it) since it belongs to our parent block.
 
         me.ts.prev()
@@ -276,7 +276,7 @@ AssignmentStatement
 
 `AssignmentStatement: UnaryExpression ('+'|'-'|'*'|'/')? '=' Expression WhenExpression?`
 
-Note that the `UnaryExpression` must be a valid l-value. 
+Note that the `UnaryExpression` must be a valid l-value.
 
     class AssignmentStatement inherits from ASTBase
       method parse()
@@ -521,7 +521,7 @@ Now we do a "hard" check to make sure the operator is in the acceptabled list.
 
           me.error("unexpected operator #{this.op.value}") unless me.op.value in ['+','-','*','/','>','<','^','<=','>=','==','!=']
 
-For `IDENTIFIER` tokens, we also check the token against the acceptable list. 
+For `IDENTIFIER` tokens, we also check the token against the acceptable list.
 
         else
 
