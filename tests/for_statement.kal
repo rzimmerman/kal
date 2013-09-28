@@ -54,3 +54,29 @@ describe 'For Statement', ->
     i.should.equal 1+2+3+4
     out_s.should.equal 'thisisatest'
 
+  it 'should support an index variable', (done) -> #gh-118
+    sum1 = 0
+    sum2 = 0
+    for x at i in [2,3,4,5]
+      sum1 += x
+      sum2 += i
+    i.should.equal 3
+    sum1.should.equal 14
+    sum2.should.equal 6
+    sum1 = 0
+    sum2 = 0
+    for series x at j in [2,3,4,5]
+      sum1 += x
+      pause for 0.001*j seconds
+      sum2 += j
+    sum1.should.equal 14
+    sum2.should.equal 6
+    sum1 = 0
+    sum2 = 0
+    for parallel x at i in [2,3,4,5]
+      sum1 += x
+      pause for 0.001*(4-i) seconds
+      sum2 += i
+    sum1.should.equal 14
+    sum2.should.equal 6
+    done()

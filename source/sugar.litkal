@@ -183,7 +183,7 @@ This stage converts implicit function calls (`my_function a, b`) to explicit one
     NOPAREN_WORDS = ['is','otherwise','except','else','doesnt','exist','exists','isnt','inherits',
                      'from','and','or','xor','in','when','instanceof','of','nor','if','unless',
                      'except','for','with','wait','task','fail','parallel','series','safe','but',
-                     'bitwise','mod','second','seconds','while','until']
+                     'bitwise','mod','second','seconds','while','until','at']
 
 This function is admittedly messy and in need of a rewrite. But it's not broken, so...
 

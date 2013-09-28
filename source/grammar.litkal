@@ -24,7 +24,8 @@ Reserved words are used to determine whether assignments are valid (for example,
                    'exist','is','isnt','inherits','from','nothing','empty','null',
                    'break','continue','try','catch','throw','raise','fail',
                    'with','arguments','of','in','instanceof','property','value',
-                   'parallel','series','pass','pause','until','me','this','typeof']
+                   'parallel','series','pass','pause','until','me','this','typeof',
+                   'at']
 
 **Words that are reserved in Kal but can be used as r-values**
 
@@ -250,9 +251,11 @@ While loops continue executing until the expression is true (or false in the cas
 ForStatement
 ============
 
-`ForStatement: 'for' ('parallel'|'series')? Variable ('in'|'of') Expression Block`
+`ForStatement: 'for' ('parallel'|'series')? Variable ('at' Variable)? ('in'|'of') Expression Block`
 
 For loops can iterate over object properties (`of`) or over an array (`in`). The `parallel` and `series` specifiers only apply if there are asynchronous constructs within the loop (the default is `series`).
+
+The `at` keyword allows the user to specify an index variable for `for in` loops.
 
     class ForStatement inherits from ASTBase
       method parse()
@@ -260,7 +263,11 @@ For loops can iterate over object properties (`of`) or over an array (`in`). The
         me.lock()
         me.execution_style = me.opt_val 'parallel', 'series'
         me.iterant = me.req Variable
+        if me.opt_val 'at'
+          me.index_var = me.req Variable
         me.type = me.req_val 'in', 'of'
+        if me.index_var exists but me.type.value isnt 'in'
+          me.error "index variables specified with 'at' are only allowed in 'for ... in' loops"
         me.iterable = me.req Expression
         me.loop_block = me.req Block
 

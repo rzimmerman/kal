@@ -380,6 +380,15 @@ for x in [1,2,3]
 
 Will print the numbers 1, 2, and 3. The value n the right of the `for ... in` expression is called the `iterant`. Currently it must be an array. Python-like iterable object support is coming soon.
 
+`for ... in` loops can also have an index variable:
+
+```kal
+for x at index in [10,20,30]
+  print index, x
+```
+
+Will print the `0 10`, `1 20`, `2 30`.
+
 `for` loops can also be used on objects:
 
 ```kal

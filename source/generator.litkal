@@ -886,6 +886,7 @@ Generate variables for an iterator, terminator (end of loop check), and a loop c
 Declare the iterant variable (the `x` from `for x in y`).
 
       scope[me.iterant.value] = 'closures ok' unless scope[me.iterant.value] exists
+      scope[me.index_var.value] = 'closures ok' unless me.index_var doesnt exist or scope[me.index_var.value] exists
 
 Try generating synchronous code, fall back to asynchronous code if we detect something asynchronous in our block.
 
@@ -905,6 +906,7 @@ Declare the iterator and terminator.
           rv += "#{terminator} = #{me.iterable.js()};\n"
           rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
           rv += "  #{me.iterant.value} = #{terminator}[#{iterator}];\n"
+          rv += "  #{me.index_var.value} = #{iterator};\n" when me.index_var exists
 
 `for ... of ...` loops loop through each property of the iterable (the `y` in `for x of y`) in whatever order. Luckily the JavaScript `in` operator does almost exactly this. We do have to skip properties that don't meet the `hasOwnProperty` criterion since these are inherited. We assign the element to the user supplied `iterant` (`x`) at the beginning of each iteration.
 
@@ -969,12 +971,14 @@ Increment the number of calls back we are expecting.
 
 Async call a wrapper function for the loop block. This way all iterations start on the next tick.
 
-        rv += "      k$async(function (#{me.iterant.value}) {\n"
+        rv += "      k$async(function (#{me.iterant.value}"
+        rv += ", #{me.index_var.value}" when me.index_var exists
+        rv += ") {\n"
         rv += multi_indent(render_try_blocks(), 3)
         rv += multi_indent(me.loop_block.js() + me.loop_block.js_closeout(), 3)
         rv += multi_indent(render_catch_blocks(), 3)
         if me.type.value is 'in'
-          rv += "    },#{kthis()},[#{terminator}[#{iterator}]]);\n"
+          rv += "    },#{kthis()},[#{terminator}[#{iterator}],#{iterator}]);\n"
         else
           rv += "    },#{kthis()},[#{iterator}]);\n"
         rv += "  }\n"
@@ -1030,6 +1034,7 @@ For `for series ... of ...` loops, we fill in `terminator` with an array of `ite
 The loop counter function first checks if the index variable is greater than the terminator length - 1. If so we are done looping and can execute the callback. Otherwise, we execute the loop block and queue up another call to `loop_counter`. We render `try`/`catch` blocks inside loop couner and our callback. function to make sure they get carried through.
 
         rv += "function #{loop_counter}(k$i,k$obj,#{me.iterant.value}) {\n"
+        rv += "  #{me.index_var.value} = k$i;\n" unless me.index_var doesnt exist
         rv += render_try_blocks()
         rv += "  k$i++;\n"
         rv += "  var k$lcb = function () {if (k$i < k$obj.length) return #{loop_counter}.apply(#{kthis()},[k$i,k$obj,k$obj[k$i]]); else return k$async(#{me.callback},#{kthis()});};\n"
