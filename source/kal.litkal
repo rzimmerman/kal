@@ -123,6 +123,8 @@ If the a sandbox option was specified, either use the specified object as the sa
 If the sandbox context is the `global` object, run the script in this context. Otherwise, run it with the sandbox.
 
       if sandbox is global
+        if sandbox.module doesnt exist and sandbox.require doesnt exist
+          sandbox = exports.makeSandbox sandbox, options
         return vm.runInThisContext js
       else
         return vm.runInContext js, sandbox
@@ -202,4 +204,3 @@ Add the extension for all appropriate file types. Don't overwrite `.md` in case 
       require.extensions['.kal']    = extension
       require.extensions['.litkal'] = extension
       require.extensions['.md']     = extension except when require.extensions['.md'] exists
-
