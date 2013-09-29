@@ -1,5 +1,11 @@
 #Change Log
 
+### [0.5.5](https://github.com/rzimmerman/kal/compare/r0.5.5...r0.5.4)
+* For loops support the `at` index syntax (`for x at index in y`)
+* `is not` now works like `isnt` rather than `is (not`
+* Fixed command-line execution of scripts
+* Late bound methods no longer cause the class to be defined in scope (bug)
+
 ### [0.5.4](https://github.com/rzimmerman/kal/compare/r0.5.4...r0.5.3)
 * Fixed support for using the `arguments` structure in list comprehensions.
 * Fixed a bug where Kal would allow compilation of class definitions with bad class names
