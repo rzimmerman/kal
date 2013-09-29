@@ -63,7 +63,7 @@ The output is a new token array (we don't modify the original).
 
 For double-quoted strings, we search for code blocks like `"#{code}"`. The regex uses the non-greedy operator to avoid parsing `"#{block1} #{block2}"` as a single block.
 
-        if token.type is 'STRING' and token.value[0] is '"'
+        if token.type in ['STRING','BLOCKSTRING'] and token.value[0] is '"'
           rv = token.value
           r = /#{.*?}/g
           m = r.exec rv

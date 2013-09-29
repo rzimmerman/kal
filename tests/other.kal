@@ -150,4 +150,24 @@ describe 'Other', ->
       Kal.compile c, {sandbox:yes,bare:yes}
       Kal.compile Buffer(c), {sandbox:yes,bare:yes}
     a.should.not.throw()
- 
+
+  it 'should support multiline strings', -> #gh-111
+    "a
+    b".should.equal "a    b"
+    """
+    a
+    b
+    """.should.equal "a\nb"
+    '''
+    a
+     b
+    c
+      d
+    '''.should.equal "a\n b\nc\n  d"
+    d = 5
+    """
+    a
+     b
+    c
+      #{d}
+    """.should.equal "a\n b\nc\n  5"

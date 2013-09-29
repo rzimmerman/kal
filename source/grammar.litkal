@@ -728,7 +728,7 @@ A string token constant. Can be anything the lexer supports, including single or
 
     class StringConstant inherits from ASTBase
       method parse()
-        me.token = me.req 'STRING'
+        me.token = me.req 'STRING', 'BLOCKSTRING'
 
 RegexConstant
 ==============
