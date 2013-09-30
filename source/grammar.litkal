@@ -25,7 +25,7 @@ Reserved words are used to determine whether assignments are valid (for example,
                    'break','continue','try','catch','throw','raise','fail',
                    'with','arguments','of','in','instanceof','property','value',
                    'parallel','series','pass','pause','until','me','this','typeof', 
-                   'to', 'as']
+                   'to']
 
 **Words that are reserved in Kal but can be used as r-values**
 
@@ -114,7 +114,7 @@ BlockWithoutIndent
 Statement
 =========
 
-`Statement: (BlankStatement|TryCatch|ClassDefinition|ReturnStatement|WaitForStatement|SimpleWaitForStatement|PauseForStatement|IfStatement|WhileStatement|FromToAsStatement|ForStatement|ThrowStatement|SuperStatement|RunInParallelBlock|LoopControlStatement|AssignmentStatement|ExpressionStatement)`
+`Statement: (BlankStatement|TryCatch|ClassDefinition|ReturnStatement|WaitForStatement|SimpleWaitForStatement|PauseForStatement|IfStatement|WhileStatement|ForStatement|ThrowStatement|SuperStatement|RunInParallelBlock|LoopControlStatement|AssignmentStatement|ExpressionStatement)`
 
 The `Statement` node is a generic wrapper for the many types of statment/control constructs that are valid inside a block. Keeping these in one class helps keep the code maintainable when we add new node types.
 
@@ -122,7 +122,7 @@ The order in the `me.req` call is important here for two reasons. One, we want t
 
     class Statement inherits from ASTBase
       method parse()
-        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, FromToAsStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, AssignmentStatement, ExpressionStatement
+        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, AssignmentStatement, ExpressionStatement
 
 LoopControlStatement
 ====================
@@ -234,22 +234,6 @@ This covers `else` and `else if`.
           me.conditional = me.req Expression
         me.block = me.req Block, Statement
 
-FromToAsStatement
-=================
-
-`FromToAsStatement: 'from' Expression 'to' Expression 'as' Expression Block`
-
-    class FromToAsStatement inherits from ASTBase
-      method parse()
-        me.req_val 'from'
-        me.lock()
-        me.from = me.req Expression
-        me.req_val 'to'
-        me.to = me.req Expression
-        me.req_val 'as'
-        me.as = me.req Expression
-        me.block = me.req Block
-  
 WhileStatement
 ==============
 
@@ -279,6 +263,8 @@ For loops can iterate over object properties (`of`) or over an array (`in`). The
         me.iterant = me.req Variable
         me.type = me.req_val 'in', 'of'
         me.iterable = me.req Expression
+        if me.opt_val 'to'
+          me.iterable_to = me.req Expression
         me.loop_block = me.req Block
 
 AssignmentStatement
@@ -1051,7 +1037,7 @@ Exports
 A list of nodes to export. For now, this is the cleanest way to do this in Kal. Perhaps an `export` keyword in the future will make this neater.
 
     Nodes = [ASTBase, File, Block, Statement, ThrowStatement, ReturnStatement, IfStatement,
-             ElseStatement, WhileStatement, FromToAsStatement, ForStatement, AssignmentStatement,
+             ElseStatement, WhileStatement, ForStatement, AssignmentStatement,
              ExpressionStatement, LoopControlStatement, BlankStatement, BinOp, Expression,
              UnaryExpression, ExisentialCheck, WhenExpression, NumberConstant, StringConstant,
              RegexConstant, IndexExpression, PropertyAccess, FunctionCallArgument,

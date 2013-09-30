@@ -1,0 +1,6 @@
+describe 'For In To Statement', ->
+  it 'should iterate over the given values', ->
+    count = 0
+    for index in 0 to 4
+    	index.should.equal count
+    	count += 1
