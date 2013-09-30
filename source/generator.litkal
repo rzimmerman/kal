@@ -1218,11 +1218,15 @@ A `ListExpression` is a definition of a list like `[1, a, 2+3]`. We just pass th
 
     method js() of Grammar.ListExpression
       if me.comprehension doesnt exist
-        rv = []
-        for item in me.items
-          rv.push item.js()
-        rv = rv.join(', ')
-        return "[#{rv}]"
+        if me.list_from exists
+          _it = 'i'
+          return "(function(){var list = []; for(var #{_it} = #{me.list_from}; #{_it} != #{me.list_to}; #{_it}#{'++' when me.list_to > me.list_from otherwise '--'}){list.push(i);}return list;})()"
+        else
+          rv = []
+          for item in me.items
+            rv.push item.js()
+          rv = rv.join(', ')
+          return "[#{rv}]"
       else
         return me.comprehension.js()
 
