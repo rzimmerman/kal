@@ -25,7 +25,7 @@ Reserved words are used to determine whether assignments are valid (for example,
                    'break','continue','try','catch','throw','raise','fail',
                    'with','arguments','of','in','instanceof','property','value',
                    'parallel','series','pass','pause','until','me','this','typeof',
-                   'at']
+                   'at','to']
 
 **Words that are reserved in Kal but can be used as r-values**
 
@@ -269,6 +269,8 @@ The `at` keyword allows the user to specify an index variable for `for in` loops
         if me.index_var exists but me.type.value isnt 'in'
           me.error "index variables specified with 'at' are only allowed in 'for ... in' loops"
         me.iterable = me.req Expression
+        if me.opt_val 'to'
+          me.iterable_to = me.req Expression
         me.loop_block = me.req Block
 
 AssignmentStatement
@@ -819,7 +821,7 @@ An expression enclosed by parentheses, like `(a + b)`.
 ListExpression
 ==============
 
-`ListExpression: '[' ObjectComprehension|ListComprehension|((Expression ',')* Expression)? ']'`
+`ListExpression: '[' ObjectComprehension|ListComprehension|((Expression ',')* Expression)? ']'
 
 An array definition, such as `[1,2,3]`. Multiline list definitions are handled by the `sugar` module. This also supports comprehensions inside the definition.
 
@@ -829,14 +831,18 @@ An array definition, such as `[1,2,3]`. Multiline list definitions are handled b
         me.lock()
         me.comprehension = me.opt ObjectComprehension, ListComprehension
         if me.comprehension doesnt exist
-          me.items = []
           item = me.opt Expression
-          while item
-            me.items.push(item)
-            if me.opt_val(',')
-              item = me.opt Expression
-            else
-              item = null
+          if me.opt_val 'to'
+            me.list_from = parseInt item.js(), 10
+            me.list_to = parseInt me.req(Expression).js(), 10
+          else  
+            me.items = []
+            while item
+              me.items.push(item)
+              if me.opt_val(',')
+                item = me.opt Expression
+              else
+                item = null
         me.req_val ']'
 
 ListComprehension

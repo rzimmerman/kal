@@ -29,3 +29,11 @@ describe 'List Comprehensions', ->
     function a()
       return [x+1 for x in arguments]
     a(1,2,3).should.eql [2,3,4]
+
+  it 'should support list shortcut', ->
+    t = [0 to 32]
+    i = 0
+    console.log t
+    while i < 32
+      i.should.equal t[i]
+      i += 1

@@ -903,10 +903,16 @@ Declare the iterator and terminator.
 `for ... in ...` loops just loop from element 0 of the iterable (the `y` in `for x in y`) to element `iterable.length - 1`. We assign the element to the user supplied `iterant` (`x`) at  the beginning of each iteration.
 
         if me.type.value is 'in'
-          rv += "#{terminator} = #{me.iterable.js()};\n"
-          rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
-          rv += "  #{me.iterant.value} = #{terminator}[#{iterator}];\n"
-          rv += "  #{me.index_var.value} = #{iterator};\n" when me.index_var exists
+          if me.hasTo
+            _to = parseInt me.iterable_to.js(), 10
+            _it = me.iterant.value
+            _from = parseInt me.iterable.js(), 10
+            rv += "for(var #{_it} = #{_from}; #{_it} != #{_to}; #{_it}#{'++' when _from < _to otherwise '--'}){\n"
+          else
+            rv += "#{terminator} = #{me.iterable.js()};\n"
+            rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
+            rv += "  #{me.iterant.value} = #{terminator}[#{iterator}];\n"
+            rv += "  #{me.index_var.value} = #{iterator};\n" when me.index_var exists
 
 `for ... of ...` loops loop through each property of the iterable (the `y` in `for x of y`) in whatever order. Luckily the JavaScript `in` operator does almost exactly this. We do have to skip properties that don't meet the `hasOwnProperty` criterion since these are inherited. We assign the element to the user supplied `iterant` (`x`) at the beginning of each iteration.
 
@@ -1216,11 +1222,15 @@ A `ListExpression` is a definition of a list like `[1, a, 2+3]`. We just pass th
 
     method js() of Grammar.ListExpression
       if me.comprehension doesnt exist
-        rv = []
-        for item in me.items
-          rv.push item.js()
-        rv = rv.join(', ')
-        return "[#{rv}]"
+        if me.list_from exists
+          _it = 'i'
+          return "(function(){var list = []; for(var #{_it} = #{me.list_from}; #{_it} != #{me.list_to}; #{_it}#{'++' when me.list_to > me.list_from otherwise '--'}){list.push(i);}return list;})()"
+        else
+          rv = []
+          for item in me.items
+            rv.push item.js()
+          rv = rv.join(', ')
+          return "[#{rv}]"
       else
         return me.comprehension.js()
 

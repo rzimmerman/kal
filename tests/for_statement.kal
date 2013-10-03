@@ -80,3 +80,15 @@ describe 'For Statement', ->
     sum1.should.equal 14
     sum2.should.equal 6
     done()
+
+  it 'should handle defined iteration values', ->
+    i = 0
+    for index in 0 to 4
+      i.should.equal index
+      i += 1
+
+  it 'should handle defined reverse iteration', ->
+    i = 0
+    for index in 4 to 0
+      i.should.equal index
+      i -= 1
