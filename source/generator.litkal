@@ -875,12 +875,14 @@ Pass the `in_loop` and `in_conditional` variables down the tree. These are used 
       me.loop_block.in_loop = yes
       me.loop_block.in_conditional = me.in_conditional
 
-Generate variables for an iterator, terminator (end of loop check), and a loop counter (used for asynchronous calls to count the number of callbacks required).
+Generate variables for an iterator, terminator (end of loop check), and a loop counter (used for asynchronous calls to count the number of callbacks required). The `initial_val` and `incrementor` variables are only used in `for x in a to b`-style loops.
 
       rv = ""
       iterator   = "ki$#{for_count}"
       terminator = "kobj$#{for_count}"
       loop_counter = "klc$#{for_count}"
+      initial_val = "kiv$#{for_count}"
+      incrementor = "kinc$#{for_count}"
       for_count += 1
 
 Declare the iterant variable (the `x` from `for x in y`).
@@ -895,20 +897,29 @@ Try generating synchronous code, fall back to asynchronous code if we detect som
         return me.js_callbacks iterator, terminator, loop_counter
       else
 
-Declare the iterator and terminator.
-
-        scope[iterator] = 'no closures'
-        scope[terminator] = 'no closures'
-
 `for ... in ...` loops just loop from element 0 of the iterable (the `y` in `for x in y`) to element `iterable.length - 1`. We assign the element to the user supplied `iterant` (`x`) at  the beginning of each iteration.
 
         if me.type.value is 'in'
-          if me.hasTo
-            _to = parseInt me.iterable_to.js(), 10
-            _it = me.iterant.value
-            _from = parseInt me.iterable.js(), 10
-            rv += "for(var #{_it} = #{_from}; #{_it} != #{_to}; #{_it}#{'++' when _from < _to otherwise '--'}){\n"
+          if me.iterable_to exists
+            from_val = me.iterable.number_constant()
+            to_val = me.iterable_to.number_constant()
+            if to_val exists and from_val exists
+              increment = '++' if to_val > from_val otherwise '--'
+              rv += "for (#{me.iterant.value} = #{from_val}; #{me.iterant.value} <= #{to_val}; #{me.iterant.value}#{increment}) {\n"
+            else
+              scope[terminator] = 'no closures'
+              scope[initial_val] = "no closures"
+              scope[incrementor] = "no closures"
+              rv += "#{initial_val} = #{me.iterable.js()}\n"
+              rv += "#{terminator} = #{me.iterable_to.js()}\n"
+              rv += "#{incrementor} = #{initial_val} < #{terminator} ? 1 : -1;\n"
+              rv += "for (#{me.iterant.value} = #{initial_val}; #{terminator} > #{initial_val} ? #{me.iterant.value} <= #{terminator} : #{me.iterant.value} >= #{terminator}; #{me.iterant.value} += #{incrementor}) {\n"
           else
+
+Declare the iterator and terminator.
+
+            scope[iterator] = 'no closures'
+            scope[terminator] = 'no closures'
             rv += "#{terminator} = #{me.iterable.js()};\n"
             rv += "for (#{iterator} = 0; #{iterator} < #{terminator}.length; #{iterator}++) {\n"
             rv += "  #{me.iterant.value} = #{terminator}[#{iterator}];\n"
@@ -917,17 +928,22 @@ Declare the iterator and terminator.
 `for ... of ...` loops loop through each property of the iterable (the `y` in `for x of y`) in whatever order. Luckily the JavaScript `in` operator does almost exactly this. We do have to skip properties that don't meet the `hasOwnProperty` criterion since these are inherited. We assign the element to the user supplied `iterant` (`x`) at the beginning of each iteration.
 
         else
+          scope[iterator] = 'no closures'
+          scope[terminator] = 'no closures'
           rv += "#{terminator} = #{me.iterable.js()};\n"
           rv += "for (#{me.iterant.value} in #{terminator}) {\n"
           rv += "  if (!#{terminator}.hasOwnProperty(#{me.iterant.value})) {continue;}\n"
         rv += indent loop_block_js
         rv += "}\n"
+
       return rv
 
 `js_callbacks` generates asynchronous code for parallel and series `for` loops.
 
     method js_callbacks(iterator, terminator, loop_counter) of Grammar.ForStatement
       rv = ""
+
+      fail with new Error "asynchronous for ... to ... loops are not supported" if me.iterable_to exists
 
 The `execution_style` actually matters for asynchronous loops. The default, if none is specified, is `series`.
 
@@ -1216,21 +1232,25 @@ As an accessor, it can have an exisential check like `a?[1]`, so we support the 
       else
         return ''
 
+### RangeExpression ###
+
+A `RangeExpression` is a range like `1 to 4`. It is only used from within a `ListExpression`, so its JavaScript output is just the appropriate list.
+
+    method js() of Grammar.RangeExpression
+      use_snippets['range'] = snippets['range']
+      return "k$range(#{me.from_expr.js()},#{me.to_expr.js()})"
+
 ### ListExpression ###
 
 A `ListExpression` is a definition of a list like `[1, a, 2+3]`. We just pass this through to JavaScript.
 
     method js() of Grammar.ListExpression
       if me.comprehension doesnt exist
-        if me.list_from exists
-          _it = 'i'
-          return "(function(){var list = []; for(var #{_it} = #{me.list_from}; #{_it} != #{me.list_to}; #{_it}#{'++' when me.list_to > me.list_from otherwise '--'}){list.push(i);}return list;})()"
-        else
-          rv = []
-          for item in me.items
-            rv.push item.js()
-          rv = rv.join(', ')
-          return "[#{rv}]"
+        rv = []
+        for item in me.items
+          rv.push item.js()
+        rv = rv.join(', ')
+        return "[#{rv}]"
       else
         return me.comprehension.js()
 
@@ -1817,3 +1837,7 @@ These are useful blocks of code that are only included in the output when used.
 `get callback` is a helper function that gets the last function argument passed to the current function.
 
       'get callback': 'var k$getcb = function (args) {return typeof args[args.length-1] == "function" ? args[args.length-1] : function () {}};'
+
+`range` creates an array from start, end, and step values. Step defaults to + or -1 (depending on whether `start` > `stop`).
+
+      'range': 'var k$range = function (start,stop,step) {step = step || (start > stop ? -1 : 1);for (var rv=[]; step>0?start<=stop:start>=stop; start+=step) rv.push(start);return rv;};'

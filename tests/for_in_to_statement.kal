@@ -1,6 +1,28 @@
 describe 'For In To Statement', ->
-  it 'should iterate over the given values', ->
-    count = 0
+  it 'should handle defined iteration values', ->
+    i = 0
     for index in 0 to 4
-    	index.should.equal count
-    	count += 1
+      i.should.equal index
+      i += 1
+    i.should.equal 5
+    a = 10
+    b = 15
+    i = 10
+    for index in a to b
+      i.should.equal index
+      i += 1
+    i.should.equal b+1
+
+  it 'should handle defined reverse iteration', ->
+    i = 4
+    for index in 4 to 0
+      i.should.equal index
+      i -= 1
+    i.should.equal -1
+    a = 10
+    b = 4
+    i = 10
+    for index in a to b
+      i.should.equal index
+      i -= 1
+    i.should.equal b-1

@@ -818,10 +818,24 @@ An expression enclosed by parentheses, like `(a + b)`.
         me.expr = me.req Expression
         me.req_val ')'
 
+RangeExpression
+===============
+
+`RangeExpression: Expression 'to' Expression`
+
+This is used inside array definitions to define a range of values (like `[1 to 4]`).
+
+    class RangeExpression inherits from ASTBase
+      method parse()
+        me.from_expr = me.req Expression
+        me.req_val 'to'
+        me.lock()
+        me.to_expr = me.req Expression
+
 ListExpression
 ==============
 
-`ListExpression: '[' ObjectComprehension|ListComprehension|((Expression ',')* Expression)? ']'
+`ListExpression: '[' ObjectComprehension|ListComprehension|((Expression ',')* Expression)? ']'`
 
 An array definition, such as `[1,2,3]`. Multiline list definitions are handled by the `sugar` module. This also supports comprehensions inside the definition.
 
@@ -829,20 +843,16 @@ An array definition, such as `[1,2,3]`. Multiline list definitions are handled b
       method parse()
         me.req_val '['
         me.lock()
-        me.comprehension = me.opt ObjectComprehension, ListComprehension
+        me.comprehension = me.opt ObjectComprehension, ListComprehension, RangeExpression
         if me.comprehension doesnt exist
           item = me.opt Expression
-          if me.opt_val 'to'
-            me.list_from = parseInt item.js(), 10
-            me.list_to = parseInt me.req(Expression).js(), 10
-          else  
-            me.items = []
-            while item
-              me.items.push(item)
-              if me.opt_val(',')
-                item = me.opt Expression
-              else
-                item = null
+          me.items = []
+          while item
+            me.items.push(item)
+            if me.opt_val(',')
+              item = me.opt Expression
+            else
+              item = null
         me.req_val ']'
 
 ListComprehension
@@ -1062,7 +1072,7 @@ A list of nodes to export. For now, this is the cleanest way to do this in Kal. 
              ImplicitMapExpression, FunctionDefArgument, FunctionExpression,
              ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent,
              SimpleWaitForStatement, WaitForStatement, PauseForStatement,
-             MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable]
+             MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable, RangeExpression]
 
     exports.Grammar = {}
     for v in Nodes

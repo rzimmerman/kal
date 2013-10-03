@@ -31,9 +31,6 @@ describe 'List Comprehensions', ->
     a(1,2,3).should.eql [2,3,4]
 
   it 'should support list shortcut', ->
-    t = [0 to 32]
-    i = 0
-    console.log t
-    while i < 32
-      i.should.equal t[i]
-      i += 1
+    [0 to 4].should.eql [0,1,2,3,4]
+    [5 to 2].should.eql [5,4,3,2]
+    [1 to 1].should.eql [1]
