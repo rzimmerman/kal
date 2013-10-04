@@ -1,0 +1,26 @@
+describe 'Delete Statement', ->
+  it 'should support syntax to delete object properties', ->
+    obj = {a:1,b:2,c:3,d:4}
+    delete property a from obj
+    obj.should.eql {b:2,c:3,d:4}
+    delete property "b" from obj
+    obj.should.eql {c:3,d:4}
+    delete property ggggg from obj
+    obj.should.eql {c:3,d:4}
+
+  it 'should support syntax to delete array members', ->
+    arr = [0 to 5]
+    delete item 2 from arr
+    arr.should.eql [0,1,3,4,5]
+    delete items 1 to 2 from arr
+    arr.should.eql [0,4,5]
+    delete items 0 to 2 from arr
+    arr.should.eql []
+
+    arr = [0 to 5]
+    delete items 0 to 100 from arr
+    arr.should.eql []
+
+    arr = [0 to 5]
+    delete items 1,3,5 from arr
+    arr.should.eql [0,2,4]

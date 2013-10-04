@@ -122,7 +122,7 @@ The order in the `me.req` call is important here for two reasons. One, we want t
 
     class Statement inherits from ASTBase
       method parse()
-        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, AssignmentStatement, ExpressionStatement
+        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, DeleteStatement, AssignmentStatement, ExpressionStatement
 
 LoopControlStatement
 ====================
@@ -189,6 +189,28 @@ Returns can have multiple return values, so we keep grabbing expressions followe
 Check again for a conditional after the expression (`return a if a isnt 2`)
 
             me.conditional = expr.transform_when_statement() if expr exists
+
+DeleteStatement
+===============
+
+`DeleteStatement: 'delete' ('property' IDENTIFIER|STRING)|('item'|'items' NoBracketListExpression) 'from' UnaryExpression`
+
+This statement deletes a property or set of indexes from an object. It supports property deletion as a string (`delete property "a" from obj`) or identifier (`delete property a from obj`). It supports index deletion as for a number or array of numbered indexes (`delete item n from obj` or `delete items 1, 2 from obj` or `delete items 2 to 3 from obj`).
+
+    class DeleteStatement inherits from ASTBase
+      method parse()
+        me.req_val 'delete'
+        me.lock()
+        me.specifier = me.req_val 'property', 'item', 'items'
+        me.lock()
+        if me.specifier.value is 'property'
+          me.prop = me.req 'STRING', 'IDENTIFIER'
+        else
+          me.item_list = me.req NoBracketListExpression
+          me.error "Expected: index to delete" unless me.item_list.comprehension exists or me.item_list.items?.length > 0
+        me.lock()
+        me.req_val 'from'
+        me.from_var = me.req UnaryExpression
 
 IfStatement
 ===========
@@ -843,6 +865,10 @@ An array definition, such as `[1,2,3]`. Multiline list definitions are handled b
       method parse()
         me.req_val '['
         me.lock()
+        me.parse_inside()
+        me.req_val ']'
+
+      method parse_inside()
         me.comprehension = me.opt ObjectComprehension, ListComprehension, RangeExpression
         if me.comprehension doesnt exist
           item = me.opt Expression
@@ -853,7 +879,17 @@ An array definition, such as `[1,2,3]`. Multiline list definitions are handled b
               item = me.opt Expression
             else
               item = null
-        me.req_val ']'
+
+NoBracketListExpression
+=======================
+
+`NoBracketListExpression: ObjectComprehension|ListComprehension|((Expression ',')* Expression)?`
+
+This is the same as a `ListExpression` except that it does not require enclosing brackets. It is used by the `DeleteStatement`.
+
+    class NoBracketListExpression inherits from ListExpression
+      method parse()
+        me.parse_inside()
 
 ListComprehension
 =================
@@ -1072,7 +1108,8 @@ A list of nodes to export. For now, this is the cleanest way to do this in Kal. 
              ImplicitMapExpression, FunctionDefArgument, FunctionExpression,
              ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent,
              SimpleWaitForStatement, WaitForStatement, PauseForStatement,
-             MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable, RangeExpression]
+             MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable,
+             RangeExpression, DeleteStatement]
 
     exports.Grammar = {}
     for v in Nodes

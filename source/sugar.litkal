@@ -237,9 +237,13 @@ Don't want to add parentheses around `bitwise left` or `bitwise right`, but we a
 
         bitwise_shift = (last_token?.value in ['left','right']) and tokens[i-2]?.value is 'bitwise'
 
+Same story for `delete item` and `delete items`. `item` is a useful word.
+
+        delete_item = (last_token?.value in ['item','items']) and tokens[i-2]?.value is 'delete'
+
 If the previous token is callable and the current token is not an operator (or it's a parenthesis that the user didn't add) and we're not in the special `bitwise` case, then we add an open paren. We add a trigger to close the parentheses on the next `NEWLINE`.
 
-        if last_token_callable and (this_token_not_operator or soft_paren) but not bitwise_shift
+        if last_token_callable and (this_token_not_operator or soft_paren) but not (bitwise_shift or delete_item)
           triggers.push 'NEWLINE'
           out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
           closures.push ')'
