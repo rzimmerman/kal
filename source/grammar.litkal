@@ -906,6 +906,7 @@ List comprehensions allow list generation by applying an expression to each memb
         me.iterant = me.req Variable
         me.req_val 'in'
         me.iterable = me.req Expression
+        me.conditional = me.iterable.transform_when_statement()
 
 ObjectComprehension
 =================
@@ -933,6 +934,7 @@ Object comprehensions allow list generation by applying an expression to each me
             me.value_iterant = me.req Variable
         me.req_val 'in'
         me.iterable = me.req Expression
+        me.conditional = me.iterable.transform_when_statement()
 
 MapExpression
 =============

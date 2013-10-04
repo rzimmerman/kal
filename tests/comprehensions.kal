@@ -34,3 +34,28 @@ describe 'List Comprehensions', ->
     [0 to 4].should.eql [0,1,2,3,4]
     [5 to 2].should.eql [5,4,3,2]
     [1 to 1].should.eql [1]
+
+  it 'should support conditionals in list comprehensions', ->
+    arr = [0 to 20]
+    x = [i * 2 for i in arr if i < 2]
+    x.should.eql [0,2]
+    y = [i for i in arr except when i mod 2 isnt 0]
+    y.should.eql [0,2,4,6,8,10,12,14,16,18,20]
+    z = [i for i in arr if i ^ 0.5 in arr]
+    z.should.eql [0,1,4,9,16]
+
+  it 'should support conditionals in object comprehensions', ->
+    obj =
+      a: 1
+      b: 2
+      c: 3
+      d: 4
+    x = [k for property k in obj if k isnt 'b']
+    x.sort()
+    x.should.eql ['a','c','d']
+    x = [v * 2 for property value v in obj unless v mod 2 is 1]
+    x.sort()
+    x.should.eql [4,8]
+    x = [v for property k with value v in obj unless k is 'c']
+    x.sort()
+    x.should.eql [1,2,4]

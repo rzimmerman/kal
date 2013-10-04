@@ -689,6 +689,14 @@ Otherwise this becomes an if statement for things like `return x if x exists`.
           rv += "\n"
           return rv
 
+`js_bool` returns an expression that evaluates the truth of the condition.
+
+    method js_bool() of Grammar.WhenExpression
+      if me.specifier.value is 'unless' or me.specifier.value is 'except'
+        return "!(#{me.condition.js()})"
+      else
+        return me.condition.js()
+
 ### ExisentialCheck ###
 
 An existential check is used to check if a variable is non-null and defined. The `js` method is never called because these are only parsed as accessors for `UnaryExpression`s. `UnaryExpression` calls `js_existence`.
@@ -1303,7 +1311,9 @@ List comprehensions support the `[x*x for x in [1,2,3]]` syntax. We just use the
     method js() of Grammar.ListComprehension
       use_snippets['array list comprehension'] = snippets['array list comprehension']
       scope[me.iterant.value] = 'closures ok'
-      rv = "k$comprl(#{me.iterable.js()},function (k$i) {#{me.iterant.value} = k$i; return #{me.iter_expr.js()};})"
+      rv = "k$comprl(#{me.iterable.js()},function (k$i) {#{me.iterant.value} = k$i; return #{me.iter_expr.js()};}"
+      rv += ",function (#{me.iterant.value}) {return #{me.conditional.js_bool()};}" if me.conditional exists
+      rv += ")"
       return rv
 
 ### ObjectComprehension ###
@@ -1312,17 +1322,19 @@ Object comprehensions support the `[x*x for x of {a:1,b:2}]` syntax and the `pro
 
     method js() of Grammar.ObjectComprehension
       use_snippets['object list comprehension'] = snippets['object list comprehension']
-      rv = ""
+      init = ""
 
 We also assign to the `property_iterant`, `value_iterant`, or both depending on which one was specified. This supports the syntaxes `[k for k of obj]`, `[k for property k in obj]`, `[v for value v in obj]`, and `[k + v for property k with value v in obj]`.
 
       if me.property_iterant exists
         scope[me.property_iterant.value] = 'closures ok'
-        rv += "#{me.property_iterant.value} = k$p;"
+        init += "#{me.property_iterant.value} = k$p;"
       if me.value_iterant exists
         scope[me.value_iterant.value] = 'closures ok'
-        rv += "#{me.value_iterant.value} = k$v;"
-      rv = "k$compro(#{me.iterable.js()},function (k$p,k$v) {#{rv}; return #{me.iter_expr.js()};})"
+        init += "#{me.value_iterant.value} = k$v;"
+      rv = "k$compro(#{me.iterable.js()},function (k$p,k$v) {#{init} return #{me.iter_expr.js()};}"
+      rv += ",function (k$p,k$v) {#{init} return #{me.conditional.js_bool()};}" if me.conditional exists
+      rv += ")"
       return rv
 
 ### MapItem ###
@@ -1866,11 +1878,11 @@ These are useful blocks of code that are only included in the output when used.
 
 `array list comprehension` preforms a function on each element of an iterable, returning an array of return values. This is used to execute list comprehensions.
 
-      'array list comprehension': 'var k$comprl = function (iterable,func) {var o = []; if (iterable instanceof Array || typeof iterable.length == "number") {for (var i=0;i<iterable.length;i++) {o.push(func(iterable[i]));}} else if (typeof iterable.next == "function") {var i; while ((i = iterable.next()) != null) {o.push(func(i));}} else {throw "Object is not iterable";}return o;};'
+      'array list comprehension': 'var k$comprl = function (iterable,func,cond) {var o = []; cond = cond || function () {return true;}; if (iterable instanceof Array || typeof iterable.length == "number") {for (var i=0;i<iterable.length;i++) {if (cond(iterable[i])) {o.push(func(iterable[i]));}}} else if (typeof iterable.next == "function") {var i; while ((i = iterable.next()) != null) {if (cond(i)) {o.push(func(i));}}} else {throw "Object is not iterable";}return o;};'
 
 `object list comprehension` preforms a function on each key-value pair of an object, returning an array of return values. This is used to execute object comprehensions.
 
-      'object list comprehension': 'var k$compro = function (obj,func) {var o = []; for (var k in obj) {o.push(func(k,obj[k]));}return o;}'
+      'object list comprehension': 'var k$compro = function (obj,func,cond) {var o = []; cond = cond || function () {return true;}; for (var k in obj) {if (cond(k,obj[k])) {o.push(func(k,obj[k]));}} return o;}'
 
 `async` calls a function on the next execution cycle using `process.nextTick` (if available) or `setTimeout`. This is used for callbacks from tasks.
 
