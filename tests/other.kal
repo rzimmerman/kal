@@ -171,3 +171,23 @@ describe 'Other', ->
     c
       #{d}
     """.should.equal "a\n b\nc\n  5"
+
+  it 'should support line continuation', -> #gh-62
+    x = \
+      3
+    x.should.equal 3
+    y = 10 + \
+      2
+    y.should.equal 12
+    function t(a,b)
+      return a \
+       + \
+       b
+    t( \
+      5, \
+      1 \
+      ).should.equal 6
+    r = t \
+      8, \
+      12
+    r.should.equal 20

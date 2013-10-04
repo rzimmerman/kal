@@ -37,9 +37,10 @@ A newline is used to demark the end of a statement. Whitespace without other con
 
                    [/^\n([\f\r\t\v\u00A0\u2028\u2029 ]*\n)*\r*/, 'NEWLINE'],
 
-Whitespace is ignored by the parser (and thrown out by the lexer), but needs to exist to break up other tokens.
+Whitespace is ignored by the parser (and thrown out by the lexer), but needs to exist to break up other tokens. We also include the line continuation character, a backslash followed by one newline and some whitespace.
 
                    [/^[\f\r\t\v\u00A0\u2028\u2029 ]+/, 'WHITESPACE'],
+                   [/^\\[\f\r\t\v\u00A0\u2028\u2029 ]*\n[\f\r\t\v\u00A0\u2028\u2029 ]*/, 'WHITESPACE']
 
 A literal is a symbol (like `=` or `+`) used as an operator. Some literals like `+=` can be two characters
 
