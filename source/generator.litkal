@@ -449,18 +449,22 @@ If the code requests a range of deletes, we can handle that in a clever way usin
             rv = "k$rstart = #{list_range.from_expr.js()};\n"
             rv += "#{me.from_var.js()}.splice(k$rstart, #{list_range.to_expr.js()} - k$rstart);\n"
             return rv
-        else if me.item_list.comprehension exists or me.item_list.items.length > 1
 
 If the code requests multiple deletes, we use the snippet for deleting indices specied by an array.
 
+        else if me.item_list.comprehension exists or me.item_list.items.length > 1
           use_snippets['delete'] = snippets['delete']
           return "k$del(#{me.from_var.js()}, #{me.item_list.js()});\n"
 
-If the code requests a single delete, we can use simpler JavaScript.
+If the code requests a single numeric delete, we can use simpler JavaScript.
+
+        else if me.item_list.items[0].number_constant?() exists
+          return "#{me.from_var.js()}.splice(#{me.item_list.items[0].number_constant()}, 1);\n"
+
+Otherwise let `k$del` handle it.
 
         else
-          item = me.item_list.items[0]
-          return "#{me.from_var.js()}.splice(#{item.js()}, 1);\n"
+          return "k$del(#{me.from_var.js()}, #{me.item_list.items[0].js()});\n"
 
 ### ExpressionStatement ###
 
@@ -1898,4 +1902,4 @@ These are useful blocks of code that are only included in the output when used.
 
 `delete` deletes an array of indices from another array. We have to delete indices in backwards order otherwise they change as we delete them!
 
-      'delete': 'var k$del = function (arr,indices) {indices.sort(); for (var i = indices.length-1; i >= 0; i--) arr.splice(indices[i],1);}'
+      'delete': 'var k$del = function (arr,indices) {if (typeof indices == "number") {arr.splice(indicies,1);} else {indices.sort(); for (var i = indices.length-1; i >= 0; i--) arr.splice(indices[i],1);}}'
