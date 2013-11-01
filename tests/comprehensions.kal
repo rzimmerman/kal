@@ -62,3 +62,9 @@ describe 'List Comprehensions', ->
     x = [v for property k with value v in obj unless k is 'c']
     x.sort()
     x.should.eql [1,2,4]
+
+  it 'should support function calls in list comprehensions', ->
+    function lister(a)
+      return [1+a,2+a,3+a]
+    x = [y * 2 for y in lister 3]
+    x.should.eql [8,10,12]
