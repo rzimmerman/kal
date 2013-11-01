@@ -185,121 +185,146 @@ This stage converts implicit function calls (`my_function a, b`) to explicit one
                      'except','for','with','wait','task','fail','parallel','series','safe','but',
                      'bitwise','mod','second','seconds','while','until','at','to']
 
-This function is admittedly messy and in need of a rewrite. But it's not broken, so...
-
     function noparen_function_calls (tokens)
       out_tokens = []
-      close_paren_count = 0
-      last_token = null
       triggers = []
-      closures = []
-      ignore_next_indent = no
+      enclosure_depth = 0
+      indentation = 0
+      declaring_function = no
 
-We need a token counter because sometimes we look back two or three tokens.
 
-      i = 0
-      while i < tokens.length
-        token = tokens[i]
+The `closeout` helper will push as many dangling `)`s as necessary to the stream when a closeout trigger is reached.
 
-Check that the previous token is not a reserved word. This can happen if the last token is not a keyword, two tokens ago was a `.` (like `x.for a`), or the last token is a keyword but a valid r-value (`me x`).
+      function closeout()
+        trigger = triggers[triggers.length-1]
+        while trigger?.indentation is indentation and trigger?.enclosure_depth >= enclosure_depth
+          out_tokens.push {text:')', line:token.line, value:')', type:'LITERAL'}
+          triggers.pop()
+          trigger = triggers[trigger.length-1]
 
-        last_token_isnt_reserved = not (last_token?.value in KEYWORDS) or tokens[i-2]?.value is '.' or (last_token?.value in RVALUE_OK)
+      for token at i in tokens
+        last_token = tokens[i-1]
+        last_last_token = tokens[i-2]
+        next_token = tokens[i+1]
+        add_auto_paren = yes
 
-Check if the previous token was callable. This is only true if it is an `IDENTIFIER` (not reserved) or a `]` like `x[1] a`.
+If the last token was a keyword, we normally can't add implicit parens (ex: `for x`). However, we do need to account for the following cases:
 
-        last_token_callable = (last_token?.type is 'IDENTIFIER' and last_token_isnt_reserved) or last_token?.value is ']'
+* Two tokens ago was a `.` (like `x.for a`)
+* The last token is a keyword but it is a valid r-value (`me x`).
 
-Check that the current token isn't a no-paren word (not looking at something like `x for`).
+If these conditions are not all met, we can't use implicit parentheses here.
 
-        token_isnt_reserved = not (token.value in NOPAREN_WORDS)
+        if last_token?.value in KEYWORDS
+          add_auto_paren = no unless last_last_token?.value is '.' or last_token?.value in RVALUE_OK
 
-Check that the current token is not a literal (don't want `my_function * 2` to become `my_function(* 2)`).
+Next, we verify that the previous token was callable. This is only true if the token was an `IDENTIFIER` (not reserved), a `]` (like `x["func"] a`), or a `)` (like `get_func(1) 1`). Don't auto-paren things like `) ->` since they are Coffee-Style functions.
 
-        non_literal = (token.type in ['IDENTIFIER','NUMBER','STRING','REGEX'])
+        if last_token?.type isnt 'IDENTIFIER'
+          add_auto_paren = no unless last_token?.value in [']', ')']
+          add_auto_paren = no if last_token?.value is ')' and token.value is '-' and next_token?.value is '>'
 
-There are some exceptions for callable literals, for things like `f {x:1}`, `f [1]`, and `->`.
+Check that the current token isn't a no-paren word (make sure we are not looking at something like `x for`).
 
-        callable_literal = (token.value is '{' or (token.value is '[' and last_token?.trailed_by_white) or (token.value is '-' and tokens[i+1]?.value is '>'))
+        add_auto_paren = no when token.value in NOPAREN_WORDS
 
-Combining previous checks, we check that this token is not an operator.
+Check that the current token is not a literal (don't want `my_function * 2` to become `my_function(* 2)`). There are some exceptions for callable literals, for things like `f {x:1}`, `f [1]`, and `->`. Also, parens with whitespace are allowed. For example, `my_func (3+2), 1` should get implicit parens.
 
-        this_token_not_operator = ((non_literal or callable_literal) and token_isnt_reserved)
+        if token.type is 'LITERAL'
+          acceptable_literal = no
+          acceptable_literal = yes when token.value is '{'
+          acceptable_literal = yes when token.value in ['[','('] but last_token?.trailed_by_white
+          acceptable_literal = yes when token.value is '-' and next_token?.value is '>'
+          add_auto_paren = no unless acceptable_literal
 
-Check if this is a function declaration.
+We also handle the special case of a function definition with a space between the function name and the argument list. We need to consider the case of something like `x.function a b` which should turn into `x.function(a(b))`
 
-        declaring_a_function = tokens[i-2]?.value in ['function','task','method','class'] and last_token?.type is 'IDENTIFIER'
+        declaring_function = yes when last_token?.value in ['function','task','method','class'] and last_last_token?.value isnt '.'
+        declaring_function = yes when last_last_token?.value is '-' and last_token?.value is '>'
+        add_auto_paren = no when declaring_function
 
 Check if a parenthesis is `soft`, meaning added by the sugar and not the user.
 
-        soft_paren = (token.value is '(' and token.soft but not declaring_a_function)
+        add_auto_paren = no when token.value is '(' but not token.soft
 
 Don't want to add parentheses around `bitwise left` or `bitwise right`, but we also really don't want `left` and `right` to be no-paren words, otherwise `x left` would not translate to `x(left)`. These are really useful words, so we handle them in this special case to avoid this issue.
 
-        bitwise_shift = (last_token?.value in ['left','right']) and tokens[i-2]?.value is 'bitwise'
+        add_auto_paren = no when last_token?.value in ['left','right'] and last_last_token?.value is 'bitwise'
+
 
 Same story for `delete item` and `delete items`. `item` is a useful word.
 
-        delete_item = (last_token?.value in ['item','items']) and tokens[i-2]?.value is 'delete'
+        add_auto_paren = no when last_token?.value in ['item','items'] and last_last_token?.value is 'delete'
 
-If the previous token is callable and the current token is not an operator (or it's a parenthesis that the user didn't add) and we're not in the special `bitwise` case, then we add an open paren. We add a trigger to close the parentheses on the next `NEWLINE`.
+The `trigger` variable tells us what indentation and paren depth we expect to be at when we close the last implicit paren.
 
-        if last_token_callable and (this_token_not_operator or soft_paren) but not (bitwise_shift or delete_item)
-          triggers.push 'NEWLINE'
+        trigger = triggers[triggers.length - 1]
+
+We keep track of indents and dedents so that we can do things like `my_func - > NEWLINE INDENT return 2 NEWLINE DEDENT` and have parentheses enclose the entire call.
+
+        if token.type is 'INDENT'
+          indentation += 1
+          out_tokens.push token
+        else if token.type is 'DEDENT'
+          indentation -= 1
+
+A dedent back to the previous level where the paren was inserted indicates we should close out the paren. Dedents need to go before the paren due to parsing rules.
+
+          out_tokens.push token
+          closeout()
+
+Similarly, we keep track of parens/braces/brackets. We assume the code has no open/close mismatches since these will wind up being parse errors anyway. Openers can be part of implicit function calls (`my_func {x:1}`).
+
+        else if token.value in ['(','{','[']
+          if add_auto_paren
+            out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
+            triggers.push {enclosure_depth:enclosure_depth, indentation:indentation}
+          enclosure_depth += 1
+          out_tokens.push token
+        else if token.value in [')','}',']']
+          enclosure_depth -= 1
+
+An implicit paren can be caused by a closing of a brace/bracket/paren like `x = (my_func a) + b`.
+
+          closeout() if trigger exists and enclosure_depth < trigger.enclosure_depth
+          out_tokens.push token
+
+It can also be closed out by a newline or a tail conditional like `x = 1 if b`.
+
+        else if token.type is 'NEWLINE'
+          unless declaring_function
+            closeout()
+          declaring_function = no
+          out_tokens.push token
+        else if token.value in ['if','unless','when','except']
+          closeout()
+          out_tokens.push token
+
+If we need to insert a paren, do it here.
+
+        else if add_auto_paren
           out_tokens.push {text:'(', line:token.line, value:'(', type:'LITERAL'}
-          closures.push ')'
+          triggers.push {enclosure_depth:enclosure_depth, indentation:indentation}
+          out_tokens.push token
 
-If we're passing a function as an argument, we want to change the close trigger to a `DEDENT` and ignore the next `INDENT`.
+Close out all auto-parens unconditionally if the file is finished.
 
-        else if (token.value is 'function' or (token.value is '>' and last_token?.value is '-')) and triggers[triggers.length-1] is 'NEWLINE'
-          triggers[triggers.length-1] = 'DEDENT'
-          ignore_next_indent = yes
-
-Keep track of indents so that streams like: `x = myfunct function () NEWLINE INDENT ... DEDENT` will not close out parentheses early.
-
-        else if token.type is 'INDENT'
-          if ignore_next_indent
-            ignore_next_indent = no
-          else
-            triggers.push 'DEDENT'
-            closures.push ''
-
-Reset the `ignore_next_indent` flag if necessary.
-
-        else if token.type is 'NEWLINE' and tokens[i+1]?.type isnt 'INDENT'
-          ignore_next_indent = no
-
-Check if we hit a "closure" (end of implied parentheses) when we are looking for a `NEWLINE`. This can happen on an actual `NEWLINE` or when we hit a tail conditional.
-
-        if (token.type is 'NEWLINE' or token.value in ['if','unless','when','except']) and closures.length > 0 and triggers[triggers.length - 1] is 'NEWLINE'
-
-If so, pop all `NEWLINE` closures and add in the implied tokens. `NEWLINE`s can close out multiple parentheses (`x = a b c`).
-
-          while closures.length > 0 and triggers[triggers.length - 1] is 'NEWLINE'
+        else if token.type is 'EOF'
+          while triggers.length > 0
+            out_tokens.push {text:')', line:token.line, value:')', type:'LITERAL'}
             triggers.pop()
-            closure = closures.pop()
-            out_tokens.push({text:closure, line:token.line, value:closure, type:'LITERAL'}) if closure isnt ''
           out_tokens.push token
 
-If our closure had a `DEDENT` trigger, pop it and add the token.
+Pass through the current token. If it was a dedent we already pushed it.
 
-        else if token.type is 'DEDENT' and closures.length > 0 and triggers[triggers.length - 1] is 'DEDENT'
+        else
           out_tokens.push token
-          triggers.pop()
-          closure = closures.pop()
-          out_tokens.push({text:closure, line:token.line, value:closure, type:'LITERAL'}) if closure isnt ''
 
-If no trigger was matched, just pass the token through.
+Close out in case the EOF is missing.
 
-        else if closures.length is 0 or token.type isnt triggers[triggers.length - 1]
-          out_tokens.push token
-        last_token = token
-        i += 1
-
-If we hit EOF, pop out all the remaning closures.
-
-      while closures.length > 0
-        closure = closures.pop()
-        out_tokens.push({text:closure, line:token.line, value:closure, type:'LITERAL'}) if closure isnt ''
+      while triggers.length > 0
+        out_tokens.push {text:')', line:token.line, value:')', type:'LITERAL'}
+        triggers.pop()
       return out_tokens
 
 Coffee-Style Functions

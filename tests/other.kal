@@ -191,3 +191,20 @@ describe 'Other', ->
       8, \
       12
     r.should.equal 20
+
+  it 'should correctly parse nested implicit paren calls with other literals', -> #gh-123
+    function donothing(v)
+      return v
+    a = 2 ^ (3 if no otherwise 5)
+    b = donothing(2 ^ (3 if no otherwise 5))
+    c = donothing 2 ^ ((3) if no otherwise 5) # this case was failing
+    a.should.equal 32
+    b.should.equal 32
+    c.should.equal 32
+    a = 2 ^ (3 if yes otherwise 5)
+    b = donothing(2 ^ (3 if yes otherwise 5))
+    c = donothing 2 ^ ((3) if yes otherwise 5)
+    a.should.equal 8
+    b.should.equal 8
+    c.should.equal 8
+
