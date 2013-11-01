@@ -208,3 +208,8 @@ describe 'Other', ->
     b.should.equal 8
     c.should.equal 8
 
+  it 'should handle nested implicit calls', ->
+    function a(x)
+      return 2 * x
+    b = a a 1
+    b.should.equal 4

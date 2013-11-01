@@ -200,7 +200,7 @@ The `closeout` helper will push as many dangling `)`s as necessary to the stream
         while trigger?.indentation is indentation and trigger?.enclosure_depth >= enclosure_depth
           out_tokens.push {text:')', line:token.line, value:')', type:'LITERAL'}
           triggers.pop()
-          trigger = triggers[trigger.length-1]
+          trigger = triggers[triggers.length-1]
 
       for token at i in tokens
         last_token = tokens[i-1]
