@@ -59,7 +59,7 @@ This function returns a string containing the compiled JavaScript including prop
 
 If code is passed as a buffer, there can be issues with Unicode characters (gh-108). As a result we convert it explicitly to a string and remove any trailing whitespace or newlines.
 
-      code = code.toString().trim()
+      code = code.toString().replace(/\s+$/, "")
 
 Files are wrapped in a function to prevent leakage to the global scope by default.
 
