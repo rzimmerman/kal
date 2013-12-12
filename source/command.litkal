@@ -7,6 +7,8 @@ This module defines the command line `kal` utility.
     path           = require 'path'
     Kal            = require './kal'
 
+    sourceMap = require 'source-map'
+
 Utilities
 =========
 
@@ -22,9 +24,9 @@ This utility function checks if a file is "hidden" by the operating system.
 
 `parseOptions` parses the command line switches.
 
-    function parseOptions()
+    function parseOptions(cmdLineArray)
       options = {}
-      for arg in process.argv
+      for arg in cmdLineArray
         if arg[0] is '-' and arg[1] isnt '-'
           options.help       = yes if 'h' in arg
           options.tokens     = yes if 't' in arg
@@ -42,17 +44,17 @@ This utility function checks if a file is "hidden" by the operating system.
 
 The `-o` option has an argument (the output directory).
 
-      if '-o' in process.argv
-        index = process.argv.indexOf '-o'
-      else if '--output' in process.argv
-        index = process.argv.indexOf '--output'
+      if '-o' in cmdLineArray
+        index = cmdLineArray.indexOf '-o'
+      else if '--output' in cmdLineArray
+        index = cmdLineArray.indexOf '--output'
 
-      options.output = process.argv[index + 1] if index isnt -1
+      options.output = cmdLineArray[index + 1] if index isnt -1
 
 The remaining arguments are assumed to be input file names. We loop through the array and ignore switches and the output directory (if any).
 
       inputs = []
-      for arg in process.argv.slice(2)
+      for arg in cmdLineArray.slice(2)
         if arg[0] is '-' or arg is options.output
 
 Set the help flag if the user passed input files (or extra arguments) that were followed by other switches like `kal -o output_dir some_file -j`. This is considered invalid.
@@ -77,7 +79,7 @@ Main
 
 Parse the command line options and print the version/usage if necessary.
 
-      options = parseOptions()
+      options = parseOptions process.argv
       return version() if options.version
       return usage() if options.help
 
@@ -135,6 +137,15 @@ The `scripts/kal` loader calls this entry point.
     exports.run = run
 
 
+addMapping, Source Map generation
+
+    function addMapping(mapping)
+      module.exports.mappingLog.push mapping
+      module.exports.globalMap.addMapping mapping
+
+    exports.addMapping = addMapping
+
+
 Compile Files
 =============
 
@@ -163,7 +174,18 @@ Check if this is Literate code.
 
 Compile the source.
 
-          js_output = Kal.compile fs.readFileSync(filename), options
+          js_filename = path.join(output_dir, path.basename(filename, extension)) + '.js'
+
+          print 'compiling' , filename, 'to' , js_filename
+
+Start Source Map generation
+
+          module.exports.currentSource = path.basename filename
+          module.exports.mappingLog = []
+          module.exports.globalMap = new sourceMap.SourceMapGenerator {file: (path.basename(js_filename)+".map")}
+          source = fs.readFileSync(filename)
+
+          js_output = Kal.compile source, options
 
 Minify if requested. We've already checked that `uglify-js` is installed at this point.
 
@@ -176,8 +198,15 @@ Print out the JavaScript if the debug option was passed in.
 
 Write the output to the output directory with a `.js` extension.
 
-          js_filename = path.join(output_dir, path.basename(filename, extension)) + '.js'
+          js_output+= '\n//# sourceMappingURL='+(path.basename(js_filename)+".map")
           fs.writeFileSync js_filename, js_output
+          fs.writeFileSync js_filename+'.map', module.exports.globalMap.toString()
+          fs.writeFileSync path.join(output_dir, path.basename(filename)), source
+          fs.writeFileSync js_filename+'.map.log', JSON.stringify(module.exports.mappingLog, null, '\t')
+          module.exports.mappingLog
+
+
+    exports.compile_files = compile_files
 
 Version
 =======

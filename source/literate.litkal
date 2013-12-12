@@ -10,11 +10,14 @@ This function reads the Literate code line by line, building a new array of non-
       regular_kal_lines = []
       last_line = ''
       in_code_block = no
-      for line in literate_code.split '\n'
+
+if the source comes from a <textarea> (or windows) the lines will end with \r\n. Let's remove the \r before split \n
+
+      for line in literate_code.replace(/\r/g, '').split '\n'  
 
 If the line starts with four spaces and the previous line was blank or code, we keep the line but remove the spaces. Otherwise, we prepend a `# ` comment marker to make it a comment.
 
-        if line.match(/^   /) and (last_line is '' or in_code_block)
+        if /^   /.test(line) and (last_line is '' or in_code_block)
           in_code_block = yes
           regular_kal_lines.push line.slice 4
         else

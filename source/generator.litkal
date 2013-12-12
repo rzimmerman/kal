@@ -1,11 +1,20 @@
 Kal Generator
 -------------
 
+Check if we're in node or in the browser
+
+    inNode = (typeof window is 'undefined')
+
 The `generator` module extends parser abstract syntax tree classes. It provides methods for generating JavaScript code for each node by traversing the tree. The compiler calls the `.js()` method of the root object to return the compiled JavaScript for the tree.
 
 We extend the grammar classes, so this module needs to be loaded **after** the `grammar` module.
 
     Grammar = require('./grammar').Grammar
+
+command has the globalMap for sourceMapping
+
+    if inNode
+        command = require './command'
 
 Keyword Mapping
 ===============
@@ -116,6 +125,10 @@ Counters used to generate unique iterator variables for loops.
 Snippets are useful chunks of JavaScript that are only included in the output when they are actually used.
 
     use_snippets = {}
+
+Generated js line number, for Source Map
+
+    js_line_number=1
 
 Utility Functions
 =================
@@ -281,6 +294,7 @@ This method also resets all the globals in this module.
 
 Global loop counters, flags, and stacks are reset here in case we are compiling multiple files.
 
+      js_line_number = 1
       for_count = 1
       while_count = 1
       literate = options.literate
@@ -1220,27 +1234,43 @@ We set the callback to the current one unless a parent node has already specifie
 We compile each statement and pass through callback information along with conditional and loop flags.
 
       for statement in me.statements
-        statement.parent_block = me
-        statement.callback = me.callback
-        statement.original_callback = me.original_callback
-        statement.in_conditional = me.in_conditional
-        statement.in_loop = me.in_loop
-        statement_js = statement.js()
+
+            statement.parent_block = me
+            statement.callback = me.callback
+            statement.original_callback = me.original_callback
+            statement.in_conditional = me.in_conditional
+            statement.in_loop = me.in_loop
+
+Source Map
+https://github.com/mozilla/source-map#with-sourcemapgenerator-low-level-api
+
+            if inNode
+                    sourceMapItem={ generated: {line: js_line_number,column: 1}, source: command.currentSource, original: {line: statement.line or 1,column: 1},name:"a"}
+                    command.addMapping sourceMapItem
+
+            statement_js = statement.js()
 
 Code is indented to look pretty, trying to avoid multiple newlines.
 
-        if statement_js[0] is '\n' and (rv.slice(-2) is '\n\n' or rv.length is 0)
-          rv += multi_indent statement_js.slice(1), me.indent_level
-        else
-          rv += multi_indent statement_js, me.indent_level
+            if statement_js[0] is '\n' and (rv.slice(-2) is '\n\n' or rv.length is 0)
+              statement_js = multi_indent statement_js.slice(1), me.indent_level
+            else
+              statement_js = multi_indent statement_js, me.indent_level
+          #end if
+
+            rv += statement_js
+            js_line_number += statement_js.split("\n").length #count lines
 
 We need to indent if this statement started a new callback function. We also save the new callback.
 
-        if current_callback isnt previous_cb
-          me.indent_level += 1
-          me.callbacks.unshift me.callback
-          me.callback = current_callback
-          previous_cb = current_callback
+            if current_callback isnt previous_cb
+              me.indent_level += 1
+              me.callbacks.unshift me.callback
+              me.callback = current_callback
+              previous_cb = current_callback
+          #end if
+
+    #end for
 
 If there is any asynchronous code, we need to handle the case where we have an implied `return` (the function ends without an explicit `return` statement). If code execution gets to the end of the function or task, we check for a `k$next` variable and call back to it. We clear out `k$next` before doing this to avoid ever calling back twice.
 

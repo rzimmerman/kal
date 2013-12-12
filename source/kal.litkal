@@ -82,7 +82,11 @@ We call the `js` method to recursively generate JavaScript from the tree, then r
 We want to throw a string here, otherwise the user won't see a useful error message at the terminal (just an error class name).
 
       catch compile_error
-        throw compile_error.message or compile_error
+        print 'COMPILE ERROR: ', compile_error.message
+        print 'full: ', JSON.stringify compile_error
+        console.trace 'quitting kal'
+        #process.exit  #process.exit is not defined on the browser
+        throw compile_error
 
     exports.compile = compile
 
