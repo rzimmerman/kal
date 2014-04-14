@@ -465,7 +465,11 @@ x = [v for property value v in obj]         # [1, 2]
 x = [p+v for propert p with value v in obj] # ['a1', 'b2']
 ```
 
-Conditionals in list comprehensions are coming soon.
+Conditionals in list comprehensions are also supported:
+
+```kal
+new_list = [i for i in old_list if i > 5]
+```
 
 ## Operators And Constants
 
