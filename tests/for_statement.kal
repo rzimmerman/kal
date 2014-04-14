@@ -80,3 +80,25 @@ describe 'For Statement', ->
     sum1.should.equal 14
     sum2.should.equal 6
     done()
+
+  it 'should support generators', -> # gh-45
+    class TestGen
+      method initialize()
+        me.i = 1
+      method next()
+        me.i += 1
+        if me.i < 10
+          return me.i
+    t = new TestGen
+    a = []
+    for x from t
+      a.push x
+    a.should.eql [2 to 9]
+    a = []
+    for x from 2 to 4
+      a.push x
+    a.should.eql [2 to 4]
+    a = []
+    for x from 4 to 2
+      a.push x
+    a.should.eql [4 to 2]

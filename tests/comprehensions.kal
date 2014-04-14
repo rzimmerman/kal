@@ -13,8 +13,6 @@ describe 'List Comprehensions', ->
         me.i += 1
         if me.i < 10
           return me.i
-        else
-          return EndOfList
     t = new TestGen
     x = [y for y in t]
     x.should.eql([2,3,4,5,6,7,8,9])

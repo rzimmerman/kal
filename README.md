@@ -411,6 +411,22 @@ for series x in y
 
 `series` is the default if neither is specified. Parallel for loops are **not** guaranteed to execute in order! In fact, they often won't. Take special care when accessing variables separated by `wait for` asynchronous statements. Remember that a `wait for` releases control of execution, so other loop iterations running in parallel may alter local variables if you are not careful. See the `wait for` section for more details.
 
+You can use a generator object as follows:
+
+```kal
+for val from generator_object
+  print val
+```
+
+A generator object is any object that has a `next()` method. The loop will keep calling the `next()` method until it does not return a value (returns `undefined` in JavaScript-speak).
+
+You can also use a range of numbers as an implicit generator to save memory:
+
+```kal
+for val from 1 to 100000000 # will not instantiate a giant list
+  print val
+```
+
 `while` loops continuously run their code block until a condition is satisfied.
 
 ```kal

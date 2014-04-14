@@ -39,7 +39,6 @@ Many keywords can be easily mapped one-to-one with their JavaScript equivalents.
       'raise':      'throw'
       'instanceof': 'instanceof'
       'of':         'in'
-      'EndOfList':  'undefined'
       'fail':       'throw'
       'bitwise and':   '&'
       'bitwise or':    '|'
@@ -981,12 +980,21 @@ Declare the iterator and terminator.
 
 `for ... of ...` loops loop through each property of the iterable (the `y` in `for x of y`) in whatever order. Luckily the JavaScript `in` operator does almost exactly this. We do have to skip properties that don't meet the `hasOwnProperty` criterion since these are inherited. We assign the element to the user supplied `iterant` (`x`) at the beginning of each iteration.
 
-        else
+        else if me.type.value is 'of'
           scope[iterator] = 'no closures'
           scope[terminator] = 'no closures'
           rv += "#{terminator} = #{me.iterable.js()};\n"
           rv += "for (#{me.iterant.value} in #{terminator}) {\n"
           rv += "  if (!#{terminator}.hasOwnProperty(#{me.iterant.value})) {continue;}\n"
+        else if me.type.value is 'from'
+          scope[iterator] = 'no closures'
+          scope[terminator] = 'no closures'
+          if me.iterable_to exists
+            use_snippets['range generator'] = snippets['range generator']
+            rv += "#{terminator} = new k$rangegen(#{me.iterable.js()}, #{me.iterable_to.js()});\n"
+          else
+            rv += "#{terminator} = #{me.iterable.js()};\n"
+          rv += "while ((#{me.iterant.value} = #{terminator}.next()) !== undefined) {\n"
         rv += indent loop_block_js
         rv += "}\n"
 
@@ -998,6 +1006,7 @@ Declare the iterator and terminator.
       rv = ""
 
       fail with new Error "asynchronous for ... to ... loops are not supported" if me.iterable_to exists
+      fail with new Error "asynchronous for ... from ... loops are not supported" if me.type.value is 'from'
 
 The `execution_style` actually matters for asynchronous loops. The default, if none is specified, is `series`.
 
@@ -1903,3 +1912,7 @@ These are useful blocks of code that are only included in the output when used.
 `delete` deletes an array of indices from another array. We have to delete indices in backwards order otherwise they change as we delete them!
 
       'delete': 'var k$del = function (arr,indices) {if (typeof indices == "number") {arr.splice(indicies,1);} else {indices.sort(); for (var i = indices.length-1; i >= 0; i--) arr.splice(indices[i],1);}}'
+
+`range generator` creates a generator object that can be used to loop through a range
+
+      'range generator': 'var k$rangegen = function (a,b) {this.v = a; this.next = (a < b) ? function () {if (this.v <= b) return this.v++;} : function () {if (this.v >= b) return this.v--;};}'

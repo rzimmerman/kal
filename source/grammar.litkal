@@ -273,7 +273,7 @@ While loops continue executing until the expression is true (or false in the cas
 ForStatement
 ============
 
-`ForStatement: 'for' ('parallel'|'series')? Variable ('at' Variable)? ('in'|'of') Expression Block`
+`ForStatement: 'for' ('parallel'|'series')? Variable ('at' Variable)? ('in'|'of'|'from') Expression Block`
 
 For loops can iterate over object properties (`of`) or over an array (`in`). The `parallel` and `series` specifiers only apply if there are asynchronous constructs within the loop (the default is `series`).
 
@@ -287,7 +287,7 @@ The `at` keyword allows the user to specify an index variable for `for in` loops
         me.iterant = me.req Variable
         if me.opt_val 'at'
           me.index_var = me.req Variable
-        me.type = me.req_val 'in', 'of'
+        me.type = me.req_val 'in', 'of', 'from'
         if me.index_var exists but me.type.value isnt 'in'
           me.error "index variables specified with 'at' are only allowed in 'for ... in' loops"
         me.iterable = me.req Expression
