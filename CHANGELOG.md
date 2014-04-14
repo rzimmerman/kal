@@ -1,5 +1,14 @@
 #Change Log
 
+### [0.5.6](https://github.com/rzimmerman/kal/compare/r0.5.6...r0.5.5)
+* Added support for block and multiline strings
+* Add the `from ... to .. as` feature
+* Added the `delete` statement
+* Fixes to implicit parentheses
+* Conditionals in comprehensions are supported
+* Added support for generators to `for` loops (like Python)
+* Added object unpacking support
+
 ### [0.5.5](https://github.com/rzimmerman/kal/compare/r0.5.5...r0.5.4)
 * For loops support the `at` index syntax (`for x at index in y`)
 * `is not` now works like `isnt` rather than `is (not`
