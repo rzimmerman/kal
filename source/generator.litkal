@@ -1874,6 +1874,23 @@ If we are done, check for errors in the array and throw if there were any.
       me.parent_block.closeout_callback = me.original_callback
       return rv
 
+### UnpackStatement ###
+
+An `UnpackStatement` reads properties from an object and stores them in the specified variables.
+
+    method js() of Grammar.UnpackStatement
+      source_obj = "kobj$#{for_count}"
+      scope[source_obj] = 'no closures'
+      for_count += 1
+      rv = "#{source_obj} = #{me.source.js()};\n"
+      for item in me.unpack_list.members
+        obj_property = item[0]
+        variable = item[1] when item[1] exists otherwise item[0]
+        var_js = variable.value or variable.js() # can be a Variable or UnaryExpression
+        scope[var_js] = 'closures ok'
+        rv += "#{var_js} = #{source_obj}.#{obj_property.js()};\n"
+      return rv
+
 Snippets
 ========
 

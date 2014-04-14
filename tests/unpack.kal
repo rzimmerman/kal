@@ -1,0 +1,33 @@
+describe 'List and Object Unpacking', -> # gh-20
+  it 'should support object unpacking', ->
+    obj =
+      a: 1
+      b: 'stuff'
+      c:
+        c1: 'hello'
+      d: 2
+    unpack obj into a, b, c
+    a.should.equal 1
+    b.should.equal 'stuff'
+    c.should.eql {c1: 'hello'}
+  it 'should support the as statement when unpacking objects', ->
+    obj =
+      a: 1
+      b: 'stuff'
+      c:
+        c1: 'hello'
+      d: 2
+    unpack obj into a, b as bee
+    a.should.equal 1
+    bee.should.equal 'stuff'
+
+  it 'should support sub-objects', ->
+    obj =
+      a: 1
+      b: 'stuff'
+      c:
+        c1: 'hello'
+      d: 2
+    unpack obj into a, c.c1 as c1
+    a.should.equal 1
+    c1.should.equal 'hello'

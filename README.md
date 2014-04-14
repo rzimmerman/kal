@@ -752,3 +752,20 @@ catch errors
   print errors[0] # prints the error thrown by task_that_fails
   print errors[1] exists # prints false
 ```
+
+## Unpacking Objects
+
+A shorthand syntax for the following:
+
+```kal
+a = myobj.a
+b = myobj.b
+c = myobj.sea
+d = myobj.subprop.d
+```
+
+is available with the `unpack into` statement:
+
+```kal
+unpack myobj into a, b, sea as c, subprop.d as d
+```

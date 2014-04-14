@@ -25,7 +25,7 @@ Reserved words are used to determine whether assignments are valid (for example,
                    'break','continue','try','catch','throw','raise','fail',
                    'with','arguments','of','in','instanceof','property','value',
                    'parallel','series','pass','pause','until','me','this','typeof',
-                   'at','to']
+                   'at','to','unpack','into','as']
 
 **Words that are reserved in Kal but can be used as r-values**
 
@@ -122,7 +122,7 @@ The order in the `me.req` call is important here for two reasons. One, we want t
 
     class Statement inherits from ASTBase
       method parse()
-        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, DeleteStatement, AssignmentStatement, ExpressionStatement
+        me.statement = me.req BlankStatement, TryCatch, ClassDefinition, ReturnStatement, WaitForStatement, SimpleWaitForStatement, PauseForStatement, IfStatement, WhileStatement, ForStatement, ThrowStatement, SuperStatement, RunInParallelBlock, LoopControlStatement, DeleteStatement, UnpackStatement, AssignmentStatement, ExpressionStatement
 
 LoopControlStatement
 ====================
@@ -700,6 +700,11 @@ For constant folding, return a numeric value if possible, otherwise `null`. This
         else
           return null
 
+For the Unpack Statement, the user can specify an expression without an `as` clause. In this case we need to make sure this is a valid variable we can declare and stick a value into (not a comlex l-value).va
+
+      method variable_constant()
+        return me.base.value
+
 ExisentialCheck
 ===============
 
@@ -1095,6 +1100,48 @@ Within a method, calls the parent class's version of that method. Unlike most fu
         me.lock()
         me.accessor = me.opt FunctionCall
 
+
+Unpack List
+===========
+
+`UnpackList: Variable ['as' UnaryExpression] (',' Variable ['as' UnaryExpression])*`
+
+A list of variables to unpack an object's properties into. If there is no `as` clause, the variable name is assumed to be the same as the object property name.
+
+    class UnpackList inherits from ASTBase
+      method parse()
+        me.members = [me.parse_one()]
+        while me.opt_val ','
+          me.lock()
+          me.members.push(me.parse_one())
+      method parse_one()
+        member = me.req(UnaryExpression)
+        me.lock()
+        if me.opt_val 'as'
+          unex = me.req Variable
+          return member, unex
+        else
+          me.error("unpack requires an l-value") unless member.variable_constant()
+        return member, none
+
+
+Unpack Statement
+================
+
+`UnpackStatement: 'unpack' Expression 'into' UnaryExpression+`
+
+This will unpack an object's properites into a list of valid lvalues.
+
+    class UnpackStatement inherits from ASTBase
+      method parse()
+        me.req_val 'unpack'
+        me.lock()
+        me.source = me.req Expression
+        me.lock()
+        me.req_val 'into'
+        me.lock()
+        me.unpack_list = me.req UnpackList
+
 Exports
 =======
 
@@ -1111,7 +1158,7 @@ A list of nodes to export. For now, this is the cleanest way to do this in Kal. 
              ClassDefinition, TryCatch, SuperStatement, BlockWithoutIndent,
              SimpleWaitForStatement, WaitForStatement, PauseForStatement,
              MultipleReturnValues, RunInParallelBlock, WaitForExpression, Variable,
-             RangeExpression, DeleteStatement]
+             RangeExpression, DeleteStatement, UnpackList, UnpackStatement]
 
     exports.Grammar = {}
     for v in Nodes
