@@ -50,7 +50,7 @@ Record the last line of the node. This is used to place comments correctly in th
 
         me.endline = ts.line
 
-**opt** attempts to parse the token stream using one of the classes or token types specified. This method takes a variable number of arguments. For example, calling `me.opt IfStatement, Expression, 'IDENTIFIER'` would attempt to parse the token stream first as an `IfStatement`. If that fails, it would attempt to use the `Expression` class. If that fails, it will accept a token of type `IDENTIFIER`. If all of those fail, it will return `none`. 
+**opt** attempts to parse the token stream using one of the classes or token types specified. This method takes a variable number of arguments. For example, calling `me.opt IfStatement, Expression, 'IDENTIFIER'` would attempt to parse the token stream first as an `IfStatement`. If that fails, it would attempt to use the `Expression` class. If that fails, it will accept a token of type `IDENTIFIER`. If all of those fail, it will return `none`.
 
 Note that `SyntaxError`s will still be thrown, but not `ParseFailed` errors.
 
@@ -78,16 +78,19 @@ For classes, it attempts to instantiate the class (which calls the class's `pars
             try
               return new cls me.ts, me
 
-If parsing does fail, we want to rewind the token stream. If the error has the `locked` flag or the error came from the compiler, we do want to abort and throw. 
+If parsing does fail, we want to rewind the token stream. If the error has the `locked` flag or the error came from the compiler, we do want to abort and throw.
 
             catch err
               me.ts.goto_token start_index
-              fail with err when err.locked or not err.not_compiler_issue
+              if err.locked or not err.not_compiler_issue
+                print err, 'class: ',cls
+                throw err
 
 `opt` returns `nothing` if none of the arguments could be use to parse the stream.
 
         return nothing
 
+-----------------------------
 **req** works the same way as `opt` except that it throws an error if none of the arguments can be used to parse the stream.
 
       method req()
@@ -101,9 +104,11 @@ If `opt` returned nothing, we want to give the user a useful error.
 
         list = [cls.name or cls for cls in Array.prototype.slice.call(arguments)]
         if list.length is 1
-          message = "Expected #{list[0]}"
+          #if me.locked
+          #    print me
+          message = "1.Expected #{list[0]}"
         else
-          message = "Expected one of #{list.join(', ')}"
+          message = "2.Expected one of #{list.join(', ')}"
         me.error "#{message}"
 
 **opt_val** checks if the next token has a semantic value that matches one of the arguments provided. If so it returns that token and advances the stream. Otherwise, it returns `nothing`.
@@ -125,7 +130,7 @@ If `opt` returned nothing, we want to give the user a useful error.
 The JavaScript (node) `arguments` structure is a little weird in that it's not strictly an array. It's actually an object mapping with some extra properties. In order to produce a useful error message we make a copy of the values as an array.
 
         args = [v for v in Array.prototype.slice.call(arguments)]
-        me.error "Expected '#{args.join('\' or \'')}'"
+        me.error "0.Expected '#{args.join('\' or \'')}'"
 
 **opt_multi** this method is like `opt` except that it will return zero or more of the requested class or token type. If it can't match any tokens it returns an empty array. It is "greedy" in that it will try to match as many occurances of a token or class as possible. `opt_multi` will only return objects/tokens from the first argument that matches the token stream. This method always returns an array.
 
@@ -162,13 +167,21 @@ Create a useful error message for the user.
 
       method error(msg)
         if me.locked
-          full_msg = msg + ' on line ' + me.line
+          #console.trace 'here'
+          full_msg = "#{msg} on line #{me.line}"
 
 We try to report the filename if possible.
 
-          if me.ts.options?['filename'] exists
-            full_msg += ' in file ' + me.ts.options['filename']
+          up = me
+          while up
+            if up.ts.options?['filename'] exists
+              full_msg += ' in file ' + up.ts.options['filename']
+              break
+            else
+              up = up.ast_parent
+
           throw new SyntaxError full_msg
+
         else
           throw new ParseFailed msg
 

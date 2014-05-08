@@ -59,7 +59,7 @@ This function returns a string containing the compiled JavaScript including prop
 
 If code is passed as a buffer, there can be issues with Unicode characters (gh-108). As a result we convert it explicitly to a string and remove any trailing whitespace or newlines.
 
-      code = code.toString().trim()
+      code = code.toString().replace(/\s+$/, "")
 
 Files are wrapped in a function to prevent leakage to the global scope by default.
 
@@ -82,7 +82,11 @@ We call the `js` method to recursively generate JavaScript from the tree, then r
 We want to throw a string here, otherwise the user won't see a useful error message at the terminal (just an error class name).
 
       catch compile_error
-        throw compile_error.message or compile_error
+        print 'COMPILE ERROR: ', compile_error.message
+        print 'full: ', JSON.stringify compile_error
+        console.trace 'quitting kal'
+        #process.exit  #process.exit is not defined on the browser
+        throw compile_error
 
     exports.compile = compile
 
