@@ -100,9 +100,10 @@ Code passed to this function is run immediately.
 
     function kal_eval(code, options)
 
-Compile the code object.
+Compile the code object. Make sure to disable exports for evaluated code.
 
       options = {} if options doesnt exist
+      options.no_export = yes
       js = compile code, options
 
 Show the output JavaScript if the user asked us to. This is really just for compiler debugging.

@@ -116,6 +116,10 @@ Snippets are useful chunks of JavaScript that are only included in the output wh
 
     use_snippets = {}
 
+Exported objects are kept in a list that is assigned to `module.exports` at the end of the file (assuming module.exports exists - only true in node).
+
+    export_objects = []
+
 Utility Functions
 =================
 
@@ -295,6 +299,7 @@ Global loop counters, flags, and stacks are reset here in case we are compiling 
       class_defs = []
       class_def = {name: '',code: '',args: [],has_constructor: no}
       use_snippets = {}
+      export_objects = []
       me.callback = current_callback
       me.bare = options.bare
 
@@ -316,7 +321,17 @@ We prepend any Kal JavaScript "snippets". Snippets are useful pieces of code tha
 
 Close out any last callback (if present).
 
-      rv += "}" when current_callback isnt 'k$cb0'
+      rv += "}\n" when current_callback isnt 'k$cb0'
+
+Export any members that need to be exported. We need to make sure `module.exports` is a thing (it doesn't work in the browser).
+
+      if export_objects.length > 0 but not options.no_export
+        rv += "if (typeof(module) != 'undefined' && module.exports != null) {\n"
+        for obj in export_objects
+          rv += "  module.exports.#{obj} = #{obj};\n"
+        for var_name of scope
+          rv += "  module.exports.#{var_name} = #{var_name};\n"
+        rv += "}\n"
 
 Close out the scope and wrap with a function if necessary.
 
@@ -1399,9 +1414,11 @@ If this is a member of a class (including a late binding), we run `js_constructo
         else
           return me.js_class_member()
 
-Normal functions go straight to `js_bare_function`.
+Normal functions go straight to `js_bare_function`. We check to see if this is a named function in the top scope. If so, this function is exported by default.
 
       else
+        if me.name exists and scopes.length is 0
+          export_objects.push me.name.value
         return me.js_bare_function()
 
 Bare functions just get the `function` header and an optional name before generating the body.
@@ -1532,6 +1549,11 @@ Function calls can have exisential checks (`a?(1)`) since they are accessors.
 Classes contain a code block with function, method, and task definitions.
 
     method js() of Grammar.ClassDefinition
+
+Mark this class for export if it is at the top level and has a name.
+
+      if me.name exists and scopes.length is 0
+        export_objects.push me.name.value
 
 For the class definition, we start a new scope and class and populate the `class_def` global.
 

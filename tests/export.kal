@@ -1,0 +1,41 @@
+
+# We check module.exports to make sure these
+# get exported
+function test1()
+  function innerTest()
+    return 0
+  return 1
+
+task test2()
+  return 2
+
+class Test3
+  method initialize()
+    me.thing = 3
+  method other()
+    return 3.1
+
+test4 = 4
+
+method test5() of Test3
+  return 5
+
+describe 'Exports', ->
+  test6 = 3
+  it 'should export top-level functions by default', (done) ->
+    module.exports.test1().should.equal 1
+    wait for x from module.exports.test2()
+    x.should.equal 2
+    done()
+
+  it 'should export top-level classes by default', ->
+    t = new module.exports.Test3()
+    t.thing.should.equal 3
+
+  it 'should export module level variables by default', ->
+    module.exports.test4.should.equal 4
+
+  it 'should not export inner functions or variables', ->
+    (module.exports.test6 exists).should.be.false
+    (module.exports.innerTest exists).should.be.false
+    (module.exports.other exists).should.be.false

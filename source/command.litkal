@@ -32,6 +32,7 @@ This utility function checks if a file is "hidden" by the operating system.
           options.bare       = yes if 'b' in arg
           options.version    = yes if 'v' in arg
           options.minify     = yes if 'm' in arg
+          options.no_export  = yes if 'e' in arg
         else if arg[0] is '-' and arg[1] is '-'
           options.help       = yes if arg is '--help'
           options.tokens     = yes if arg is '--tokens'
@@ -39,6 +40,7 @@ This utility function checks if a file is "hidden" by the operating system.
           options.bare       = yes if arg is '--bare'
           options.version    = yes if arg is '--version'
           options.minify     = yes if arg is '--minify'
+          options.no_export  = yes if arg is '--no_export'
 
 The `-o` option has an argument (the output directory).
 
@@ -205,4 +207,5 @@ Help options or invalid input will cause this message to print to the screen.
       print "  --version, -v     display the version number                           [boolean]"
       print "  --output, -o      the output directory for the compiled source"
       print "  --minify          minify the output (requires uglify-js)               [boolean]"
+      print "  --no_export, -e   don't export top-level objects by default            [boolean]"
       process.exit(2)
